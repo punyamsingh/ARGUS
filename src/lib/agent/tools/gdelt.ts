@@ -87,9 +87,18 @@ async function query(
     enddatetime: window.end,
   });
   const res = await fetch(`${DOC_API}?${params}`, { signal, headers: HEADERS });
-  if (!res.ok) return [];
-  // GDELT replies with plain text on malformed/empty queries — guard the parse.
-  if (!(res.headers.get("content-type") ?? "").includes("json")) return [];
+  if (!res.ok) {
+    console.warn(`gdelt: HTTP ${res.status} for query=${q}`);
+    return [];
+  }
+  // GDELT replies with plain text on malformed/empty/rate-limited queries —
+  // guard the parse and surface why, so empty briefs are diagnosable.
+  const contentType = res.headers.get("content-type") ?? "";
+  if (!contentType.includes("json")) {
+    const body = (await res.text()).slice(0, 160).replace(/\s+/g, " ").trim();
+    console.warn(`gdelt: non-JSON (${contentType}) for query=${q} — ${body}`);
+    return [];
+  }
   const json = (await res.json()) as GdeltResponse;
   return json.articles ?? [];
 }
