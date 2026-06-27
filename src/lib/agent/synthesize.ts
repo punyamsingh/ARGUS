@@ -1,13 +1,33 @@
 import { generateObject } from "ai";
+import { z } from "zod";
 import { getModel, llmDefaults } from "@/lib/llm";
 import {
-  briefSchema,
   type Brief,
   type BriefInput,
   type BriefItem,
   type Evidence,
   type ResolvedEntity,
 } from "@/types/brief";
+
+/**
+ * Lenient schema for the model call. We deliberately drop the canonical
+ * `Brief`'s `citations.min(1)` here: structured-output backends (e.g. Gemini)
+ * have limited JSON-Schema support and may reject `minItems`. Grounding is
+ * enforced after generation by dropping items without valid citations, so the
+ * returned value still satisfies the strict `Brief` contract.
+ */
+const modelBriefItem = z.object({
+  text: z.string(),
+  citations: z.array(z.string()),
+});
+const modelBriefSchema = z.object({
+  snapshot: z.string(),
+  objective: z.string(),
+  talkingPoints: z.array(modelBriefItem),
+  decisionAsks: z.array(modelBriefItem),
+  riskAlerts: z.array(modelBriefItem),
+  buyingSignals: z.array(modelBriefItem),
+});
 
 /**
  * Synthesis (#6) — turn gathered evidence into a cited Brief.
@@ -57,9 +77,9 @@ export async function synthesizeBrief(
 
   const { object } = await generateObject({
     model: getModel(),
-    schema: briefSchema,
+    schema: modelBriefSchema,
     maxRetries: llmDefaults.maxRetries,
-    abortSignal: AbortSignal.timeout(45_000),
+    abortSignal: AbortSignal.timeout(25_000),
     system: SYSTEM,
     prompt: [
       `Meeting input:`,
