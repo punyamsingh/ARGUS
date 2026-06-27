@@ -36,6 +36,25 @@ npm run typecheck  # tsc --noEmit
 A full setup guide (free Gemini & Langfuse keys, env vars) lands with
 [issue #34](https://github.com/punyamsingh/ARGUS/issues/34).
 
+## Configuration
+
+Copy [`.env.example`](./.env.example) → `.env.local` (or set the vars in Vercel).
+The LLM layer is provider-agnostic — **switching providers is one env change**:
+
+```bash
+# default — free Google Gemini (key: https://aistudio.google.com/apikey)
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=...
+
+# swap to Claude with no code changes
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=...
+```
+
+**Connectivity check:** with a key set, `GET /api/ping-llm` returns
+`{ ok: true, provider, model, text }`. (Temporary probe — removed when the real
+`/api/brief` pipeline lands.)
+
 ## Architecture (target)
 
 ```
