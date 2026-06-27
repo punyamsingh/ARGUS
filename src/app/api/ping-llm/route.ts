@@ -12,12 +12,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
   try {
     const { text } = await generateText({
       model: getModel(),
       prompt:
         "In one short sentence, confirm you are reachable and name your model family.",
       maxRetries: llmDefaults.maxRetries,
+      abortSignal: controller.signal,
     });
 
     return Response.json({
@@ -27,10 +31,15 @@ export async function GET() {
       text,
     });
   } catch (err) {
+    // Developer setup probe — surfacing the message is intentional (it's how you
+    // debug a missing/invalid key). Also logged server-side.
+    console.error("ping-llm error:", err);
     const message = err instanceof Error ? err.message : "Unknown error";
     return Response.json(
       { ok: false, provider: llmProvider, model: llmModelId, error: message },
       { status: 500 },
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }
