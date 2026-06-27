@@ -24,25 +24,60 @@ the commodity part now. The value-determining, genuinely hard parts are:
 Calendar sync, CRM integration, and team workspaces are real but are *plumbing* bolted
 on once the core works. **The MVP must prove #1–3 or nothing else matters.**
 
-## 2. The honest data-source reality
+## 2. The data layer — a belt of specialized tools (the moat)
 
-| Source | Buildable? | Notes |
+Google Search grounding is **breadth** — prose, not structured signals. The moat is a set
+of **specialized, typed, read-only tools** the gather step calls *conditionally* on the
+resolved entity. Every MVP tool is **free + API-accessible + ToS-clean**.
+
+### MVP tool belt (all free)
+
+| Tool | Signal | Feeds |
 |---|---|---|
-| Company news / web | ✅ Free & legit | **Gemini's Google Search grounding** returns results **with citations** — built in, on the free tier |
-| Public-company financials | ✅ Doable | Real APIs (Alpha Vantage, FMP, Yahoo) — *Phase 2* |
-| CRM (Salesforce/HubSpot) | ✅ Clean | User OAuths their **own** CRM — fully legitimate — *Phase 2* |
-| Hiring / funding signals | ✅ Doable | Job boards, Crunchbase, news — *Phase 2* |
-| **LinkedIn profile/activity** | ⚠️ The trap | Scraping violates ToS; LinkedIn litigates (hiQ v. LinkedIn). No API gives arbitrary profiles. The original pitch hand-waves exactly the hardest, most legally fraught source. **MVP excludes LinkedIn scraping.** |
+| **Gemini Google Search grounding** | Broad web + news, with citations | everything (baseline) |
+| **Wikipedia / Wikidata** | Structured firmographics: founded, HQ, industry, leadership, subsidiaries | Snapshot (+ sharpens entity resolution) |
+| **Company website fetch** | First-party truth: newsroom, careers, blog, pricing | Snapshot, Buying signals |
+| **Job-board APIs** (Greenhouse, Lever — public JSON) | Live open roles → hiring spikes, which teams, where | **Buying signals** (the sleeper hit) |
+| **SEC EDGAR** | 10-K/Q financials, **8-K material events**, **Form D** private fundraising, insider trades | Financials, **Risk alerts**, **Buying signals** |
+| **GDELT** | Global news + **tone/sentiment** at scale (no key) | **Risk alerts** (negative-press radar) |
+| **Financial markets** (Finnhub / Alpha Vantage, free tier) | Stock moves, earnings dates (public cos) | Financials, Risk alerts |
 
-The MVP leans on what is free, legitimate, and cited: **Gemini + Google Search grounding.**
+### Stretch tools (free, niche)
+
+| Tool | Signal | Note |
+|---|---|---|
+| **OpenCorporates / Companies House** | Official entity registry, officers, filings | Entity verification, esp. non-US/UK |
+| **GitHub API** | Public activity of technical buyers | Only for dev-tool / eng-leader sales |
+
+### Deferred / excluded
+
+| Source | Why |
+|---|---|
+| Crunchbase / BuiltWith / Clearbit / X | Paid / gated — *Phase 2* when there's budget |
+| CRM (Salesforce / HubSpot) | OAuth the user's **own** CRM — legit but an integration — *Phase 2* |
+| **LinkedIn profile/activity** | ⚠️ Scraping violates ToS; LinkedIn litigates (hiQ v. LinkedIn). No API for arbitrary profiles. The pitch hand-waves exactly the hardest, most fraught source. **Excluded.** |
+
+### Conditional routing (don't call everything every time)
+
+- **Always:** Google Search + Wikipedia/Wikidata + website fetch + GDELT
+- **If US public company** → SEC EDGAR (financials, 8-K) + financial markets
+- **If private company** → SEC Form D + job boards
+- **If technical buyer** → GitHub
+
+All tools are **read-only → safe to run in parallel.** Each returns the shared `Evidence[]`
+shape so synthesis treats every source identically. Tradeoffs to manage: latency,
+free-tier rate limits, and a hard dependency on accurate entity resolution (need the right
+ticker / board slug / domain first — see issue #4).
 
 ## 3. Architecture — an agentic RAG pipeline
 
 ```
 Trigger (manual input for v0; calendar later)
-  → Entity resolution (disambiguate company + person)
-  → Parallel gather tools (web search/news now; financials, CRM later)
-  → Evidence store (snippets + source URL + timestamp)
+  → Entity resolution (disambiguate company + person; resolve ticker/domain/board slug)
+  → Gather orchestrator → fans out to the tool belt IN PARALLEL, conditional on entity:
+        Google Search · Wikipedia/Wikidata · website fetch · job boards ·
+        SEC EDGAR · GDELT · financial markets   (see §2)
+  → Evidence store (every tool returns the same Evidence shape: claim + source URL + timestamp)
   → Synthesis agent: writes the brief grounded ONLY in evidence, with citations
   → Single-screen brief (objectives · talking points · decision asks · risk alerts · buying signals)
 ```
