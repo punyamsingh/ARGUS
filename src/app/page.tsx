@@ -1,6 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { BriefPreview } from "@/components/brief-preview";
+import { BriefStudio } from "@/components/brief-studio";
 
 const PIPELINE = [
   {
@@ -20,15 +20,7 @@ const PIPELINE = [
   },
 ];
 
-const TOOLBELT = [
-  "Web search",
-  "Wikipedia",
-  "SEC EDGAR",
-  "Job boards",
-  "GDELT",
-  "Financials",
-  "Company site",
-];
+const TOOLBELT = ["Web search", "Wikipedia", "Company site", "Wikidata"];
 
 export default function Home() {
   return (
@@ -41,78 +33,29 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
 
         {/* ── Hero ─────────────────────────────────────────── */}
-        <section className="mx-auto grid max-w-6xl items-center gap-14 px-6 pb-20 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24">
-          <div className="rise">
-            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted">
-              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
-              AI pre-meeting intelligence agent
-            </span>
+        <section className="mx-auto max-w-3xl px-6 pb-12 pt-16 text-center lg:pt-24">
+          <span className="rise inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted">
+            <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
+            AI pre-meeting intelligence agent
+          </span>
 
-            <h1 className="mt-6 font-display text-[2.7rem] font-semibold leading-[1.05] tracking-tight text-ivory sm:text-6xl">
-              Walk in already{" "}
-              <span className="text-gleam italic">briefed</span>.
-            </h1>
+          <h1 className="rise mt-6 font-display text-[2.7rem] font-semibold leading-[1.05] tracking-tight text-ivory sm:text-6xl">
+            Walk in already <span className="text-gleam italic">briefed</span>.
+          </h1>
 
-            <p className="mt-6 max-w-xl text-balance text-lg leading-relaxed text-muted">
-              Argus turns 45 minutes of scattered account research into a single,
-              cited, conversation-ready brief — synthesised from real-time signals
-              in the minutes before your meeting.
-            </p>
-
-            {/* preview input (generation goes live with the MVP build) */}
-            <div className="mt-9 max-w-xl rounded-2xl border border-line-strong bg-surface/70 p-2 shadow-xl shadow-black/30 backdrop-blur-sm">
-              <div className="grid gap-2 sm:grid-cols-2">
-                <input
-                  disabled
-                  placeholder="Company — e.g. Northwind Logistics"
-                  className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint"
-                  aria-label="Company"
-                />
-                <input
-                  disabled
-                  placeholder="Who you're meeting"
-                  className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint"
-                  aria-label="Person"
-                />
-              </div>
-              <input
-                disabled
-                placeholder="Meeting context — e.g. renewal + expansion call"
-                className="mt-2 w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint"
-                aria-label="Meeting context"
-              />
-              <button
-                disabled
-                className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink opacity-90"
-              >
-                Generate brief
-                <span className="font-mono text-[11px] font-medium opacity-70">
-                  · soon
-                </span>
-              </button>
-            </div>
-
-            <p className="mt-3 text-[12px] text-faint">
-              Generation goes live as the MVP lands — follow progress on{" "}
-              <a
-                href="https://github.com/punyamsingh/ARGUS/issues"
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
-              >
-                the roadmap
-              </a>
-              .
-            </p>
-          </div>
-
-          {/* product preview */}
-          <div className="rise [animation-delay:120ms] lg:pl-4">
-            <BriefPreview />
-          </div>
+          <p className="rise mx-auto mt-6 max-w-xl text-balance text-lg leading-relaxed text-muted">
+            Argus turns 45 minutes of scattered account research into a single,
+            cited, conversation-ready brief — synthesised from real-time signals
+            in the minutes before your meeting.
+          </p>
         </section>
 
-        {/* ── Tool belt marquee ────────────────────────────── */}
+        {/* ── The studio ───────────────────────────────────── */}
+        <section className="rise pb-20 [animation-delay:120ms]">
+          <BriefStudio />
+        </section>
+
+        {/* ── Tool belt ────────────────────────────────────── */}
         <section className="mx-auto max-w-6xl px-6">
           <div className="rule" />
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-6 text-faint">
@@ -124,6 +67,7 @@ export default function Home() {
                 {t}
               </span>
             ))}
+            <span className="text-sm text-faint">+ more soon</span>
           </div>
           <div className="rule" />
         </section>

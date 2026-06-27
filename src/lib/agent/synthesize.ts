@@ -1,0 +1,95 @@
+import { generateObject } from "ai";
+import { getModel, llmDefaults } from "@/lib/llm";
+import {
+  briefSchema,
+  type Brief,
+  type BriefInput,
+  type BriefItem,
+  type Evidence,
+  type ResolvedEntity,
+} from "@/types/brief";
+
+/**
+ * Synthesis (#6) — turn gathered evidence into a cited Brief.
+ *
+ * The non-negotiable discipline: write ONLY from the evidence, cite every item
+ * by evidence id, and drop any item whose citations don't resolve to real
+ * evidence. Thin evidence → an honest, sparse brief, never fabrication.
+ */
+
+const SYSTEM = `You write concise, conversation-ready B2B sales pre-meeting briefs.
+
+Rules:
+- Use ONLY the supplied evidence. Do not add facts from your own knowledge.
+- Every item in talkingPoints, decisionAsks, riskAlerts, and buyingSignals MUST cite at least one evidence id (the bracketed ids in the evidence list). Cite the ids exactly.
+- Never invent an evidence id. If a section has no support in the evidence, return an empty array for it.
+- Keep each item to one or two sharp sentences a rep can say out loud.
+- snapshot: one line on the company (and the person if known).
+- objective: infer the meeting's goal from the provided context.
+- Prefer specific, recent, decision-useful points over generic ones.`;
+
+export async function synthesizeBrief(
+  input: BriefInput,
+  entity: ResolvedEntity,
+  evidence: Evidence[],
+): Promise<Brief> {
+  // No evidence → honest minimal brief; never fabricate.
+  if (evidence.length === 0) {
+    return {
+      snapshot: entity.company.industry
+        ? `${entity.company.name} — ${entity.company.industry}`
+        : entity.company.name,
+      objective: input.context,
+      talkingPoints: [],
+      decisionAsks: [],
+      riskAlerts: [],
+      buyingSignals: [],
+    };
+  }
+
+  const evidenceList = evidence
+    .map((e) => `[${e.id}] (${e.tool}) ${e.claim} — ${e.sourceUrl}`)
+    .join("\n");
+
+  const personLine = entity.person.role
+    ? `${entity.person.name} (${entity.person.role})`
+    : entity.person.name;
+
+  const { object } = await generateObject({
+    model: getModel(),
+    schema: briefSchema,
+    maxRetries: llmDefaults.maxRetries,
+    abortSignal: AbortSignal.timeout(45_000),
+    system: SYSTEM,
+    prompt: [
+      `Meeting input:`,
+      `Company: ${input.company}`,
+      `Person: ${input.person}`,
+      `Context: ${input.context}`,
+      ``,
+      `Resolved: ${entity.company.name}; meeting ${personLine}`,
+      ``,
+      `Evidence (cite by id):`,
+      evidenceList,
+    ].join("\n"),
+  });
+
+  // Keep only citations that resolve to real evidence; drop unsupported items.
+  const validIds = new Set(evidence.map((e) => e.id));
+  const ground = (items: BriefItem[]): BriefItem[] =>
+    items
+      .map((item) => ({
+        ...item,
+        citations: item.citations.filter((c) => validIds.has(c)),
+      }))
+      .filter((item) => item.citations.length > 0);
+
+  return {
+    snapshot: object.snapshot,
+    objective: object.objective,
+    talkingPoints: ground(object.talkingPoints),
+    decisionAsks: ground(object.decisionAsks),
+    riskAlerts: ground(object.riskAlerts),
+    buyingSignals: ground(object.buyingSignals),
+  };
+}
