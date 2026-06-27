@@ -95,21 +95,36 @@ export async function synthesizeBrief(
   });
 
   // Keep only citations that resolve to real evidence; drop unsupported items.
+  // The model often also echoes the ids inline in prose ("…apps. [e1, e3]") —
+  // strip those so the UI's own citation chips are the single source of truth.
   const validIds = new Set(evidence.map((e) => e.id));
   const ground = (items: BriefItem[]): BriefItem[] =>
     items
       .map((item) => ({
-        ...item,
+        text: stripInlineCitations(item.text),
         citations: item.citations.filter((c) => validIds.has(c)),
       }))
-      .filter((item) => item.citations.length > 0);
+      .filter((item) => item.text.length > 0 && item.citations.length > 0);
 
   return {
-    snapshot: object.snapshot,
-    objective: object.objective,
+    snapshot: stripInlineCitations(object.snapshot),
+    objective: stripInlineCitations(object.objective),
     talkingPoints: ground(object.talkingPoints),
     decisionAsks: ground(object.decisionAsks),
     riskAlerts: ground(object.riskAlerts),
     buyingSignals: ground(object.buyingSignals),
   };
+}
+
+/**
+ * Remove inline evidence-id tokens the model writes into prose — `[e1]`,
+ * `[e1, e3, e4]`, or runs like `[e1][e3]` — then tidy the leftover whitespace
+ * and dangling punctuation so the sentence reads cleanly.
+ */
+function stripInlineCitations(text: string): string {
+  return text
+    .replace(/\s*\[\s*e\d+(?:\s*,\s*e\d+)*\s*\]/gi, "")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 }
