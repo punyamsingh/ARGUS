@@ -28,13 +28,13 @@ on once the core works. **The MVP must prove #1–3 or nothing else matters.**
 
 | Source | Buildable? | Notes |
 |---|---|---|
-| Company news / web | ✅ Easy & legit | Claude's built-in web search tool returns results **with citations** |
+| Company news / web | ✅ Free & legit | **Gemini's Google Search grounding** returns results **with citations** — built in, on the free tier |
 | Public-company financials | ✅ Doable | Real APIs (Alpha Vantage, FMP, Yahoo) — *Phase 2* |
 | CRM (Salesforce/HubSpot) | ✅ Clean | User OAuths their **own** CRM — fully legitimate — *Phase 2* |
 | Hiring / funding signals | ✅ Doable | Job boards, Crunchbase, news — *Phase 2* |
 | **LinkedIn profile/activity** | ⚠️ The trap | Scraping violates ToS; LinkedIn litigates (hiQ v. LinkedIn). No API gives arbitrary profiles. The original pitch hand-waves exactly the hardest, most legally fraught source. **MVP excludes LinkedIn scraping.** |
 
-The MVP leans on what is free, legitimate, and cited: **Claude + the web search tool.**
+The MVP leans on what is free, legitimate, and cited: **Gemini + Google Search grounding.**
 
 ## 3. Architecture — an agentic RAG pipeline
 
@@ -57,27 +57,36 @@ into an engineering target.
 > conversation-ready brief in **under 60 seconds**.
 
 - Manual input (no calendar/CRM yet — those are integrations, not the core value).
-- Data via **Claude Opus 4.8 + web search tool** (`web_search_20260209`), which returns
-  cited results. Collapses "build 6 data integrations" into one grounded, cited gather
-  step — and directly attacks the hallucination problem.
+- Data via **Gemini Flash + Google Search grounding**, which returns cited results.
+  Collapses "build 6 data integrations" into one grounded, cited gather step — and
+  directly attacks the hallucination problem. **Free tier, no per-call cost.**
 - A clean **single-screen brief** UI.
 - **Cache** account research so re-briefing the same company is cheap (the stated
-  unit-economics lever).
+  unit-economics lever — and it keeps us inside free-tier rate limits).
 
-### Cost sanity (grounded, not guessed)
+### Cost — building on the free tier
 
-Opus 4.8 is **$5 / $25 per 1M tokens** (input / output). A brief is realistically a few
-thousand input + ~1–2k output tokens → **single-digit cents per brief**, comfortably
-inside the ₹1,000–2,500 Professional tier. Wire in **model-tier routing** (Haiku/Sonnet
-for simple briefs, Opus for deep synthesis) per the cost section of the pitch.
+The MVP runs on **Google Gemini's free tier ($0 inference)**. Gemini Flash plus built-in
+Google Search grounding covers both synthesis and the cited-data step at no cost. The only
+real constraints are **rate limits** (fine for building + demoing; not for production
+scale) and free-tier **data policy** (acceptable — we query public company info, not
+secrets). This is why caching (issue #12) matters even early: it keeps repeat briefs
+inside the rate limits.
+
+*Production economics are a later problem.* When there's revenue/credits, premium briefs
+can route to a paid frontier model (e.g. Claude Opus, ~single-digit cents/brief) via the
+provider abstraction below — a config swap, not a rewrite.
 
 ## 5. Tech stack
 
 - **Next.js + TypeScript** full-stack app (clean single-screen brief UI; trivial to
   deploy to Vercel for a live, shareable demo).
-- Agent loop in API routes calling **Claude via `@anthropic-ai/sdk`**.
-- Model default: `claude-opus-4-8`; tier-routing to Sonnet/Haiku where synthesis depth
-  allows.
+- Agent loop in API routes calling the LLM through a **thin provider abstraction** —
+  one `generate()` / `gatherWithSearch()` interface, swappable implementations.
+- **Default provider: Google Gemini** (`@google/genai`) — Gemini Flash for synthesis,
+  Google Search grounding for the cited gather step. Free tier.
+- **Swappable later:** the abstraction lets us drop in Claude/Opus (or any provider) for
+  premium briefs without touching the pipeline. No vendor lock-in.
 
 ## 6. The brief format (single screen)
 
