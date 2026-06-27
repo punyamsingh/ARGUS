@@ -4,10 +4,19 @@ import type { GatherTool, RawEvidence } from "./types";
 /**
  * GDELT news & sentiment radar (#28) — always-on.
  *
- * GDELT's DOC 2.0 API indexes worldwide news with no key. We run two passes
- * over a recent window: the latest coverage (general signal) and a negative-tone
- * slice (`tone<-3`) that surfaces layoffs, lawsuits, scandals and bad earnings as
- * risk evidence. Quiet companies simply return little. Free, no key.
+ * GDELT's DOC 2.0 API indexes worldwide news with no key. We make a recent-news
+ * pass and, only when that succeeds (proving the IP isn't being throttled), a
+ * second negative-tone pass (`tone<-3`) that surfaces layoffs, lawsuits, scandals
+ * and bad earnings as risk evidence.
+ *
+ * Two realities shape this tool:
+ *  - GDELT rate-limits aggressively (HTTP 429), especially from shared serverless
+ *    IPs — so requests are sequential, retried with backoff, and the second pass
+ *    is skipped when the first comes back empty.
+ *  - Exact-phrase queries on a legal name ("Stripe, Inc.") match almost nothing,
+ *    so we search the cleaned company name and only quote multi-word terms.
+ *
+ * Quiet companies (or a persistently throttled IP) return little, gracefully.
  */
 
 const DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc";
@@ -20,8 +29,8 @@ const WINDOW_DAYS = 90;
 const MAX_RECENT = 6;
 const MAX_NEGATIVE = 5;
 const GAP_MS = 1_200; // spacing between passes to dodge rate limits
-const RETRY_MS = 2_500; // backoff before a single 429 retry
-const MAX_RETRY_MS = 5_000;
+const RETRY_BACKOFFS_MS = [3_000, 5_000]; // growing waits before each 429 retry
+const MAX_RETRY_MS = 6_000;
 
 interface GdeltArticle {
   url?: string;
@@ -39,19 +48,23 @@ export const gdeltTool: GatherTool = {
   appliesTo: (entity) => Boolean(entity.company.name),
 
   async run(entity: ResolvedEntity, signal: AbortSignal): Promise<RawEvidence[]> {
-    const phrase = `"${entity.company.name}"`;
+    const term = searchTerm(entity.company.name);
+    if (!term) return [];
+
     const now = new Date();
     const start = new Date(now.getTime() - WINDOW_DAYS * 86_400_000);
     const window = { start: stamp(start), end: stamp(now) };
 
-    // GDELT rate-limits concurrent requests hard (HTTP 429), so run the two
-    // passes sequentially with a brief gap rather than in parallel. Either
-    // failing is non-fatal.
-    const recent = await query(phrase, window, signal, MAX_RECENT).catch(() => []);
-    await sleep(GAP_MS, signal).catch(() => {});
-    const negative = await query(`${phrase} tone<-3`, window, signal, MAX_NEGATIVE).catch(
-      () => [],
-    );
+    // Recent-news pass first. Only attempt the negative-tone pass if it returned
+    // something — a second request when the IP is throttled just burns budget.
+    const recent = await query(term, window, signal, MAX_RECENT).catch(() => []);
+    let negative: GdeltArticle[] = [];
+    if (recent.length > 0) {
+      await sleep(GAP_MS, signal).catch(() => {});
+      negative = await query(`${term} tone<-3`, window, signal, MAX_NEGATIVE).catch(
+        () => [],
+      );
+    }
 
     const retrievedAt = now.toISOString();
     const evidence: RawEvidence[] = [];
@@ -59,32 +72,35 @@ export const gdeltTool: GatherTool = {
 
     // Negative-tone first so the risk-bearing items survive de-duplication.
     for (const a of negative) {
-      const item = toEvidence(a, "Negative-sentiment coverage", retrievedAt);
-      if (item && !seen.has(item.sourceUrl)) {
-        seen.add(item.sourceUrl);
-        evidence.push(item);
-      }
+      push(evidence, seen, toEvidence(a, "Negative-sentiment coverage", retrievedAt));
     }
     for (const a of recent) {
-      const item = toEvidence(a, "Recent news", retrievedAt);
-      if (item && !seen.has(item.sourceUrl)) {
-        seen.add(item.sourceUrl);
-        evidence.push(item);
-      }
+      push(evidence, seen, toEvidence(a, "Recent news", retrievedAt));
     }
 
     return evidence;
   },
 };
 
+function push(
+  evidence: RawEvidence[],
+  seen: Set<string>,
+  item: RawEvidence | null,
+): void {
+  if (item && !seen.has(item.sourceUrl)) {
+    seen.add(item.sourceUrl);
+    evidence.push(item);
+  }
+}
+
 async function query(
-  q: string,
+  term: string,
   window: { start: string; end: string },
   signal: AbortSignal,
   maxRecords: number,
 ): Promise<GdeltArticle[]> {
   const params = new URLSearchParams({
-    query: `${q} sourcelang:english`,
+    query: `${term} sourcelang:english`,
     mode: "artlist",
     format: "json",
     sort: "datedesc",
@@ -93,14 +109,20 @@ async function query(
     enddatetime: window.end,
   });
   const url = `${DOC_API}?${params}`;
+
+  // GDELT's free API rate-limits aggressively; back off and retry on 429.
   let res = await fetch(url, { signal, headers: HEADERS });
-  // GDELT's free API rate-limits aggressively; back off once and retry.
-  if (res.status === 429) {
-    await sleep(retryAfterMs(res), signal);
+  for (
+    let attempt = 0;
+    res.status === 429 && attempt < RETRY_BACKOFFS_MS.length;
+    attempt++
+  ) {
+    await sleep(retryWaitMs(res, attempt), signal);
     res = await fetch(url, { signal, headers: HEADERS });
   }
+
   if (!res.ok) {
-    console.warn(`gdelt: HTTP ${res.status} for query=${q}`);
+    console.warn(`gdelt: HTTP ${res.status} for query=${term}`);
     return [];
   }
   // GDELT replies with plain text on malformed/empty/rate-limited queries —
@@ -108,11 +130,25 @@ async function query(
   const contentType = res.headers.get("content-type") ?? "";
   if (!contentType.includes("json")) {
     const body = (await res.text()).slice(0, 160).replace(/\s+/g, " ").trim();
-    console.warn(`gdelt: non-JSON (${contentType}) for query=${q} — ${body}`);
+    console.warn(`gdelt: non-JSON (${contentType}) for query=${term} — ${body}`);
     return [];
   }
   const json = (await res.json()) as GdeltResponse;
   return json.articles ?? [];
+}
+
+/**
+ * Build a GDELT search term from the company name: drop a trailing legal suffix
+ * (Inc., LLC, Ltd, …) so coverage actually matches, and quote multi-word names
+ * for phrase search while leaving single tokens unquoted (broader recall).
+ */
+function searchTerm(name: string): string | null {
+  const cleaned = name
+    .replace(/[,\s]+(inc|incorporated|llc|ltd|limited|corp|corporation|co|plc|gmbh|s\.?a|ag|nv)\.?$/i, "")
+    .trim();
+  const base = cleaned || name.trim();
+  if (!base) return null;
+  return /\s/.test(base) ? `"${base}"` : base;
 }
 
 function toEvidence(
@@ -146,14 +182,14 @@ function formatSeen(seen?: string): string | null {
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
 }
 
-/** How long to wait before a 429 retry — honour `Retry-After`, capped. */
-function retryAfterMs(res: Response): number {
+/** Backoff before a 429 retry — honour `Retry-After`, else grow per attempt. */
+function retryWaitMs(res: Response, attempt: number): number {
   const header = res.headers.get("retry-after");
   const seconds = header ? Number(header) : NaN;
   if (Number.isFinite(seconds) && seconds > 0) {
     return Math.min(seconds * 1000, MAX_RETRY_MS);
   }
-  return RETRY_MS;
+  return RETRY_BACKOFFS_MS[attempt] ?? MAX_RETRY_MS;
 }
 
 /** Cancellable delay — rejects if the abort signal fires first. */
