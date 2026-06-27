@@ -7,7 +7,9 @@ export function SiteFooter() {
         <div className="flex items-center gap-3">
           <ArgusMark size={26} animated={false} />
           <div>
-            <p className="font-display text-sm font-semibold text-ivory">Argus</p>
+            <p className="font-display text-sm font-semibold tracking-[0.14em] text-ivory">
+              ARGUS
+            </p>
             <p className="mt-0.5 text-[12px] text-muted">
               <span className="text-accent">A</span>gentic{" "}
               <span className="text-accent">R</span>esearch{" "}
