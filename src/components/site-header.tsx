@@ -8,8 +8,8 @@ export function SiteHeader() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
           <Link href="/" className="group flex items-center gap-3">
             <ArgusMark size={30} />
-            <span className="font-display text-lg font-semibold tracking-tight text-ivory">
-              Argus
+            <span className="font-display text-lg font-semibold tracking-[0.14em] text-ivory">
+              ARGUS
             </span>
             <span className="hidden text-[13px] text-faint sm:inline">
               pre-meeting intelligence
