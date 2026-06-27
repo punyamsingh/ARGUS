@@ -19,6 +19,9 @@ const HEADERS = {
 const WINDOW_DAYS = 90;
 const MAX_RECENT = 6;
 const MAX_NEGATIVE = 5;
+const GAP_MS = 1_200; // spacing between passes to dodge rate limits
+const RETRY_MS = 2_500; // backoff before a single 429 retry
+const MAX_RETRY_MS = 5_000;
 
 interface GdeltArticle {
   url?: string;
@@ -41,11 +44,14 @@ export const gdeltTool: GatherTool = {
     const start = new Date(now.getTime() - WINDOW_DAYS * 86_400_000);
     const window = { start: stamp(start), end: stamp(now) };
 
-    // Two independent passes; either failing is non-fatal.
-    const [recent, negative] = await Promise.all([
-      query(phrase, window, signal, MAX_RECENT).catch(() => []),
-      query(`${phrase} tone<-3`, window, signal, MAX_NEGATIVE).catch(() => []),
-    ]);
+    // GDELT rate-limits concurrent requests hard (HTTP 429), so run the two
+    // passes sequentially with a brief gap rather than in parallel. Either
+    // failing is non-fatal.
+    const recent = await query(phrase, window, signal, MAX_RECENT).catch(() => []);
+    await sleep(GAP_MS, signal).catch(() => {});
+    const negative = await query(`${phrase} tone<-3`, window, signal, MAX_NEGATIVE).catch(
+      () => [],
+    );
 
     const retrievedAt = now.toISOString();
     const evidence: RawEvidence[] = [];
@@ -86,7 +92,13 @@ async function query(
     startdatetime: window.start,
     enddatetime: window.end,
   });
-  const res = await fetch(`${DOC_API}?${params}`, { signal, headers: HEADERS });
+  const url = `${DOC_API}?${params}`;
+  let res = await fetch(url, { signal, headers: HEADERS });
+  // GDELT's free API rate-limits aggressively; back off once and retry.
+  if (res.status === 429) {
+    await sleep(retryAfterMs(res), signal);
+    res = await fetch(url, { signal, headers: HEADERS });
+  }
   if (!res.ok) {
     console.warn(`gdelt: HTTP ${res.status} for query=${q}`);
     return [];
@@ -132,4 +144,30 @@ function formatSeen(seen?: string): string | null {
   if (!seen) return null;
   const m = seen.match(/^(\d{4})(\d{2})(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}
+
+/** How long to wait before a 429 retry — honour `Retry-After`, capped. */
+function retryAfterMs(res: Response): number {
+  const header = res.headers.get("retry-after");
+  const seconds = header ? Number(header) : NaN;
+  if (Number.isFinite(seconds) && seconds > 0) {
+    return Math.min(seconds * 1000, MAX_RETRY_MS);
+  }
+  return RETRY_MS;
+}
+
+/** Cancellable delay — rejects if the abort signal fires first. */
+function sleep(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(new Error("aborted"));
+    const timer = setTimeout(resolve, ms);
+    signal.addEventListener(
+      "abort",
+      () => {
+        clearTimeout(timer);
+        reject(new Error("aborted"));
+      },
+      { once: true },
+    );
+  });
 }
