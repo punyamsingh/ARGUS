@@ -41,16 +41,24 @@ export const wikipediaTool: GatherTool = {
   appliesTo: () => true,
 
   async run(entity: ResolvedEntity, signal: AbortSignal): Promise<RawEvidence[]> {
-    const title = await searchTitle(entity.company.name, signal);
-    if (!title) return [];
-
-    const summary = await fetchSummary(title, signal);
-    if (!summary || summary.type === "disambiguation") return [];
+    // Search returns several candidates; the bare company name often ranks a
+    // disambiguation page first (e.g. "Stripe"). Walk the results and take the
+    // first real article with an extract.
+    const titles = await searchTitles(entity.company.name, signal);
+    let summary: WikiSummary | null = null;
+    for (const title of titles) {
+      const candidate = await fetchSummary(title, signal);
+      if (candidate && candidate.type !== "disambiguation" && candidate.extract) {
+        summary = candidate;
+        break;
+      }
+    }
+    if (!summary) return [];
 
     const now = new Date().toISOString();
     const pageUrl =
       summary.content_urls?.desktop?.page ??
-      `${WIKI}/wiki/${encodeURIComponent(title)}`;
+      `${WIKI}/wiki/${encodeURIComponent(summary.title)}`;
     const evidence: RawEvidence[] = [];
 
     if (summary.extract) {
@@ -82,17 +90,19 @@ export const wikipediaTool: GatherTool = {
   },
 };
 
-async function searchTitle(
+async function searchTitles(
   company: string,
   signal: AbortSignal,
-): Promise<string | null> {
+): Promise<string[]> {
+  // Bias the query toward the organisation, then return several candidates so
+  // run() can skip disambiguation pages.
   const url =
-    `${WIKI}/w/api.php?action=query&format=json&list=search&srlimit=1&srprop=` +
-    `&srsearch=${encodeURIComponent(company)}`;
+    `${WIKI}/w/api.php?action=query&format=json&list=search&srlimit=5&srprop=` +
+    `&srsearch=${encodeURIComponent(`${company} company`)}`;
   const res = await fetch(url, { signal, headers: HEADERS });
-  if (!res.ok) return null;
+  if (!res.ok) return [];
   const json = (await res.json()) as WikiSearchResponse;
-  return json.query?.search?.[0]?.title ?? null;
+  return (json.query?.search ?? []).map((s) => s.title);
 }
 
 async function fetchSummary(
