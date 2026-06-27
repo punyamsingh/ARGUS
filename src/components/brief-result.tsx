@@ -151,6 +151,9 @@ export function BriefResultView({ result }: { result: BriefResult }) {
 
           {(brief.snapshot || brief.objective) && (
             <div className="mt-4 space-y-1.5">
+              <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-faint">
+                Summary · framing, not a sourced claim
+              </p>
               {brief.snapshot && (
                 <p className="text-[13.5px] text-ivory/90">{brief.snapshot}</p>
               )}
@@ -238,7 +241,7 @@ export function BriefResultView({ result }: { result: BriefResult }) {
             {meta.model} · {(meta.elapsedMs / 1000).toFixed(1)}s
           </p>
           <p className="font-mono text-[11px] text-faint">
-            every claim cited
+            every signal cited
           </p>
         </footer>
       </article>

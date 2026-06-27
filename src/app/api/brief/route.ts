@@ -34,7 +34,11 @@ export async function POST(req: Request) {
     const result = await generateBrief(parsed.data);
     return Response.json({ ok: true, result });
   } catch (err) {
-    console.error("brief error:", err);
+    // Log only name + message — never the raw error object, which can carry the
+    // submitted prompt (company/person/context) via the provider's error fields.
+    const detail =
+      err instanceof Error ? `${err.name}: ${err.message}` : "unknown error";
+    console.error("brief error —", detail);
     return Response.json(
       { ok: false, error: "Couldn't generate the brief. Please try again." },
       { status: 500 },

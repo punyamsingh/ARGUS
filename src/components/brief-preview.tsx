@@ -127,7 +127,7 @@ export function BriefPreview() {
 
         {/* footer sources */}
         <div className="flex items-center justify-between border-t border-line px-6 py-3">
-          <p className="font-mono text-[11px] text-faint">5 sources · every claim cited</p>
+          <p className="font-mono text-[11px] text-faint">5 sources · every signal cited</p>
           <p className="font-mono text-[11px] text-faint">prep time · 45 min → 38 sec</p>
         </div>
       </div>
