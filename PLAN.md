@@ -116,12 +116,19 @@ provider abstraction below — a config swap, not a rewrite.
 
 - **Next.js + TypeScript** full-stack app (clean single-screen brief UI; trivial to
   deploy to Vercel for a live, shareable demo).
-- Agent loop in API routes calling the LLM through a **thin provider abstraction** —
-  one `generate()` / `gatherWithSearch()` interface, swappable implementations.
-- **Default provider: Google Gemini** (`@google/genai`) — Gemini Flash for synthesis,
+- **Vercel AI SDK** (`ai` + provider packages) is the framework layer — not a hand-rolled
+  abstraction. It gives us, in one place:
+  - **Provider switching** as a one-line change (`@ai-sdk/google` → `@ai-sdk/anthropic` …)
+  - **Structured output** via `generateObject({ schema })` (+ zod) → guaranteed `Brief` shape
+  - **Tool calling** via `tool()` + zod for the gather tools
+  - **Streaming** + React hooks for the live progress UI
+- **Default provider: Google Gemini** (`@ai-sdk/google`) — Gemini Flash for synthesis,
   Google Search grounding for the cited gather step. Free tier.
-- **Swappable later:** the abstraction lets us drop in Claude/Opus (or any provider) for
-  premium briefs without touching the pipeline. No vendor lock-in.
+- **No vendor lock-in:** swapping in Claude/Opus (or any provider) for premium briefs is a
+  config change, not a rewrite.
+- **Observability — Langfuse (free/OSS).** The AI SDK emits OpenTelemetry spans; we wire
+  them into Langfuse (free cloud tier or self-host) for traces, token/cost, and latency
+  per call and per tool. Portable, no lock-in. (This is most of issue #15 for free.)
 
 ## 6. The brief format (single screen)
 
