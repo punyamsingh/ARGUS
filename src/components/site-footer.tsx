@@ -8,7 +8,14 @@ export function SiteFooter() {
           <ArgusMark size={26} animated={false} />
           <div>
             <p className="font-display text-sm font-semibold text-ivory">Argus</p>
-            <p className="text-[12px] text-faint">
+            <p className="mt-0.5 text-[12px] text-muted">
+              <span className="text-accent">A</span>gentic{" "}
+              <span className="text-accent">R</span>esearch{" "}
+              <span className="text-accent">G</span>enerated to{" "}
+              <span className="text-accent">U</span>nburden{" "}
+              <span className="text-accent">S</span>alespeople
+            </p>
+            <p className="mt-0.5 text-[12px] text-faint">
               Capstone · Product Management with Generative &amp; Agentic AI
             </p>
           </div>
