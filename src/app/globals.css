@@ -1,0 +1,192 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────
+   ARGUS design system — "intelligence dossier"
+   Near-black ink, warm ivory type, a single restrained gold accent,
+   plus semantic risk/signal colors. Editorial serif + clean sans.
+   ───────────────────────────────────────────────────────────── */
+
+@theme {
+  /* Surfaces */
+  --color-ink: #0a0b0e;
+  --color-ink-2: #0e1014;
+  --color-surface: #14161c;
+  --color-surface-2: #1a1d25;
+  --color-line: #23262f;
+  --color-line-strong: #30343f;
+
+  /* Type */
+  --color-ivory: #edeae3;
+  --color-muted: #9aa1ab;
+  --color-faint: #646b76;
+
+  /* Accent — restrained gold */
+  --color-accent: #e6b450;
+  --color-accent-strong: #f0c468;
+  --color-accent-deep: #b4842f;
+
+  /* Semantic */
+  --color-risk: #f0676d;
+  --color-signal: #43d39e;
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+
+  /* Radii */
+  --radius-card: 16px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+body {
+  background-color: var(--color-ink);
+  color: var(--color-ivory);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 32%, transparent);
+  color: var(--color-ivory);
+}
+
+/* Slim, dark scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3c414d;
+}
+
+/* Visible, on-brand focus */
+:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Decorative layers ─────────────────────────────────────── */
+
+/* Faint engineering grid */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-line) 55%, transparent) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 75%);
+}
+
+/* Gold spotlight glow */
+.bg-glow {
+  background:
+    radial-gradient(60% 50% at 50% -10%, color-mix(in oklab, var(--color-accent) 16%, transparent) 0%, transparent 60%),
+    radial-gradient(40% 40% at 85% 10%, color-mix(in oklab, var(--color-signal) 7%, transparent) 0%, transparent 55%);
+}
+
+/* Hairline gradient divider */
+.rule {
+  height: 1px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    color-mix(in oklab, var(--color-line-strong) 100%, transparent) 50%,
+    transparent
+  );
+}
+
+/* Glass surface */
+.glass {
+  background: color-mix(in oklab, var(--color-surface) 70%, transparent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+}
+
+/* Text gradient for the wordmark */
+.text-gleam {
+  background: linear-gradient(180deg, var(--color-ivory) 0%, #c7c2b7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Motion ────────────────────────────────────────────────── */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes iris-pulse {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+.iris-pulse {
+  animation: iris-pulse 4.5s ease-in-out infinite;
+}
+
+@keyframes ring-scan {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+.ring-scan {
+  animation: ring-scan 14s linear infinite;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
