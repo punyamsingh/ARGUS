@@ -20,7 +20,14 @@ const PIPELINE = [
   },
 ];
 
-const TOOLBELT = ["Job boards", "Wikipedia", "Company site", "Wikidata"];
+const TOOLBELT = [
+  "Wikipedia",
+  "Company site",
+  "Job boards",
+  "News (GDELT)",
+  "Wikidata",
+  "Web search",
+];
 
 export default function Home() {
   return (

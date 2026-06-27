@@ -2,6 +2,7 @@ import type { GatherTool } from "./types";
 import { wikipediaTool } from "./wikipedia";
 import { websiteTool } from "./website";
 import { jobBoardTool } from "./jobboards";
+import { gdeltTool } from "./gdelt";
 
 /**
  * The gather tool belt. Tools register here as they land:
@@ -12,4 +13,9 @@ import { jobBoardTool } from "./jobboards";
  * Each tool owns its own routing via `appliesTo`, so adding one is a single
  * import + array entry — no orchestrator changes.
  */
-export const gatherTools: GatherTool[] = [wikipediaTool, websiteTool, jobBoardTool];
+export const gatherTools: GatherTool[] = [
+  wikipediaTool,
+  websiteTool,
+  jobBoardTool,
+  gdeltTool,
+];
