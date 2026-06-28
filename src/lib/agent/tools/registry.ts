@@ -3,6 +3,7 @@ import { wikipediaTool } from "./wikipedia";
 import { websiteTool } from "./website";
 import { jobBoardTool } from "./jobboards";
 import { gdeltTool } from "./gdelt";
+import { edgarTool } from "./edgar";
 
 /**
  * The gather tool belt. Tools register here as they land:
@@ -18,4 +19,5 @@ export const gatherTools: GatherTool[] = [
   websiteTool,
   jobBoardTool,
   gdeltTool,
+  edgarTool,
 ];
