@@ -1,5 +1,6 @@
 import type { ResolvedEntity } from "@/types/brief";
 import type { GatherTool, RawEvidence } from "./types";
+import { jsonHeaders as HEADERS, stripLegalSuffix } from "./shared";
 
 /**
  * GDELT news & sentiment radar (#28) — always-on.
@@ -20,10 +21,6 @@ import type { GatherTool, RawEvidence } from "./types";
  */
 
 const DOC_API = "https://api.gdeltproject.org/api/v2/doc/doc";
-const HEADERS = {
-  "User-Agent": "ARGUS/0.1 (+https://github.com/punyamsingh/ARGUS)",
-  Accept: "application/json",
-};
 
 const WINDOW_DAYS = 90;
 const MAX_RECENT = 6;
@@ -149,10 +146,7 @@ async function query(
  * rejects the query ("Parentheses may only be used around OR'd statements").
  */
 function searchTerm(name: string, industry?: string): string | null {
-  const cleaned = name
-    .replace(/[,\s]+(inc|incorporated|llc|ltd|limited|corp|corporation|co|plc|gmbh|s\.?a|ag|nv)\.?$/i, "")
-    .trim();
-  const base = cleaned || name.trim();
+  const base = stripLegalSuffix(name) || name.trim();
   if (!base) return null;
 
   const quoted = `"${base}"`;
