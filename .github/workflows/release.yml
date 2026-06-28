@@ -1,0 +1,85 @@
+name: Release
+
+# After a PR is merged into main, derive the next semantic version from the
+# (Conventional Commit) PR title, bump package.json, tag the commit, and cut a
+# GitHub Release. The displayed app version reads package.json, so it updates
+# automatically on the next deploy. docs/chore/style/ci/test PRs cut no release.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: tag & release
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Compute next version
+        id: version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          NEXT=$(node scripts/next-version.mjs "$PR_TITLE")
+          if [ -z "$NEXT" ]; then
+            echo "PR title \"$PR_TITLE\" does not warrant a release (docs/chore/etc.). Skipping."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Next version: $NEXT"
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "version=$NEXT" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump package.json
+        if: steps.version.outputs.release == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.version }}
+        run: |
+          npm version "$NEXT" --no-git-tag-version --allow-same-version
+          git --no-pager diff -- package.json package-lock.json
+
+      - name: Commit, tag & push
+        if: steps.version.outputs.release == 'true'
+        env:
+          NEXT: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore(release): v$NEXT [skip ci]"
+          git tag -a "v$NEXT" -m "v$NEXT"
+          git push origin HEAD:main
+          git push origin "v$NEXT"
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEXT: ${{ steps.version.outputs.version }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          gh release create "v$NEXT" \
+            --title "v$NEXT" \
+            --target main \
+            --generate-notes \
+            --notes "Released from #$PR_NUMBER — $PR_TITLE"
