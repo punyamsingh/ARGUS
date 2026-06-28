@@ -54,7 +54,8 @@ function Cite({
             target="_blank"
             rel="noreferrer"
             title={ev.sourceTitle}
-            className="ml-0.5 text-[10px] font-medium text-accent transition-colors hover:text-accent-strong"
+            // Roomy hit area for touch (≥24px) without changing the visual size.
+            className="ml-0.5 inline-flex min-w-[18px] justify-center px-1 py-0.5 text-[10px] font-medium text-accent transition-colors hover:text-accent-strong"
           >
             [{n}]
           </a>
@@ -81,7 +82,9 @@ function Section({
     return (
       <section>
         <SectionLabel tone={tone}>{title}</SectionLabel>
-        <p className="text-[13px] italic text-faint">Nothing notable found.</p>
+        <p className="rounded-lg border border-dashed border-line px-3 py-2 text-[12.5px] text-faint">
+          No public signal yet.
+        </p>
       </section>
     );
   }
@@ -124,7 +127,10 @@ export function BriefResultView({ result }: { result: BriefResult }) {
     <div className="relative">
       <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-glow opacity-50 blur-2xl" />
 
-      <article className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-black/40 backdrop-blur-sm">
+      <article
+        id="brief-print-root"
+        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-black/40 backdrop-blur-sm"
+      >
         {/* header */}
         <header className="border-b border-line px-6 py-5">
           <div className="flex items-start justify-between gap-4">

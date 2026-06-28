@@ -64,9 +64,9 @@ export function BriefPreview() {
               </p>
             </div>
             <div className="hidden shrink-0 text-right sm:block">
-              <p className="font-mono text-2xl font-semibold text-signal">94%</p>
+              <p className="font-mono text-2xl font-semibold text-signal">5</p>
               <p className="font-mono text-[10px] uppercase tracking-wider text-faint">
-                grounded
+                sources
               </p>
             </div>
           </div>
