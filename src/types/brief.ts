@@ -11,10 +11,26 @@ import { z } from "zod";
 
 // ── Input ────────────────────────────────────────────────────
 
+/**
+ * The rep's own side of the table — what they sell. Optional and additive: when
+ * omitted the pipeline behaves exactly as before. When present it is fed to
+ * synthesis as *seller-stated* context so talking points and asks are tailored
+ * to where the offering meets the buyer's situation. The no-fabrication rule is
+ * symmetric: the model may only attribute capabilities the rep actually stated.
+ */
+export const sellerProfileSchema = z.object({
+  company: z.string().trim().min(1, "Your company is required"),
+  offering: z.string().trim().min(1, "What you sell is required"),
+  valueProp: z.string().trim().optional(),
+  competitors: z.array(z.string().trim().min(1)).default([]),
+});
+export type SellerProfile = z.infer<typeof sellerProfileSchema>;
+
 export const briefInputSchema = z.object({
   company: z.string().trim().min(1, "Company is required"),
   person: z.string().trim().min(1, "Who you're meeting is required"),
   context: z.string().trim().min(1, "Meeting context is required"),
+  seller: sellerProfileSchema.optional(),
 });
 export type BriefInput = z.infer<typeof briefInputSchema>;
 
