@@ -1,3 +1,11 @@
+# [1.3.0](https://github.com/punyamsingh/ARGUS/compare/v1.2.0...v1.3.0) (2026-06-28)
+
+
+### Features
+
+* instrument Langfuse tracing via the official Langfuse skill ([#15](https://github.com/punyamsingh/ARGUS/issues/15)) ([e8de082](https://github.com/punyamsingh/ARGUS/commit/e8de08279cbf5453dc58417c9125edb94837c21a))
+* wire Langfuse observability via OpenTelemetry ([#15](https://github.com/punyamsingh/ARGUS/issues/15)) ([a992e2a](https://github.com/punyamsingh/ARGUS/commit/a992e2a263e913b08015558d9506fdd2310d1d2d))
+
 # [1.2.0](https://github.com/punyamsingh/ARGUS/compare/v1.1.1...v1.2.0) (2026-06-28)
 
 
