@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/punyamsingh/ARGUS/compare/v1.8.0...v1.9.0) (2026-06-28)
+
+
+### Features
+
+* **ui:** dedicated focused page for a brief; recent briefs expand into it ([47793f5](https://github.com/punyamsingh/ARGUS/commit/47793f54bbdf4bd070b68afc1ccc807c9cf41306))
+
 # [1.8.0](https://github.com/punyamsingh/ARGUS/compare/v1.7.0...v1.8.0) (2026-06-28)
 
 
