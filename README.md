@@ -53,18 +53,18 @@ most keyless.
 Requires **Node 22** (see [`.nvmrc`](./.nvmrc)).
 
 ```bash
-npm install
+pnpm install
 cp .env.example .env.local   # then fill in GEMINI_API_KEY (see below)
-npm run dev                  # http://localhost:3000
+pnpm dev                     # http://localhost:3000
 ```
 
 Scripts:
 
 ```bash
-npm run dev        # local dev server
-npm run build      # production build
-npm run lint       # eslint
-npm run typecheck  # tsc --noEmit
+pnpm dev        # local dev server
+pnpm build      # production build
+pnpm lint       # eslint
+pnpm typecheck  # tsc --noEmit
 ```
 
 ## Getting the free keys
@@ -157,7 +157,7 @@ from `package.json` at build time.
   scopes are required. When `main` is protected, the token's identity must be on the
   ruleset bypass list so it can push the `chore(release)` commit and tag.
 - The baseline version `0.18.3` (tagged `v0.18.3`) was computed by replaying this
-  scheme over the full history — run `npm run version:compute` for the per-commit
+  scheme over the full history — run `pnpm version:compute` for the per-commit
   ledger. semantic-release picks up from that tag.
 
 ## Project layout
