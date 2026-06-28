@@ -32,7 +32,7 @@ const EXT_X = 28;
 const EXT_Y = 17;
 const STEP = 2.3; // grid spacing
 const JIT = 0.7; // grid jitter
-const PROX_R = 3.2; // cursor highlight radius (world units)
+const PROX_R = 4.5; // cursor highlight radius (world units) — ~2× the lit area of 3.2
 
 // ── Shared GLSL helpers ─────────────────────────────────────────
 const VIGNETTE = /* glsl */ `
