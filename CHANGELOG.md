@@ -1,3 +1,20 @@
+## [2.0.0](https://github.com/punyamsingh/ARGUS/compare/v1.9.0...v2.0.0) (2026-06-28)
+
+### ⚠ BREAKING CHANGES
+
+* ARGUS moves to its 2.0 release line. Breaking changes are now
+detected from the Conventional Commit "!" marker (e.g. feat!:, docs!:), matching
+the documented release contract.
+* overhaul README and add CONTRIBUTING; cut 2.0 release line (#90)
+
+### Features
+
+* honor Conventional Commit "!" for breaking-change releases ([#91](https://github.com/punyamsingh/ARGUS/issues/91)) ([602ff58](https://github.com/punyamsingh/ARGUS/commit/602ff58eeba9019789d22887f8042341483d7796))
+
+### Documentation
+
+* overhaul README and add CONTRIBUTING; cut 2.0 release line ([#90](https://github.com/punyamsingh/ARGUS/issues/90)) ([e80fd51](https://github.com/punyamsingh/ARGUS/commit/e80fd51b81f9c328af583288f2fddbd7ce140d66))
+
 # [1.9.0](https://github.com/punyamsingh/ARGUS/compare/v1.8.0...v1.9.0) (2026-06-28)
 
 
