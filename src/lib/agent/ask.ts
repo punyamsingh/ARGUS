@@ -11,7 +11,8 @@ import type {
   BriefInput,
 } from "@/types/brief";
 import { gather } from "./gather";
-import { sellerStatedFacts, stripInlineCitations } from "./synthesize";
+import { sellerStatedFacts } from "./synthesize";
+import { groundCitations, mergeEvidence, stripInlineCitations } from "./grounding";
 
 /**
  * Grounded follow-up engine (#74) — the conversational layer.
@@ -152,28 +153,4 @@ async function answerOnce(
   );
 
   return object;
-}
-
-/** Keep only citations that resolve to real evidence, de-duplicated. */
-function groundCitations(citations: string[], evidence: Evidence[]): string[] {
-  const valid = new Set(evidence.map((e) => e.id));
-  return [...new Set(citations.filter((c) => valid.has(c)))];
-}
-
-/**
- * Append freshly gathered evidence to the existing store, skipping duplicates
- * (by source URL + claim) and assigning new contiguous ids so the brief's
- * original ids stay stable.
- */
-function mergeEvidence(existing: Evidence[], gathered: Evidence[]): Evidence[] {
-  const seen = new Set(existing.map((e) => `${e.sourceUrl} ${e.claim}`));
-  const out = [...existing];
-  let n = existing.length;
-  for (const g of gathered) {
-    const key = `${g.sourceUrl} ${g.claim}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ ...g, id: `e${++n}` });
-  }
-  return out;
 }
