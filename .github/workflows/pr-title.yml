@@ -1,0 +1,49 @@
+name: PR Title
+
+# Enforce Conventional Commit formatting on PR titles. The title becomes the
+# squash-merge subject and drives the automated release version, so it must be
+# parseable. Required shape:  type(optional scope)!: subject
+#   e.g.  feat: add LinkedIn gather tool
+#         fix(gdelt): serialize passes to avoid 429s
+#         refactor!: drop the legacy resolver
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  lint-title:
+    name: validate conventional title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR title: $PR_TITLE"
+          pattern='^(feat|fix|refactor|perf|docs|style|chore|ci|test|build|revert)(\([a-z0-9_.-]+\))?!?: .+'
+          if echo "$PR_TITLE" | grep -Eq "$pattern"; then
+            echo "::notice::PR title is a valid Conventional Commit."
+          else
+            echo "::error::Invalid PR title: \"$PR_TITLE\""
+            echo ""
+            echo "Titles must follow Conventional Commits:"
+            echo "  <type>(<optional scope>)<optional !>: <subject>"
+            echo ""
+            echo "Allowed types: feat, fix, refactor, perf, docs, style, chore, ci, test, build, revert"
+            echo "Releasing types: feat (minor), fix/refactor/perf (patch). '!' marks a breaking change."
+            echo ""
+            echo "Examples:"
+            echo "  feat: add LinkedIn gather tool"
+            echo "  fix(gdelt): serialize passes to avoid 429s"
+            echo "  docs: rewrite the README cold-start guide"
+            exit 1
+          fi
