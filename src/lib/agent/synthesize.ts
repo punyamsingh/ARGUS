@@ -9,6 +9,7 @@ import {
   type Evidence,
   type GuidanceItem,
   type ResolvedEntity,
+  type SellerProfile,
 } from "@/types/brief";
 
 /**
@@ -48,7 +49,12 @@ Rules:
 - Keep each item to one or two sharp sentences a rep can say out loud.
 - snapshot: one line on the company (and the person if known).
 - objective: infer the meeting's goal from the provided context.
-- Prefer specific, recent, decision-useful points over generic ones.`;
+- Prefer specific, recent, decision-useful points over generic ones.
+
+Seller context (when provided):
+- You may be given SELLER-STATED facts about the rep's OWN company/product (ids s1, s2, …). Use them to tailor talkingPoints and decisionAsks to where the seller's offering meets the buyer's situation.
+- Symmetric grounding: only attribute capabilities to the seller's product that appear in the seller-stated facts. NEVER invent a product capability, integration, or claim the rep didn't state.
+- Seller-stated facts are context, not public sources: do NOT cite the s-ids. Every brief item must still cite buyer evidence (the e-ids).`;
 
 export async function synthesizeBrief(
   input: BriefInput,
@@ -77,6 +83,15 @@ export async function synthesizeBrief(
     ? `${entity.person.name} (${entity.person.role})`
     : entity.person.name;
 
+  const sellerFacts = input.seller ? sellerStatedFacts(input.seller) : [];
+  const sellerBlock = sellerFacts.length
+    ? [
+        ``,
+        `Your company/product — seller-stated context (tailor to this; do NOT cite the s-ids):`,
+        ...sellerFacts.map((f) => `[${f.id}] ${f.text}`),
+      ]
+    : [];
+
   const { object } = await withGeneration(
     "synthesize-brief",
     {
@@ -97,6 +112,7 @@ export async function synthesizeBrief(
           `Context: ${input.context}`,
           ``,
           `Resolved: ${entity.company.name}; meeting ${personLine}`,
+          ...sellerBlock,
           ``,
           `Evidence (cite by id):`,
           evidenceList,
@@ -162,13 +178,34 @@ export function groundGuidance(
 }
 
 /**
+ * Turn the rep's seller profile into a small list of seller-stated facts with
+ * stable `s`-ids. These are synthesis *context* — they constrain what the model
+ * may claim about the seller's own product (the symmetric no-fabrication rule),
+ * but they are not public evidence and never enter the cited Sources list. The
+ * questions/fit work (#73) reuses these to anchor fit hypotheses.
+ */
+export function sellerStatedFacts(
+  seller: SellerProfile,
+): { id: string; text: string }[] {
+  const facts: { id: string; text: string }[] = [];
+  const push = (text: string) => facts.push({ id: `s${facts.length + 1}`, text });
+
+  push(`${seller.company} offers: ${seller.offering}`);
+  if (seller.valueProp) push(`Value proposition: ${seller.valueProp}`);
+  if (seller.competitors.length) {
+    push(`Named competitors: ${seller.competitors.join(", ")}`);
+  }
+  return facts;
+}
+
+/**
  * Remove inline evidence-id tokens the model writes into prose — `[e1]`,
  * `[e1, e3, e4]`, or runs like `[e1][e3]` — then tidy the leftover whitespace
  * and dangling punctuation so the sentence reads cleanly.
  */
 function stripInlineCitations(text: string): string {
   return text
-    .replace(/\s*\[\s*e\d+(?:\s*,\s*e\d+)*\s*\]/gi, "")
+    .replace(/\s*\[\s*[es]\d+(?:\s*,\s*[es]\d+)*\s*\]/gi, "")
     .replace(/\s+([.,;:!?])/g, "$1")
     .replace(/\s{2,}/g, " ")
     .trim();
