@@ -23,13 +23,25 @@ const modelBriefItem = z.object({
   text: z.string(),
   citations: z.array(z.string()),
 });
+/**
+ * Derived-guidance shape for the model call. We ask only for `text` + `anchors`
+ * (the evidence ids the guidance rests on) — `kind` is inferred afterwards from
+ * whether any anchor survives grounding, so the model has one fewer thing to get
+ * wrong. `anchors` may be empty for a purely strategic prompt.
+ */
+const modelGuidanceItem = z.object({
+  text: z.string(),
+  anchors: z.array(z.string()),
+});
 const modelBriefSchema = z.object({
   snapshot: z.string(),
   objective: z.string(),
   talkingPoints: z.array(modelBriefItem),
-  decisionAsks: z.array(modelBriefItem),
   riskAlerts: z.array(modelBriefItem),
   buyingSignals: z.array(modelBriefItem),
+  decisionAsks: z.array(modelGuidanceItem),
+  questions: z.array(modelGuidanceItem),
+  fitHypotheses: z.array(modelGuidanceItem),
 });
 
 /**
@@ -42,19 +54,28 @@ const modelBriefSchema = z.object({
 
 const SYSTEM = `You write concise, conversation-ready B2B sales pre-meeting briefs.
 
-Rules:
+There are two kinds of content. Keep them distinct:
+
+SOURCED CLAIMS — facts about the buyer. Sections: talkingPoints, riskAlerts, buyingSignals.
 - Use ONLY the supplied evidence. Do not add facts from your own knowledge.
-- Every item in talkingPoints, decisionAsks, riskAlerts, and buyingSignals MUST cite at least one evidence id (the bracketed ids in the evidence list). Cite the ids exactly.
-- Never invent an evidence id. If a section has no support in the evidence, return an empty array for it.
+- Every sourced-claim item MUST \`cite\` at least one evidence id (the bracketed e-ids). Cite ids exactly; never invent one. No support → return an empty array.
+
+DERIVED GUIDANCE — what the rep should do, not a public fact. Sections: decisionAsks, questions, fitHypotheses.
+- These use \`anchors\`, not \`citations\`: list the evidence e-ids the guidance rests on (the signal that motivates it). \`anchors\` may be empty for a purely strategic prompt; never invent an id.
+- decisionAsks: what to push for / the next step to land.
+- questions: sharp discovery questions to ASK in the meeting. Anchor each to the specific signal that prompts it where possible (e.g. a hiring spike, a filing, recent news).
+- fitHypotheses: where the SELLER's stated offering plausibly meets a buyer signal — framed as a hypothesis to test, not an asserted outcome. Only produce these when seller-stated context is provided, and only using capabilities the rep actually stated. Anchor to the buyer e-id that makes the offering relevant. Empty array if no seller context.
+
+General:
 - Keep each item to one or two sharp sentences a rep can say out loud.
 - snapshot: one line on the company (and the person if known).
 - objective: infer the meeting's goal from the provided context (and the meeting type, if given).
 - Prefer specific, recent, decision-useful points over generic ones.
 
 Seller context (when provided):
-- You may be given SELLER-STATED facts about the rep's OWN company/product (ids s1, s2, …). Use them to tailor talkingPoints and decisionAsks to where the seller's offering meets the buyer's situation.
+- You may be given SELLER-STATED facts about the rep's OWN company/product (ids s1, s2, …). Use them to tailor talkingPoints, decisionAsks, and especially fitHypotheses to where the seller's offering meets the buyer's situation.
 - Symmetric grounding: only attribute capabilities to the seller's product that appear in the seller-stated facts. NEVER invent a product capability, integration, or claim the rep didn't state.
-- Seller-stated facts are context, not public sources: do NOT cite the s-ids. Every brief item must still cite buyer evidence (the e-ids).`;
+- Seller-stated facts are context, not public sources: do NOT put s-ids in citations or anchors. Sourced claims still cite buyer e-ids; guidance anchors are buyer e-ids only.`;
 
 export async function synthesizeBrief(
   input: BriefInput,
@@ -69,9 +90,11 @@ export async function synthesizeBrief(
         : entity.company.name,
       objective: input.context,
       talkingPoints: [],
-      decisionAsks: [],
       riskAlerts: [],
       buyingSignals: [],
+      decisionAsks: [],
+      questions: [],
+      fitHypotheses: [],
     };
   }
 
@@ -124,13 +147,27 @@ export async function synthesizeBrief(
 
   const validIds = new Set(evidence.map((e) => e.id));
 
+  // Infer guidance `kind` from whether the model supplied any anchors, then let
+  // groundGuidance filter anchors to real ids and downgrade if none survive.
+  const asGuidance = (items: { text: string; anchors: string[] }[]) =>
+    groundGuidance(
+      items.map((i) => ({
+        text: i.text,
+        anchors: i.anchors,
+        kind: i.anchors.length ? ("sourced-premise" as const) : ("strategic" as const),
+      })),
+      validIds,
+    );
+
   return {
     snapshot: stripInlineCitations(object.snapshot),
     objective: stripInlineCitations(object.objective),
     talkingPoints: groundClaim(object.talkingPoints, validIds),
-    decisionAsks: groundClaim(object.decisionAsks, validIds),
     riskAlerts: groundClaim(object.riskAlerts, validIds),
     buyingSignals: groundClaim(object.buyingSignals, validIds),
+    decisionAsks: asGuidance(object.decisionAsks),
+    questions: asGuidance(object.questions),
+    fitHypotheses: asGuidance(object.fitHypotheses),
   };
 }
 

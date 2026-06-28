@@ -82,7 +82,6 @@ function citedEvidence(brief: Brief, evidence: Evidence[]): Evidence[] {
   // Sourced claims cite via `citations`.
   for (const section of [
     brief.talkingPoints,
-    brief.decisionAsks,
     brief.riskAlerts,
     brief.buyingSignals,
   ]) {
@@ -90,9 +89,13 @@ function citedEvidence(brief: Brief, evidence: Evidence[]): Evidence[] {
       for (const id of item.citations) cited.add(id);
     }
   }
-  // Derived guidance cites via `anchors` (questions/fit, added in #73) — so a
-  // guidance item's premise still renders in the Sources list. Empty until then.
-  const guidanceSections: GuidanceItem[][] = [];
+  // Derived guidance cites via `anchors` — so a guidance item's premise still
+  // renders in the Sources list (#73).
+  const guidanceSections: GuidanceItem[][] = [
+    brief.decisionAsks,
+    brief.questions,
+    brief.fitHypotheses,
+  ];
   for (const section of guidanceSections) {
     for (const item of section) {
       for (const id of item.anchors) cited.add(id);

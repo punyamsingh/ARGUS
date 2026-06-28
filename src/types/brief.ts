@@ -138,10 +138,16 @@ export const briefSchema = z.object({
   snapshot: z.string(),
   /** The inferred meeting objective. */
   objective: z.string(),
+  // Sourced claims about the buyer — every item cites real evidence.
   talkingPoints: z.array(briefItemSchema),
-  decisionAsks: z.array(briefItemSchema),
   riskAlerts: z.array(briefItemSchema),
   buyingSignals: z.array(briefItemSchema),
+  // Derived guidance about the meeting — what to push for, what to ask, and
+  // where the seller's offering fits. Anchored to evidence where it rests on a
+  // signal, but never presented as a sourced fact (#70 two-truths model).
+  decisionAsks: z.array(guidanceItemSchema),
+  questions: z.array(guidanceItemSchema),
+  fitHypotheses: z.array(guidanceItemSchema),
 });
 export type Brief = z.infer<typeof briefSchema>;
 

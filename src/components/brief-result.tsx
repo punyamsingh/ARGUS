@@ -1,5 +1,10 @@
 import { clsx } from "@/lib/cn";
-import type { BriefItem, BriefResult, Evidence } from "@/types/brief";
+import type {
+  BriefItem,
+  BriefResult,
+  Evidence,
+  GuidanceItem,
+} from "@/types/brief";
 
 /**
  * Renders a real generated brief (#9). Every claim links to its source;
@@ -11,9 +16,12 @@ type Tone = "default" | "risk" | "signal";
 function SectionLabel({
   children,
   tone = "default",
+  note,
 }: {
   children: React.ReactNode;
   tone?: Tone;
+  /** Faint suffix, e.g. "to ask" — used to flag guidance as a prompt, not a fact. */
+  note?: string;
 }) {
   return (
     <div className="mb-2.5 flex items-center gap-2">
@@ -28,6 +36,11 @@ function SectionLabel({
       <h4 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted">
         {children}
       </h4>
+      {note && (
+        <span className="font-mono text-[10px] tracking-wide text-faint">
+          · {note}
+        </span>
+      )}
     </div>
   );
 }
@@ -103,6 +116,42 @@ function Section({
   );
 }
 
+/**
+ * A derived-guidance section (decision asks, questions, fit hypotheses — #73).
+ * Rendered like a claim section but flagged as a prompt, not a sourced fact:
+ * its anchor chips link to the signal that motivated it, yet the header `note`
+ * makes clear these are things to do/ask, not asserted facts. Hidden when empty
+ * (guidance can legitimately have nothing to say — e.g. fit without seller input).
+ */
+function GuidanceSection({
+  title,
+  note,
+  items,
+  numbering,
+  evidence,
+}: {
+  title: string;
+  note: string;
+  items: GuidanceItem[];
+  numbering: Map<string, number>;
+  evidence: Map<string, Evidence>;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section>
+      <SectionLabel note={note}>{title}</SectionLabel>
+      <ul className="space-y-2.5 text-[13.5px] leading-relaxed text-ivory/90">
+        {items.map((item, i) => (
+          <li key={i}>
+            {item.text}
+            <Cite ids={item.anchors} numbering={numbering} evidence={evidence} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function BriefResultView({ result }: { result: BriefResult }) {
   const { brief, entity, evidence, meta, input } = result;
 
@@ -113,11 +162,27 @@ export function BriefResultView({ result }: { result: BriefResult }) {
     evidenceById.set(e.id, e);
   });
 
+  const guidanceCount =
+    brief.decisionAsks.length +
+    brief.questions.length +
+    brief.fitHypotheses.length;
   const totalItems =
     brief.talkingPoints.length +
-    brief.decisionAsks.length +
     brief.riskAlerts.length +
-    brief.buyingSignals.length;
+    brief.buyingSignals.length +
+    guidanceCount;
+
+  // Guidance order; a discovery meeting leads with the questions to ask (#73).
+  const guidance: { key: string; title: string; note: string; items: GuidanceItem[] }[] = [
+    { key: "decisionAsks", title: "Decision asks", note: "what to push for", items: brief.decisionAsks },
+    { key: "questions", title: "Questions to ask", note: "to ask", items: brief.questions },
+    { key: "fitHypotheses", title: "Fit hypotheses", note: "hypothesis to test", items: brief.fitHypotheses },
+  ];
+  if (input.meetingType === "discovery") {
+    guidance.sort((a, b) =>
+      a.key === "questions" ? -1 : b.key === "questions" ? 1 : 0,
+    );
+  }
 
   const personLine = entity.person.role
     ? `${entity.person.name} · ${entity.person.role}`
@@ -184,20 +249,13 @@ export function BriefResultView({ result }: { result: BriefResult }) {
           </div>
         )}
 
-        {/* body */}
+        {/* body — sourced claims about the buyer */}
         {totalItems > 0 && (
           <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
             <Section
               title="Talking points"
               tone="default"
               items={brief.talkingPoints}
-              numbering={numbering}
-              evidence={evidenceById}
-            />
-            <Section
-              title="Decision asks"
-              tone="default"
-              items={brief.decisionAsks}
               numbering={numbering}
               evidence={evidenceById}
             />
@@ -215,6 +273,27 @@ export function BriefResultView({ result }: { result: BriefResult }) {
               numbering={numbering}
               evidence={evidenceById}
             />
+          </div>
+        )}
+
+        {/* derived guidance — what to do/ask/test, not asserted facts */}
+        {guidanceCount > 0 && (
+          <div className="border-t border-line px-6 py-6">
+            <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.18em] text-faint">
+              Your playbook · guidance, not sourced claims
+            </p>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {guidance.map((g) => (
+                <GuidanceSection
+                  key={g.key}
+                  title={g.title}
+                  note={g.note}
+                  items={g.items}
+                  numbering={numbering}
+                  evidence={evidenceById}
+                />
+              ))}
+            </div>
           </div>
         )}
 
