@@ -48,6 +48,7 @@ export function BriefActions({ result }: { result: BriefResult }) {
   );
 }
 
+/** A pill-styled button used for each brief action (copy / download / print). */
 function ActionButton({
   onClick,
   children,

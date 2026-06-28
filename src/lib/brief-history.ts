@@ -29,22 +29,50 @@ let snapshot: HistoryEntry[] = EMPTY;
 let hydrated = false;
 const listeners = new Set<() => void>();
 
+/**
+ * Validate a parsed record before trusting it as a `HistoryEntry`. localStorage
+ * can hold stale or corrupted data from an older schema; we only keep records
+ * with the fields `RecentBriefs` and `openHistory` actually dereference, so a
+ * drifted shape is discarded rather than thrown on at read time.
+ */
+function isHistoryEntry(value: unknown): value is HistoryEntry {
+  if (!value || typeof value !== "object") return false;
+  const entry = value as Partial<HistoryEntry>;
+  const result = entry.result as BriefResult | undefined;
+  return (
+    typeof entry.id === "string" &&
+    typeof entry.company === "string" &&
+    typeof entry.person === "string" &&
+    typeof entry.context === "string" &&
+    !!result &&
+    typeof result === "object" &&
+    Array.isArray(result.evidence) &&
+    !!result.input &&
+    typeof result.input.company === "string" &&
+    typeof result.input.person === "string" &&
+    typeof result.input.context === "string"
+  );
+}
+
+/** Read and validate the persisted history; returns `EMPTY` on any failure. */
 function readStorage(): HistoryEntry[] {
   if (typeof window === "undefined") return EMPTY;
   try {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return EMPTY;
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as HistoryEntry[]) : EMPTY;
+    return Array.isArray(parsed) ? parsed.filter(isHistoryEntry) : EMPTY;
   } catch {
     return EMPTY;
   }
 }
 
+/** Notify all current subscribers that the snapshot changed. */
 function emit() {
   for (const l of listeners) l();
 }
 
+/** `useSyncExternalStore` subscribe: hydrate on first listener, then track it. */
 function subscribe(cb: () => void): () => void {
   // First subscriber hydrates from localStorage and notifies, so the initial
   // (server-matching) empty render is replaced with the stored briefs.
