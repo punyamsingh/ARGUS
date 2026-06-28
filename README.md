@@ -1,66 +1,147 @@
-# Argus
+# ARGUS
 
 **A**gentic **R**esearch **G**enerated to **U**nburden **S**alespeople.
 
-Argus is an AI **pre-meeting intelligence agent** for B2B sales reps. It turns 45
+ARGUS is an AI **pre-meeting intelligence agent** for B2B sales reps. It turns 45
 minutes of scattered account research into a single, **cited**, conversation-ready
-brief — synthesised from real-time signals in the minutes before a meeting.
+brief — synthesised from real-time public signals in the minutes before a meeting.
 
-> **Status:** early MVP, built in the open one issue at a time.
+You give it three things — **company**, **person**, **meeting context** — and it
+returns one screen: a snapshot, the meeting objective, talking points, decision
+asks, risk alerts, and buying signals. **Every claim links to its source.**
+
+> **Status:** MVP, built in the open one issue at a time.
 > Direction lives in [`PLAN.md`](./PLAN.md); work lives in
-> [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues)
-> (tracked by [the epic](https://github.com/punyamsingh/ARGUS/issues/20)).
+> [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues).
+
+## How it works
+
+```
+input (company · person · context)
+        │
+        ▼
+   ┌─────────┐     ┌──────────────────────────┐     ┌────────────┐
+   │ resolve │ ──▶ │ gather (parallel toolbelt)│ ──▶ │ synthesise │ ──▶ cited brief
+   └─────────┘     └──────────────────────────┘     └────────────┘
+   which company    Wikipedia · company site ·        grounded, every
+   & person, with   job boards · GDELT news ·         claim cites a
+   identifiers      SEC EDGAR  (more landing)          piece of evidence
+```
+
+1. **Resolve** — turn "meeting Jane at Acme" into concrete entities (domain,
+   ticker, CIK, job-board slug, …) the tools can act on.
+2. **Gather** — every applicable tool fans out in parallel for real, cited
+   evidence. Each tool self-routes (`appliesTo`), times out independently, and
+   fails soft — one tool erroring never sinks the brief.
+3. **Synthesise** — the model writes the brief **only** from gathered evidence;
+   anything it can't cite is dropped. Thin evidence → an honest, sparse brief,
+   never fabrication.
+
+The tool belt today: **Wikipedia/Wikidata**, **company website**, **job boards**
+(Greenhouse/Lever), **GDELT** news & sentiment, **SEC EDGAR** filings. All free,
+most keyless.
 
 ## Stack
 
-- **Next.js (App Router) + TypeScript + Tailwind v4**
+- **Next.js (App Router) + React + TypeScript + Tailwind v4**
 - **Vercel AI SDK** — provider-agnostic LLM layer (default: free Google Gemini)
-- **Langfuse** — observability
-- Deployed on **Vercel**
+- **Langfuse** — observability (free tier / self-host)
+- Deployed on **Vercel** (preview per PR, production on `main`)
 
 ## Quickstart
 
+Requires **Node 22** (see [`.nvmrc`](./.nvmrc)).
+
 ```bash
 npm install
-npm run dev      # http://localhost:3000
+cp .env.example .env.local   # then fill in GEMINI_API_KEY (see below)
+npm run dev                  # http://localhost:3000
 ```
 
-Other scripts:
+Scripts:
 
 ```bash
+npm run dev        # local dev server
 npm run build      # production build
 npm run lint       # eslint
 npm run typecheck  # tsc --noEmit
 ```
 
-A full setup guide (free Gemini & Langfuse keys, env vars) lands with
-[issue #34](https://github.com/punyamsingh/ARGUS/issues/34).
+## Getting the free keys
 
-## Configuration
+### `GEMINI_API_KEY` — required, free, no card
 
-Copy [`.env.example`](./.env.example) → `.env.local` (or set the vars in Vercel).
-The LLM layer is provider-agnostic — **switching providers is one env change**:
+1. Go to **[Google AI Studio → API keys](https://aistudio.google.com/apikey)**.
+2. Sign in with a Google account, click **Create API key**.
+3. Copy it into `.env.local` as `GEMINI_API_KEY=...` (and into Vercel for
+   deploys — see below).
+
+The free tier is generous for development. Rate limits apply (requests/min and
+requests/day per model); if you hit them you'll see a clear error in the UI, not
+a crash. The default model is `gemini-2.5-flash`.
+
+### Langfuse keys — optional, for observability
+
+1. Create a free project at **[cloud.langfuse.com](https://cloud.langfuse.com)**
+   (or self-host the OSS version).
+2. Project **Settings → API Keys** → create a key pair.
+3. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASEURL`.
+
+ARGUS runs fine without Langfuse; it just won't emit traces.
+
+### Tool keys — optional
+
+Most tools are keyless (Wikipedia, company site, job boards, GDELT, SEC EDGAR).
+A financial-markets tool can use a free **Finnhub** key (`FINNHUB_API_KEY`) when
+present; without it, that tool simply no-ops.
+
+## Switching LLM provider
+
+The LLM layer is provider-agnostic — **switching is one env change, no code**:
 
 ```bash
-# default — free Google Gemini (key: https://aistudio.google.com/apikey)
+# default — free Google Gemini
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=...
 
-# swap to Claude with no code changes
+# swap to Claude
 LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=...
 ```
 
-**Connectivity check:** with a key set, `GET /api/ping-llm` returns
-`{ ok: true, provider, model, text }`. (Temporary probe — removed when the real
-`/api/brief` pipeline lands.)
+Optionally pin a model with `LLM_MODEL` (defaults: `gemini-2.5-flash` /
+`claude-opus-4-8`).
 
-## Architecture (target)
+## Environment variables
+
+All variables are documented in [`.env.example`](./.env.example). Copy it to
+`.env.local` for local dev, or add them in **Vercel → Project → Settings →
+Environment Variables** (scoped to Preview + Production) for deploys. **Never
+commit real keys.**
+
+## Deploy workflow
+
+- The repo is connected to **Vercel**; **every PR gets a preview URL**, and
+  merging to **`main` deploys production**. Preview deployments are the primary
+  manual-testing surface.
+- The `/api/brief` route runs on the Node runtime with `maxDuration` set to fit
+  the sub-60s brief target.
+
+## Project layout
 
 ```
-input (company · person · context)
-  → resolve entity  → gather (parallel tool belt)  → synthesise (cited brief)
-  → single-screen brief
+src/
+  app/            # Next.js App Router — pages + /api/brief route
+  components/     # UI (brief studio, brief result, chrome)
+  lib/
+    llm/          # provider-agnostic model factory (Gemini / Claude)
+    agent/        # the pipeline
+      resolve.ts    # entity resolution
+      gather.ts     # parallel orchestrator
+      synthesize.ts # grounded brief synthesis
+      brief.ts      # resolve → gather → synthesize
+      tools/        # the gather tool belt (one file per tool)
+  types/          # zod schemas = the single source of truth
 ```
 
 See [`PLAN.md`](./PLAN.md) for the full picture.
