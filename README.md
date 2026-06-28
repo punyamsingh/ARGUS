@@ -8,11 +8,36 @@ brief — synthesised from real-time public signals in the minutes before a meet
 
 You give it three things — **company**, **person**, **meeting context** — and it
 returns one screen: a snapshot, the meeting objective, talking points, decision
-asks, risk alerts, and buying signals. **Every claim links to its source.**
+asks, risk alerts, and buying signals. **Every claim links to its source.** As of
+2.0, the brief is a **workspace**: ask grounded follow-ups beneath it, and ARGUS
+keeps a persistent seller profile so each brief is written for *you* and the
+meeting you're walking into.
 
-> **Status:** MVP, built in the open one issue at a time.
-> Direction lives in [`PLAN.md`](./PLAN.md); work lives in
-> [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues).
+> **Status:** v2.0 — a grounded, conversational brief workspace, built in the
+> open one issue at a time. Direction lives in [`PLAN.md`](./PLAN.md); work lives
+> in [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues).
+
+## What's new in 2.0
+
+The 1.x line grew the single-shot brief into a grounded, conversational
+workspace. The headline shifts (full history in [`CHANGELOG.md`](./CHANGELOG.md)):
+
+- **A conversational workspace, not a one-shot brief** — a grounded follow-up
+  engine (`/api/brief/ask`), follow-ups answered beneath the brief, a dedicated
+  focused page per brief, recent-briefs history, and live streaming of pipeline
+  progress.
+- **The two-truths content model** — every brief now separates **sourced claims**
+  (cited evidence) from **derived guidance** (the model's reasoning over it), and
+  adds questions-to-ask and fit hypotheses as explicit, labelled guidance. This is
+  the breaking shape change behind 2.0.
+- **Seller-aware synthesis** — a persistent, progressive seller profile and a
+  meeting-type picker feed seller context into synthesis as its own grounded
+  channel, so the brief is tailored to who's selling.
+- **A wider tool belt** — a GitHub open-source footprint tool joins the gather
+  belt, with shared helpers extracted across the belt.
+- **Observability** — Langfuse tracing over OpenTelemetry exports every brief as a
+  single `brief → resolve → gather → synthesize` trace tree with per-step latency,
+  tokens, and cost.
 
 ## How it works
 
