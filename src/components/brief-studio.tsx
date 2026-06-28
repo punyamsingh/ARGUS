@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   BriefResult,
   BriefStage,
   BriefStreamMessage,
+  MeetingType,
+  SellerProfile,
 } from "@/types/brief";
+import { MEETING_TYPES } from "@/types/brief";
 import { clsx } from "@/lib/cn";
 import { getSessionId } from "@/lib/session-id";
 import { BriefResultView } from "@/components/brief-result";
@@ -16,6 +19,7 @@ import {
   useBriefHistory,
   type HistoryEntry,
 } from "@/lib/brief-history";
+import { saveSellerProfile, useSellerProfile } from "@/lib/seller-profile";
 
 type Status = "idle" | "loading" | "done" | "error";
 
@@ -34,11 +38,60 @@ export function BriefStudio() {
   const [company, setCompany] = useState("");
   const [person, setPerson] = useState("");
   const [context, setContext] = useState("");
+  const [meetingType, setMeetingType] = useState<MeetingType | "">("");
   const [status, setStatus] = useState<Status>("idle");
   const [stage, setStage] = useState<BriefStage>("resolving");
   const [result, setResult] = useState<BriefResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const history = useBriefHistory();
+
+  // Seller profile — a set-once, remembered layer (progressive disclosure: the
+  // 3-field path stays the default). A local draft mirrors the persisted profile
+  // so partial/invalid edits never clobber storage; we persist on submit.
+  const savedSeller = useSellerProfile();
+  const [sellerOpen, setSellerOpen] = useState(false);
+  const [sellerCompany, setSellerCompany] = useState("");
+  const [offering, setOffering] = useState("");
+  const [valueProp, setValueProp] = useState("");
+  const [competitors, setCompetitors] = useState("");
+  const seededRef = useRef(false);
+
+  // Seed the draft once from the persisted profile when it hydrates, and open
+  // the panel so a returning rep sees their product is already known.
+  useEffect(() => {
+    if (seededRef.current || !savedSeller) return;
+    seededRef.current = true;
+    setSellerCompany(savedSeller.company);
+    setOffering(savedSeller.offering);
+    setValueProp(savedSeller.valueProp ?? "");
+    setCompetitors(savedSeller.competitors.join(", "));
+    setSellerOpen(true);
+  }, [savedSeller]);
+
+  /** Build a valid SellerProfile from the draft, or undefined if incomplete. */
+  function buildSeller(): SellerProfile | undefined {
+    const c = sellerCompany.trim();
+    const o = offering.trim();
+    if (!c || !o) return undefined;
+    const vp = valueProp.trim();
+    return {
+      company: c,
+      offering: o,
+      ...(vp ? { valueProp: vp } : {}),
+      competitors: competitors
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    };
+  }
+
+  function clearSeller() {
+    setSellerCompany("");
+    setOffering("");
+    setValueProp("");
+    setCompetitors("");
+    saveSellerProfile(null);
+  }
 
   const canSubmit =
     company.trim() !== "" && person.trim() !== "" && context.trim() !== "";
@@ -51,6 +104,10 @@ export function BriefStudio() {
     setError(null);
     setResult(null);
 
+    // Persist the seller profile so it's remembered next time (or no-op if blank).
+    const seller = buildSeller();
+    if (seller) saveSellerProfile(seller);
+
     try {
       const res = await fetch("/api/brief", {
         method: "POST",
@@ -62,7 +119,13 @@ export function BriefStudio() {
           // Groups this browser's briefs into one Langfuse session.
           "x-argus-session-id": getSessionId(),
         },
-        body: JSON.stringify({ company, person, context }),
+        body: JSON.stringify({
+          company,
+          person,
+          context,
+          ...(seller ? { seller } : {}),
+          ...(meetingType ? { meetingType } : {}),
+        }),
       });
 
       // Validation failures come back as a plain JSON error (4xx).
@@ -159,6 +222,7 @@ export function BriefStudio() {
             placeholder="e.g. renewal + expansion call"
             className="mt-2"
           />
+          <MeetingTypePicker value={meetingType} onChange={setMeetingType} />
           <button
             type="submit"
             disabled={!canSubmit || status === "loading"}
@@ -171,6 +235,21 @@ export function BriefStudio() {
           Free, grounded in public sources. Every claim is cited.{" "}
           <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
         </p>
+
+        <SellerPanel
+          open={sellerOpen}
+          onToggle={() => setSellerOpen((v) => !v)}
+          configured={!!savedSeller}
+          company={sellerCompany}
+          onCompany={setSellerCompany}
+          offering={offering}
+          onOffering={setOffering}
+          valueProp={valueProp}
+          onValueProp={setValueProp}
+          competitors={competitors}
+          onCompetitors={setCompetitors}
+          onClear={clearSeller}
+        />
 
         {history.length > 0 && (
           <RecentBriefs
@@ -242,6 +321,139 @@ function Field({
         className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong"
       />
     </label>
+  );
+}
+
+/** Optional meeting-type chips — a light hint that sharpens the inferred
+ *  objective (and, in #73, section ordering). Click a selected chip to clear. */
+function MeetingTypePicker({
+  value,
+  onChange,
+}: {
+  value: MeetingType | "";
+  onChange: (v: MeetingType | "") => void;
+}) {
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5 px-1">
+      {MEETING_TYPES.map((t) => {
+        const active = value === t;
+        return (
+          <button
+            key={t}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(active ? "" : t)}
+            className={clsx(
+              "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize transition-colors",
+              active
+                ? "border-accent bg-accent/15 text-accent"
+                : "border-line bg-surface/40 text-faint hover:border-line-strong hover:text-ivory",
+            )}
+          >
+            {t}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The "Your product" panel — the persistent seller profile. Collapsed by default
+ * (progressive disclosure); set once and remembered so every brief is tailored
+ * to what the rep sells. Company + what-you-sell are the only fields that matter;
+ * the rest sharpen fit. Clearing removes the saved profile.
+ */
+function SellerPanel({
+  open,
+  onToggle,
+  configured,
+  company,
+  onCompany,
+  offering,
+  onOffering,
+  valueProp,
+  onValueProp,
+  competitors,
+  onCompetitors,
+  onClear,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  configured: boolean;
+  company: string;
+  onCompany: (v: string) => void;
+  offering: string;
+  onOffering: (v: string) => void;
+  valueProp: string;
+  onValueProp: (v: string) => void;
+  competitors: string;
+  onCompetitors: (v: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong"
+      >
+        <span className="flex items-center gap-2 text-[13px] text-ivory">
+          Your product
+          <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
+            {configured ? "saved · tailors the brief" : "optional · tailors the brief"}
+          </span>
+        </span>
+        <span className="text-faint">{open ? "−" : "+"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-2 grid gap-2 rounded-xl border border-line bg-surface/30 p-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Field
+              label="Your company"
+              value={company}
+              onChange={onCompany}
+              placeholder="e.g. Acme Analytics"
+            />
+            <Field
+              label="Named competitors (comma-separated)"
+              value={competitors}
+              onChange={onCompetitors}
+              placeholder="e.g. Looker, Mode"
+            />
+          </div>
+          <Field
+            label="What you sell"
+            value={offering}
+            onChange={onOffering}
+            placeholder="e.g. self-serve product analytics for B2B SaaS"
+          />
+          <Field
+            label="Value proposition"
+            value={valueProp}
+            onChange={onValueProp}
+            placeholder="e.g. ship insights without a data team"
+          />
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[11px] text-faint">
+              Remembered on this device. Only “what you sell” is used to tailor;
+              never invented.
+            </p>
+            {configured && (
+              <button
+                type="button"
+                onClick={onClear}
+                className="shrink-0 text-[11px] text-faint underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
