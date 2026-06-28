@@ -6,6 +6,7 @@ import type {
   BriefStage,
   BriefStreamMessage,
 } from "@/types/brief";
+import { clsx } from "@/lib/cn";
 import { BriefResultView } from "@/components/brief-result";
 import { BriefActions } from "@/components/brief-actions";
 import { BriefPreview } from "@/components/brief-preview";
@@ -23,6 +24,11 @@ const STAGES: { key: BriefStage; label: string }[] = [
   { key: "synthesizing", label: "Synthesising your brief…" },
 ];
 
+/**
+ * The brief "studio": the input form plus the result panel. Submits to
+ * `/api/brief`, consumes the streamed stage events to drive a live skeleton,
+ * persists results to local history, and offers export actions on the result.
+ */
 export function BriefStudio() {
   const [company, setCompany] = useState("");
   const [person, setPerson] = useState("");
@@ -47,7 +53,12 @@ export function BriefStudio() {
     try {
       const res = await fetch("/api/brief", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          // The route streams NDJSON; ask for it explicitly so the contract is
+          // unambiguous and a future JSON fallback wouldn't desync the reader.
+          Accept: "application/x-ndjson, application/json",
+        },
         body: JSON.stringify({ company, person, context }),
       });
 
@@ -159,7 +170,11 @@ export function BriefStudio() {
         </p>
 
         {history.length > 0 && (
-          <RecentBriefs entries={history} onOpen={openHistory} />
+          <RecentBriefs
+            entries={history}
+            onOpen={openHistory}
+            disabled={status === "loading"}
+          />
         )}
       </form>
 
@@ -199,6 +214,7 @@ export function BriefStudio() {
   );
 }
 
+/** A single labelled text input (label is visually hidden, kept for a11y). */
 function Field({
   label,
   value,
@@ -226,12 +242,18 @@ function Field({
   );
 }
 
+/**
+ * The "Recent briefs" switcher under the form. Disabled while a generation is in
+ * flight so a history selection can't be clobbered by the streaming result.
+ */
 function RecentBriefs({
   entries,
   onOpen,
+  disabled,
 }: {
   entries: HistoryEntry[];
   onOpen: (e: HistoryEntry) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="mt-5 px-1">
@@ -243,8 +265,9 @@ function RecentBriefs({
           <li key={e.id}>
             <button
               type="button"
+              disabled={disabled}
               onClick={() => onOpen(e)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2"
+              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[13px] text-ivory">
@@ -265,38 +288,73 @@ function RecentBriefs({
   );
 }
 
+/** A shimmering skeleton placeholder bar. */
+function Bar({ className }: { className?: string }) {
+  return (
+    <div className={clsx("animate-pulse rounded bg-line-strong/60", className)} />
+  );
+}
+
+/**
+ * Loading state: a skeleton in the shape of the finished brief (header, four
+ * sections, footer) so the layout doesn't jump when the real brief lands, with
+ * the live pipeline stage — driven by #10's streamed `stage` events — surfaced
+ * along the bottom.
+ */
 function Loader({ stage }: { stage: BriefStage }) {
   const current = STAGES.findIndex((s) => s.key === stage);
 
   return (
-    <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-line-strong bg-surface/50 p-8 text-center">
-      <span className="relative flex size-12 items-center justify-center">
-        <span className="absolute inset-0 animate-ping rounded-full bg-accent/20" />
-        <span className="size-3 rounded-full bg-accent shadow-[0_0_16px_var(--color-accent)]" />
-      </span>
-      <div className="mt-6 space-y-2">
-        {STAGES.map((s, i) => (
-          <p
-            key={s.key}
-            className={
-              i === current
-                ? "text-sm text-ivory"
-                : i < current
-                  ? "text-sm text-faint line-through decoration-line-strong"
-                  : "text-sm text-faint"
-            }
-          >
-            {s.label}
-          </p>
+    <div className="overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/50">
+      {/* header */}
+      <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
+        <div className="w-full">
+          <Bar className="h-2.5 w-24" />
+          <Bar className="mt-3 h-5 w-2/3" />
+          <Bar className="mt-2 h-3 w-1/2" />
+        </div>
+        <Bar className="hidden h-8 w-10 shrink-0 sm:block" />
+      </div>
+
+      {/* body — four section placeholders, matching the real brief grid */}
+      <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i}>
+            <Bar className="h-2 w-20" />
+            <Bar className="mt-3 h-3 w-full" />
+            <Bar className="mt-2 h-3 w-5/6" />
+          </div>
         ))}
       </div>
-      <p className="mt-6 font-mono text-[11px] text-faint">
-        usually under a minute
-      </p>
+
+      {/* live stage strip */}
+      <div className="flex items-center gap-3 border-t border-line px-6 py-4">
+        <span className="relative flex size-3 shrink-0 items-center justify-center">
+          <span className="absolute inset-0 animate-ping rounded-full bg-accent/30" />
+          <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
+        </span>
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {STAGES.map((s, i) => (
+            <span
+              key={s.key}
+              className={
+                i === current
+                  ? "text-[12px] text-ivory"
+                  : i < current
+                    ? "text-[12px] text-faint line-through decoration-line-strong"
+                    : "text-[12px] text-faint"
+              }
+            >
+              {s.label}
+            </span>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
 
+/** Error state: the failure message with a retry affordance. */
 function ErrorCard({
   message,
   onRetry,

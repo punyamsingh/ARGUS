@@ -214,16 +214,19 @@ body {
     background: #fff !important;
     color: #111 !important;
   }
-  /* Hide everything, then reveal just the brief and its ancestors. */
+  /* Hide everything, then reveal just the brief and its ancestors. Reset every
+     element to static so the absolutely-positioned print root resolves to the
+     page box, not the brief's sidebar column (which would offset/clip it). */
   body * {
     visibility: hidden;
+    position: static !important;
   }
   #brief-print-root,
   #brief-print-root * {
     visibility: visible;
   }
   #brief-print-root {
-    position: absolute;
+    position: absolute !important;
     inset: 0 auto auto 0;
     width: 100%;
     border: none !important;
