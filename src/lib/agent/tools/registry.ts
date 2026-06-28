@@ -4,6 +4,7 @@ import { websiteTool } from "./website";
 import { jobBoardTool } from "./jobboards";
 import { gdeltTool } from "./gdelt";
 import { edgarTool } from "./edgar";
+import { financialsTool } from "./financials";
 
 /**
  * The gather tool belt. Tools register here as they land:
@@ -20,4 +21,5 @@ export const gatherTools: GatherTool[] = [
   jobBoardTool,
   gdeltTool,
   edgarTool,
+  financialsTool,
 ];
