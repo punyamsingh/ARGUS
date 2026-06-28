@@ -241,7 +241,7 @@ export function sellerStatedFacts(
  * `[e1, e3, e4]`, or runs like `[e1][e3]` — then tidy the leftover whitespace
  * and dangling punctuation so the sentence reads cleanly.
  */
-function stripInlineCitations(text: string): string {
+export function stripInlineCitations(text: string): string {
   return text
     .replace(/\s*\[\s*[es]\d+(?:\s*,\s*[es]\d+)*\s*\]/gi, "")
     .replace(/\s+([.,;:!?])/g, "$1")
