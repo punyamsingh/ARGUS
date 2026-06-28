@@ -1,49 +1,33 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type {
-  BriefResult,
-  BriefStage,
-  BriefStreamMessage,
-  MeetingType,
-  SellerProfile,
-} from "@/types/brief";
+import { useRouter } from "next/navigation";
+import type { BriefResult, MeetingType, SellerProfile } from "@/types/brief";
 import { MEETING_TYPES } from "@/types/brief";
 import { clsx } from "@/lib/cn";
-import { getSessionId } from "@/lib/session-id";
-import { BriefResultView } from "@/components/brief-result";
-import { BriefActions } from "@/components/brief-actions";
 import { BriefPreview } from "@/components/brief-preview";
-import { BriefFollowUps } from "@/components/brief-followups";
+import { BriefConversation } from "@/components/brief-conversation";
 import {
-  saveToHistory,
   useBriefHistory,
   type HistoryEntry,
 } from "@/lib/brief-history";
 import { saveSellerProfile, useSellerProfile } from "@/lib/seller-profile";
-
-type Status = "idle" | "loading" | "done" | "error";
-
-const STAGES: { key: BriefStage; label: string }[] = [
-  { key: "resolving", label: "Resolving the company & person…" },
-  { key: "gathering", label: "Gathering signals across sources…" },
-  { key: "synthesizing", label: "Synthesising your brief…" },
-];
+import { PENDING_BRIEF_KEY } from "@/lib/use-brief-stream";
 
 /**
- * The brief "studio": the input form plus the result panel. Submits to
- * `/api/brief`, consumes the streamed stage events to drive a live skeleton,
- * persists results to local history, and offers export actions on the result.
+ * The brief "studio": the input form plus a preview panel. Submitting hands the
+ * input to the focused brief page (`/brief/new`), which streams the generation
+ * there. Recent briefs open inline in the panel — exactly as before — with an
+ * Expand button to pop into the focused full-page view.
  */
 export function BriefStudio() {
+  const router = useRouter();
   const [company, setCompany] = useState("");
   const [person, setPerson] = useState("");
   const [context, setContext] = useState("");
   const [meetingType, setMeetingType] = useState<MeetingType | "">("");
-  const [status, setStatus] = useState<Status>("idle");
-  const [stage, setStage] = useState<BriefStage>("resolving");
-  const [result, setResult] = useState<BriefResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // A recent brief opened inline in the panel (null → show the example).
+  const [opened, setOpened] = useState<BriefResult | null>(null);
   const history = useBriefHistory();
 
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
@@ -57,8 +41,6 @@ export function BriefStudio() {
   const [competitors, setCompetitors] = useState("");
   const seededRef = useRef(false);
 
-  // Seed the draft once from the persisted profile when it hydrates, and open
-  // the panel so a returning rep sees their product is already known.
   useEffect(() => {
     if (seededRef.current || !savedSeller) return;
     seededRef.current = true;
@@ -97,95 +79,38 @@ export function BriefStudio() {
   const canSubmit =
     company.trim() !== "" && person.trim() !== "" && context.trim() !== "";
 
-  async function run() {
-    if (!canSubmit || status === "loading") return;
+  /** Stash the input and jump to the focused page, which streams the brief. */
+  function startGenerate() {
+    if (!canSubmit) return;
 
-    setStatus("loading");
-    setStage("resolving");
-    setError(null);
-    setResult(null);
-
-    // Persist the seller profile so it's remembered next time (or no-op if blank).
     const seller = buildSeller();
     if (seller) saveSellerProfile(seller);
 
+    const input = {
+      company: company.trim(),
+      person: person.trim(),
+      context: context.trim(),
+      ...(seller ? { seller } : {}),
+      ...(meetingType ? { meetingType } : {}),
+    };
     try {
-      const res = await fetch("/api/brief", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // The route streams NDJSON; ask for it explicitly so the contract is
-          // unambiguous and a future JSON fallback wouldn't desync the reader.
-          Accept: "application/x-ndjson, application/json",
-          // Groups this browser's briefs into one Langfuse session.
-          "x-argus-session-id": getSessionId(),
-        },
-        body: JSON.stringify({
-          company,
-          person,
-          context,
-          ...(seller ? { seller } : {}),
-          ...(meetingType ? { meetingType } : {}),
-        }),
-      });
-
-      // Validation failures come back as a plain JSON error (4xx).
-      if (!res.ok || !res.body) {
-        const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? "Something went wrong.");
-      }
-
-      // Otherwise the route streams newline-delimited JSON: stage events, then a
-      // terminal result or error.
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let settled = false;
-
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        let newline: number;
-        while ((newline = buffer.indexOf("\n")) >= 0) {
-          const line = buffer.slice(0, newline).trim();
-          buffer = buffer.slice(newline + 1);
-          if (!line) continue;
-
-          const msg = JSON.parse(line) as BriefStreamMessage;
-          if (msg.type === "stage") {
-            setStage(msg.stage);
-          } else if (msg.type === "result") {
-            setResult(msg.result);
-            saveToHistory(msg.result);
-            setStatus("done");
-            settled = true;
-          } else {
-            throw new Error(msg.error);
-          }
-        }
-      }
-
-      if (!settled) {
-        throw new Error("The brief ended unexpectedly. Please try again.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong.");
-      setStatus("error");
+      sessionStorage.setItem(PENDING_BRIEF_KEY, JSON.stringify(input));
+    } catch {
+      // best-effort; if storage is blocked the focused page shows a prompt
     }
+    router.push("/brief/new");
   }
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    void run();
+    startGenerate();
   }
 
   // Cmd/Ctrl+Enter submits from any field.
   function onKeyDown(e: React.KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      void run();
+      startGenerate();
     }
   }
 
@@ -193,8 +118,8 @@ export function BriefStudio() {
     setCompany(entry.result.input.company);
     setPerson(entry.result.input.person);
     setContext(entry.result.input.context);
-    setResult(entry.result);
-    setStatus("done");
+    setMeetingType(entry.result.input.meetingType ?? "");
+    setOpened(entry.result);
   }
 
   return (
@@ -226,10 +151,10 @@ export function BriefStudio() {
           <MeetingTypePicker value={meetingType} onChange={setMeetingType} />
           <button
             type="submit"
-            disabled={!canSubmit || status === "loading"}
+            disabled={!canSubmit}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-opacity hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {status === "loading" ? "Generating…" : "Generate brief"}
+            Generate brief
           </button>
         </div>
         <p className="mt-3 px-1 text-[12px] text-faint">
@@ -253,46 +178,41 @@ export function BriefStudio() {
         />
 
         {history.length > 0 && (
-          <RecentBriefs
-            entries={history}
-            onOpen={openHistory}
-            disabled={status === "loading"}
-          />
+          <RecentBriefs entries={history} onOpen={openHistory} />
         )}
       </form>
 
-      {/* Panel: idle → example · loading → stages · error → retry · done → brief */}
+      {/* Panel: a recent brief opened inline, else the example. New briefs open
+          on the focused page instead. */}
       <div>
-        {status === "idle" && (
+        {opened ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-end gap-2 print:hidden">
+              <button
+                onClick={() =>
+                  router.push(
+                    `/brief/${encodeURIComponent(opened.meta.generatedAt)}`,
+                  )
+                }
+                className="rounded-full border border-line-strong bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:bg-surface-2"
+              >
+                Expand ↗
+              </button>
+              <button
+                onClick={() => setOpened(null)}
+                className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-faint transition-colors hover:border-line-strong hover:text-ivory"
+              >
+                Close
+              </button>
+            </div>
+            <BriefConversation result={opened} />
+          </div>
+        ) : (
           <div className="relative">
             <span className="absolute -top-3 left-4 z-10 rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
               Example
             </span>
             <BriefPreview />
-          </div>
-        )}
-        {status === "loading" && <Loader stage={stage} />}
-        {status === "error" && (
-          <ErrorCard message={error} onRetry={() => void run()} />
-        )}
-        {status === "done" && result && (
-          <div className="space-y-4">
-            <BriefResultView result={result} />
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <BriefActions result={result} />
-              <button
-                onClick={() => {
-                  setStatus("idle");
-                  setResult(null);
-                }}
-                className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2 print:hidden"
-              >
-                New brief
-              </button>
-            </div>
-            {/* Conversational layer — keyed to the brief so each new brief starts
-                a fresh conversation. The brief above stays the pinned artifact. */}
-            <BriefFollowUps key={result.meta.generatedAt} result={result} />
           </div>
         )}
       </div>
@@ -329,7 +249,7 @@ function Field({
 }
 
 /** Optional meeting-type chips — a light hint that sharpens the inferred
- *  objective (and, in #73, section ordering). Click a selected chip to clear. */
+ *  objective and section ordering. Click a selected chip to clear. */
 function MeetingTypePicker({
   value,
   onChange,
@@ -461,18 +381,13 @@ function SellerPanel({
   );
 }
 
-/**
- * The "Recent briefs" switcher under the form. Disabled while a generation is in
- * flight so a history selection can't be clobbered by the streaming result.
- */
+/** The "Recent briefs" switcher under the form — opens a saved brief inline. */
 function RecentBriefs({
   entries,
   onOpen,
-  disabled,
 }: {
   entries: HistoryEntry[];
   onOpen: (e: HistoryEntry) => void;
-  disabled?: boolean;
 }) {
   return (
     <div className="mt-5 px-1">
@@ -484,9 +399,8 @@ function RecentBriefs({
           <li key={e.id}>
             <button
               type="button"
-              disabled={disabled}
               onClick={() => onOpen(e)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[13px] text-ivory">
@@ -503,96 +417,6 @@ function RecentBriefs({
           </li>
         ))}
       </ul>
-    </div>
-  );
-}
-
-/** A shimmering skeleton placeholder bar. */
-function Bar({ className }: { className?: string }) {
-  return (
-    <div className={clsx("animate-pulse rounded bg-line-strong/60", className)} />
-  );
-}
-
-/**
- * Loading state: a skeleton in the shape of the finished brief (header, four
- * sections, footer) so the layout doesn't jump when the real brief lands, with
- * the live pipeline stage — driven by #10's streamed `stage` events — surfaced
- * along the bottom.
- */
-function Loader({ stage }: { stage: BriefStage }) {
-  const current = STAGES.findIndex((s) => s.key === stage);
-
-  return (
-    <div className="overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/50">
-      {/* header */}
-      <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-        <div className="w-full">
-          <Bar className="h-2.5 w-24" />
-          <Bar className="mt-3 h-5 w-2/3" />
-          <Bar className="mt-2 h-3 w-1/2" />
-        </div>
-        <Bar className="hidden h-8 w-10 shrink-0 sm:block" />
-      </div>
-
-      {/* body — four section placeholders, matching the real brief grid */}
-      <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i}>
-            <Bar className="h-2 w-20" />
-            <Bar className="mt-3 h-3 w-full" />
-            <Bar className="mt-2 h-3 w-5/6" />
-          </div>
-        ))}
-      </div>
-
-      {/* live stage strip */}
-      <div className="flex items-center gap-3 border-t border-line px-6 py-4">
-        <span className="relative flex size-3 shrink-0 items-center justify-center">
-          <span className="absolute inset-0 animate-ping rounded-full bg-accent/30" />
-          <span className="size-1.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
-        </span>
-        <div className="flex flex-wrap gap-x-3 gap-y-1">
-          {STAGES.map((s, i) => (
-            <span
-              key={s.key}
-              className={
-                i === current
-                  ? "text-[12px] text-ivory"
-                  : i < current
-                    ? "text-[12px] text-faint line-through decoration-line-strong"
-                    : "text-[12px] text-faint"
-              }
-            >
-              {s.label}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Error state: the failure message with a retry affordance. */
-function ErrorCard({
-  message,
-  onRetry,
-}: {
-  message: string | null;
-  onRetry: () => void;
-}) {
-  return (
-    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-risk/40 bg-surface/50 p-8 text-center">
-      <span className="size-2.5 rounded-full bg-risk shadow-[0_0_10px_var(--color-risk)]" />
-      <p className="mt-4 max-w-sm text-sm text-ivory">
-        {message ?? "Something went wrong."}
-      </p>
-      <button
-        onClick={onRetry}
-        className="mt-5 rounded-xl border border-line-strong bg-surface-2 px-4 py-2 text-sm font-medium text-ivory transition-colors hover:bg-surface"
-      >
-        Try again
-      </button>
     </div>
   );
 }
