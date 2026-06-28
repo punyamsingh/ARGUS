@@ -158,33 +158,6 @@ body {
   animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@keyframes iris-pulse {
-  0%,
-  100% {
-    opacity: 0.85;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.06);
-  }
-}
-.iris-pulse {
-  animation: iris-pulse 4.5s ease-in-out infinite;
-}
-
-@keyframes ring-scan {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-.ring-scan {
-  animation: ring-scan 14s linear infinite;
-}
-
 @keyframes shimmer {
   to {
     background-position: 200% 0;
