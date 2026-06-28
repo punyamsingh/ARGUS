@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "eval": "vitest run",
     "version:compute": "node scripts/version-from-history.mjs --table"
   },
   "dependencies": {
@@ -40,6 +41,7 @@
     "eslint-config-next": "16.2.9",
     "semantic-release": "^25.0.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.9"
   }
 }

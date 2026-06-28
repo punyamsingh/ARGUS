@@ -5,12 +5,11 @@ import { withGeneration } from "@/lib/telemetry";
 import {
   type Brief,
   type BriefInput,
-  type BriefItem,
   type Evidence,
-  type GuidanceItem,
   type ResolvedEntity,
   type SellerProfile,
 } from "@/types/brief";
+import { groundClaim, groundGuidance, stripInlineCitations } from "./grounding";
 
 /**
  * Lenient schema for the model call. We deliberately drop the canonical
@@ -172,50 +171,6 @@ export async function synthesizeBrief(
 }
 
 /**
- * Ground a **sourced claim** section: keep only citations that resolve to real
- * evidence and drop any item left unsupported — no source, no item. The model
- * often echoes the ids inline in prose ("…apps. [e1, e3]"); strip those so the
- * UI's own citation chips are the single source of truth.
- */
-export function groundClaim(
-  items: BriefItem[],
-  validIds: Set<string>,
-): BriefItem[] {
-  return items
-    .map((item) => ({
-      text: stripInlineCitations(item.text),
-      citations: item.citations.filter((c) => validIds.has(c)),
-    }))
-    .filter((item) => item.text.length > 0 && item.citations.length > 0);
-}
-
-/**
- * Ground a **derived guidance** section (questions, fit hypotheses, follow-up
- * answers — #73/#74). Unlike a claim, guidance is kept even with no anchors, but
- * its `anchors` are filtered to real ids (never fabricated) and a
- * "sourced-premise" item whose anchors don't resolve is downgraded to
- * "strategic" so it is never presented as resting on a citation it lacks.
- */
-export function groundGuidance(
-  items: GuidanceItem[],
-  validIds: Set<string>,
-): GuidanceItem[] {
-  return items
-    .map((item) => {
-      const anchors = item.anchors.filter((a) => validIds.has(a));
-      return {
-        text: stripInlineCitations(item.text),
-        anchors,
-        kind:
-          item.kind === "sourced-premise" && anchors.length === 0
-            ? ("strategic" as const)
-            : item.kind,
-      };
-    })
-    .filter((item) => item.text.length > 0);
-}
-
-/**
  * Turn the rep's seller profile into a small list of seller-stated facts with
  * stable `s`-ids. These are synthesis *context* — they constrain what the model
  * may claim about the seller's own product (the symmetric no-fabrication rule),
@@ -236,15 +191,3 @@ export function sellerStatedFacts(
   return facts;
 }
 
-/**
- * Remove inline evidence-id tokens the model writes into prose — `[e1]`,
- * `[e1, e3, e4]`, or runs like `[e1][e3]` — then tidy the leftover whitespace
- * and dangling punctuation so the sentence reads cleanly.
- */
-export function stripInlineCitations(text: string): string {
-  return text
-    .replace(/\s*\[\s*[es]\d+(?:\s*,\s*[es]\d+)*\s*\]/gi, "")
-    .replace(/\s+([.,;:!?])/g, "$1")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
