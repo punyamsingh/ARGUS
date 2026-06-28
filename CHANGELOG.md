@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/punyamsingh/ARGUS/compare/v1.7.0...v1.8.0) (2026-06-28)
+
+
+### Features
+
+* **ui:** conversational workspace — ask follow-ups beneath the brief ([abfc09b](https://github.com/punyamsingh/ARGUS/commit/abfc09b25a21e4b9a8c11fc593abb468817f9ea8)), closes [#74](https://github.com/punyamsingh/ARGUS/issues/74) [#75](https://github.com/punyamsingh/ARGUS/issues/75)
+
 # [1.7.0](https://github.com/punyamsingh/ARGUS/compare/v1.6.0...v1.7.0) (2026-06-28)
 
 
