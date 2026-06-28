@@ -1,4 +1,9 @@
-import type { BriefItem, BriefResult, Evidence } from "@/types/brief";
+import type {
+  BriefItem,
+  BriefResult,
+  Evidence,
+  GuidanceItem,
+} from "@/types/brief";
 
 /**
  * Serialise a generated brief to clean, portable Markdown — for the copy and
@@ -14,8 +19,8 @@ export function briefToMarkdown(result: BriefResult): string {
   const numbering = new Map<string, number>();
   evidence.forEach((e, i) => numbering.set(e.id, i + 1));
 
-  const cites = (item: BriefItem) => {
-    const ns = item.citations
+  const refs = (ids: string[]) => {
+    const ns = ids
       .map((id) => numbering.get(id))
       .filter((n): n is number => typeof n === "number");
     return ns.length ? ` ${ns.map((n) => `[${n}]`).join("")}` : "";
@@ -24,7 +29,14 @@ export function briefToMarkdown(result: BriefResult): string {
   const section = (title: string, items: BriefItem[]) => {
     if (items.length === 0) return "";
     // Escape the claim text, then append our own `[n]` citations unescaped.
-    const lines = items.map((it) => `- ${escapeMdText(it.text)}${cites(it)}`);
+    const lines = items.map((it) => `- ${escapeMdText(it.text)}${refs(it.citations)}`);
+    return `### ${title}\n${lines.join("\n")}\n`;
+  };
+
+  // Guidance sections reference their motivating signal via `anchors`, not citations.
+  const guidanceSection = (title: string, items: GuidanceItem[]) => {
+    if (items.length === 0) return "";
+    const lines = items.map((it) => `- ${escapeMdText(it.text)}${refs(it.anchors)}`);
     return `### ${title}\n${lines.join("\n")}\n`;
   };
 
@@ -41,9 +53,11 @@ export function briefToMarkdown(result: BriefResult): string {
 
   const body = [
     section("Talking points", brief.talkingPoints),
-    section("Decision asks", brief.decisionAsks),
     section("Risk alerts", brief.riskAlerts),
     section("Buying signals", brief.buyingSignals),
+    guidanceSection("Decision asks", brief.decisionAsks),
+    guidanceSection("Questions to ask", brief.questions),
+    guidanceSection("Fit hypotheses", brief.fitHypotheses),
   ]
     .filter(Boolean)
     .join("\n");
