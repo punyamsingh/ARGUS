@@ -1,15 +1,26 @@
 #!/usr/bin/env node
 // Recomputes ARGUS's semantic version by replaying conventional-commit intent
-// over the full git history. feat -> minor, fix/refactor/perf -> patch,
-// docs/style/chore/ci/test -> no bump. Pre-1.0, so features bump the minor.
+// over the full git history. Breaking (`!` / BREAKING CHANGE) -> major,
+// feat -> minor, fix/refactor/perf -> patch, docs/style/chore/ci/test -> no bump.
+// Pre-1.0, so features bump the minor.
 //
 //   node scripts/version-from-history.mjs            # prints the version
 //   node scripts/version-from-history.mjs --table    # prints the full ledger
 import { execSync } from "node:child_process";
 
-const subjects = execSync('git log --reverse --no-merges --pretty=format:%s', {
-  encoding: "utf8",
-}).trim().split("\n");
+// One record per commit: subject, then body, delimited by control chars so a
+// commit body can span multiple lines without confusing the parser.
+const commits = execSync(
+  "git log --reverse --no-merges --pretty=format:%s%x1f%b%x1e",
+  { encoding: "utf8" },
+)
+  .split("\x1e")
+  .map((rec) => rec.replace(/^\n/, ""))
+  .filter(Boolean)
+  .map((rec) => {
+    const [subject, ...body] = rec.split("\x1f");
+    return { subject, body: body.join("\x1f") };
+  });
 
 function classify(subject) {
   const s = subject.toLowerCase();
@@ -28,12 +39,20 @@ function classify(subject) {
   return "chore";
 }
 
+// A commit is breaking if its type carries a `!` (e.g. feat!: / fix(scope)!:)
+// or its body declares a BREAKING CHANGE footer — matching semantic-release.
+function isBreaking({ subject, body }) {
+  return /^[a-z]+(\([^)]*\))?!:/i.test(subject) || /BREAKING[ -]CHANGE/.test(`${subject}\n${body}`);
+}
+
 let major = 0, minor = 0, patch = 0;
 const rows = [];
-for (const subject of subjects) {
+for (const commit of commits) {
+  const { subject } = commit;
   const type = classify(subject);
   let bump = "—";
-  if (type === "feat") { minor++; patch = 0; bump = "minor"; }
+  if (isBreaking(commit)) { major++; minor = 0; patch = 0; bump = "major"; }
+  else if (type === "feat") { minor++; patch = 0; bump = "minor"; }
   else if (["fix", "refactor", "perf"].includes(type)) { patch++; bump = "patch"; }
   rows.push({ version: `${major}.${minor}.${patch}`, type, bump, subject });
 }
