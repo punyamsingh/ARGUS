@@ -1,18 +1,40 @@
+<div align="center">
+
 # ARGUS
 
 **A**gentic **R**esearch **G**enerated to **U**nburden **S**alespeople.
 
-ARGUS is an AI **pre-meeting intelligence agent** for B2B sales reps. It turns 45
-minutes of scattered account research into a single, **cited**, conversation-ready
-brief — synthesised from real-time public signals in the minutes before a meeting.
+AI **pre-meeting intelligence** for B2B sales reps — 45 minutes of scattered
+account research, distilled into one **cited**, conversation-ready brief.
+
+[![CI](https://github.com/punyamsingh/ARGUS/actions/workflows/ci.yml/badge.svg)](https://github.com/punyamsingh/ARGUS/actions/workflows/ci.yml)
+[![Release](https://github.com/punyamsingh/ARGUS/actions/workflows/release.yml/badge.svg)](https://github.com/punyamsingh/ARGUS/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![Node 22](https://img.shields.io/badge/node-22-3c873a.svg)](./.nvmrc)
+[![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org/)
+
+</div>
+
+---
 
 You give it three things — **company**, **person**, **meeting context** — and it
 returns one screen: a snapshot, the meeting objective, talking points, decision
 asks, risk alerts, and buying signals. **Every claim links to its source.**
 
-> **Status:** MVP, built in the open one issue at a time.
+> **Status:** `2.0` — graduated from MVP to a stable, documented release line.
 > Direction lives in [`PLAN.md`](./PLAN.md); work lives in
-> [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues).
+> [GitHub Issues](https://github.com/punyamsingh/ARGUS/issues); how to help lives
+> in [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+## Contents
+
+- [How it works](#how-it-works)
+- [Stack](#stack)
+- [Quickstart](#quickstart)
+- [Getting the free keys](#getting-the-free-keys)
+- [Contributing](#contributing)
+- [Versioning & releases](#versioning--releases)
+- [Project layout](#project-layout)
 
 ## How it works
 
@@ -41,6 +63,9 @@ The tool belt today: **Wikipedia/Wikidata**, **company website**, **job boards**
 (Greenhouse/Lever), **GDELT** news & sentiment, **SEC EDGAR** filings. All free,
 most keyless.
 
+Once a brief exists you can **ask grounded follow-ups** beneath it — the same
+evidence base answers your questions, still cited, no invented extras.
+
 ## Stack
 
 - **Next.js (App Router) + React + TypeScript + Tailwind v4**
@@ -50,7 +75,7 @@ most keyless.
 
 ## Quickstart
 
-Requires **Node 22** (see [`.nvmrc`](./.nvmrc)).
+Requires **Node 22** (see [`.nvmrc`](./.nvmrc)) and **pnpm**.
 
 ```bash
 pnpm install
@@ -65,6 +90,7 @@ pnpm dev        # local dev server
 pnpm build      # production build
 pnpm lint       # eslint
 pnpm typecheck  # tsc --noEmit
+pnpm eval       # grounding-invariant evals (vitest)
 ```
 
 ## Getting the free keys
@@ -99,41 +125,19 @@ registered and nothing is emitted.
 
 ### Tool keys — optional
 
-Most tools are keyless (Wikipedia, company site, job boards, GDELT, SEC EDGAR).
-A financial-markets tool can use a free **Finnhub** key (`FINNHUB_API_KEY`) when
-present; without it, that tool simply no-ops.
+Most gather tools are keyless. A few optional keys unlock extra tools or raise
+rate limits — see [`.env.example`](./.env.example) for the full list (Finnhub,
+SEC EDGAR User-Agent, GitHub token). Each one no-ops gracefully when absent.
 
-## Switching LLM provider
+## Contributing
 
-The LLM layer is provider-agnostic — **switching is one env change, no code**:
+Contributions are welcome. Read **[`CONTRIBUTING.md`](./CONTRIBUTING.md)** for the
+short version: pick an issue, branch, keep `typecheck` / `lint` / `build` / `eval`
+green, and open a PR whose **title is a Conventional Commit** — CI enforces it, and
+that title is what drives the next release.
 
-```bash
-# default — free Google Gemini
-LLM_PROVIDER=gemini
-GEMINI_API_KEY=...
-
-# swap to Claude
-LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=...
-```
-
-Optionally pin a model with `LLM_MODEL` (defaults: `gemini-2.5-flash` /
-`claude-opus-4-8`).
-
-## Environment variables
-
-All variables are documented in [`.env.example`](./.env.example). Copy it to
-`.env.local` for local dev, or add them in **Vercel → Project → Settings →
-Environment Variables** (scoped to Preview + Production) for deploys. **Never
-commit real keys.**
-
-## Deploy workflow
-
-- The repo is connected to **Vercel**; **every PR gets a preview URL**, and
-  merging to **`main` deploys production**. Preview deployments are the primary
-  manual-testing surface.
-- The `/api/brief` route runs on the Node runtime with `maxDuration` set to fit
-  the sub-60s brief target.
+The `/api/brief` route runs on the Node runtime with `maxDuration` set to fit the
+sub-60s brief target — keep that budget in mind when adding gather tools.
 
 ## Versioning & releases
 
@@ -173,8 +177,13 @@ src/
       gather.ts     # parallel orchestrator
       synthesize.ts # grounded brief synthesis
       brief.ts      # resolve → gather → synthesize
+      ask.ts        # grounded follow-up engine
       tools/        # the gather tool belt (one file per tool)
   types/          # zod schemas = the single source of truth
 ```
 
 See [`PLAN.md`](./PLAN.md) for the full picture.
+
+## License
+
+[MIT](./LICENSE) © ARGUS contributors.
