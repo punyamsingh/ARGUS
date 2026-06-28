@@ -14,6 +14,8 @@ import { synthesizeBrief } from "./synthesize";
 export interface GenerateBriefOptions {
   /** Called as each stage begins, so callers can stream progress. */
   onProgress?: (stage: BriefStage) => void;
+  /** Groups a user's briefs into one Langfuse session (#15). */
+  sessionId?: string;
 }
 
 /**
@@ -23,11 +25,12 @@ export interface GenerateBriefOptions {
  */
 export async function generateBrief(
   input: BriefInput,
-  { onProgress }: GenerateBriefOptions = {},
+  { onProgress, sessionId }: GenerateBriefOptions = {},
 ): Promise<BriefResult> {
   // Wrap the whole pipeline in one observation so resolve, each gather tool, and
   // synthesis nest under a single per-brief trace in Langfuse (#15). Input is set
-  // to just the meeting fields (not raw args); output to a compact summary.
+  // to just the meeting fields (not raw args); output to a compact summary; the
+  // session id groups a user's briefs in the Langfuse Sessions view.
   return withObservation(
     "brief",
     { company: input.company, person: input.person, context: input.context },
@@ -37,6 +40,7 @@ export async function generateBrief(
       sources: result.evidence.length,
       elapsedMs: result.meta.elapsedMs,
     }),
+    { sessionId, traceName: "brief" },
   );
 }
 

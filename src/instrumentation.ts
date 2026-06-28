@@ -1,4 +1,5 @@
 import { NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
+import { resourceFromAttributes } from "@opentelemetry/resources";
 import { LangfuseSpanProcessor } from "@langfuse/otel";
 
 /**
@@ -33,6 +34,7 @@ export const langfuseSpanProcessor =
 export function register() {
   if (!langfuseSpanProcessor) return;
   new NodeTracerProvider({
+    resource: resourceFromAttributes({ "service.name": "argus" }),
     spanProcessors: [langfuseSpanProcessor],
   }).register();
 }

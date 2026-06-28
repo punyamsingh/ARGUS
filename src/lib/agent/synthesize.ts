@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getModel, llmDefaults } from "@/lib/llm";
-import { aiTelemetry } from "@/lib/telemetry";
+import { getModel, llmDefaults, llmModelId } from "@/lib/llm";
+import { withGeneration } from "@/lib/telemetry";
 import {
   type Brief,
   type BriefInput,
@@ -76,27 +76,33 @@ export async function synthesizeBrief(
     ? `${entity.person.name} (${entity.person.role})`
     : entity.person.name;
 
-  const { object } = await generateObject({
-    model: getModel(),
-    schema: modelBriefSchema,
-    maxRetries: llmDefaults.maxRetries,
-    abortSignal: AbortSignal.timeout(25_000),
-    experimental_telemetry: aiTelemetry("synthesize-brief", {
-      "argus.evidenceCount": evidence.length,
-    }),
-    system: SYSTEM,
-    prompt: [
-      `Meeting input:`,
-      `Company: ${input.company}`,
-      `Person: ${input.person}`,
-      `Context: ${input.context}`,
-      ``,
-      `Resolved: ${entity.company.name}; meeting ${personLine}`,
-      ``,
-      `Evidence (cite by id):`,
-      evidenceList,
-    ].join("\n"),
-  });
+  const { object } = await withGeneration(
+    "synthesize-brief",
+    {
+      model: llmModelId,
+      input: { entity: entity.company.name, evidenceCount: evidence.length },
+    },
+    () =>
+      generateObject({
+        model: getModel(),
+        schema: modelBriefSchema,
+        maxRetries: llmDefaults.maxRetries,
+        abortSignal: AbortSignal.timeout(25_000),
+        system: SYSTEM,
+        prompt: [
+          `Meeting input:`,
+          `Company: ${input.company}`,
+          `Person: ${input.person}`,
+          `Context: ${input.context}`,
+          ``,
+          `Resolved: ${entity.company.name}; meeting ${personLine}`,
+          ``,
+          `Evidence (cite by id):`,
+          evidenceList,
+        ].join("\n"),
+      }),
+    (r) => ({ output: r.object, usage: r.usage }),
+  );
 
   // Keep only citations that resolve to real evidence; drop unsupported items.
   // The model often also echoes the ids inline in prose ("…apps. [e1, e3]") —
