@@ -204,3 +204,45 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* ── Print ─────────────────────────────────────────────────────
+   Reps print or "Save as PDF" the brief to bring into the room.
+   Drop the dark chrome and decoration; print only the brief card,
+   on white, with citations as a clean numbered list. */
+@media print {
+  body {
+    background: #fff !important;
+    color: #111 !important;
+  }
+  /* Hide everything, then reveal just the brief and its ancestors. Reset every
+     element to static so the absolutely-positioned print root resolves to the
+     page box, not the brief's sidebar column (which would offset/clip it). */
+  body * {
+    visibility: hidden;
+    position: static !important;
+  }
+  #brief-print-root,
+  #brief-print-root * {
+    visibility: visible;
+  }
+  #brief-print-root {
+    position: absolute !important;
+    inset: 0 auto auto 0;
+    width: 100%;
+    border: none !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    color: #111 !important;
+  }
+  #brief-print-root * {
+    color: #1a1a1a !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  #brief-print-root a {
+    color: #1a4fd6 !important;
+    text-decoration: underline;
+  }
+}

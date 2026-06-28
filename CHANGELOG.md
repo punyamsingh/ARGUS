@@ -1,3 +1,15 @@
+# [1.1.0](https://github.com/punyamsingh/ARGUS/compare/v1.0.1...v1.1.0) (2026-06-28)
+
+
+### Bug Fixes
+
+* address review — escaping, history validation, print, race; add skeleton + docstrings ([a3fe515](https://github.com/punyamsingh/ARGUS/commit/a3fe515ca11b731b1cf1d57afced903be9c48889)), closes [#61](https://github.com/punyamsingh/ARGUS/issues/61)
+
+
+### Features
+
+* brief export, recent-briefs history, and UI consistency ([#61](https://github.com/punyamsingh/ARGUS/issues/61)) ([7b95e17](https://github.com/punyamsingh/ARGUS/commit/7b95e17eeac96011aa49ad0585f1716884613b76)), closes [#10](https://github.com/punyamsingh/ARGUS/issues/10)
+
 ## [1.0.1](https://github.com/punyamsingh/ARGUS/compare/v1.0.0...v1.0.1) (2026-06-28)
 
 
