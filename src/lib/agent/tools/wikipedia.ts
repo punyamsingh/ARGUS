@@ -1,5 +1,6 @@
 import type { ResolvedEntity } from "@/types/brief";
 import type { GatherTool, RawEvidence } from "./types";
+import { jsonHeaders as HEADERS, truncate } from "./shared";
 
 /**
  * Wikipedia / Wikidata firmographics (#24) — always-on backbone.
@@ -10,10 +11,6 @@ import type { GatherTool, RawEvidence } from "./types";
  */
 
 const WIKI = "https://en.wikipedia.org";
-const HEADERS = {
-  "User-Agent": "ARGUS/0.1 (https://github.com/punyamsingh/ARGUS)",
-  Accept: "application/json",
-};
 
 interface WikiSearchResponse {
   query?: { search?: { title: string }[] };
@@ -145,8 +142,4 @@ function inceptionYear(value: unknown): string | null {
     if (match) return match[1];
   }
   return null;
-}
-
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
 }

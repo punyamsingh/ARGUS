@@ -1,5 +1,6 @@
 import type { ResolvedEntity } from "@/types/brief";
 import type { GatherTool, RawEvidence } from "./types";
+import { jsonHeaders as HEADERS, bareHost, CLAIM_MAX, truncate } from "./shared";
 
 /**
  * Job-board APIs (#26) — the sleeper hit, feeding Buying signals.
@@ -11,12 +12,6 @@ import type { GatherTool, RawEvidence } from "./types";
  * location, and notable senior roles. Free, public JSON. No board → empty.
  */
 
-const HEADERS = {
-  "User-Agent": "ARGUS/0.1 (+https://github.com/punyamsingh/ARGUS)",
-  Accept: "application/json",
-};
-
-const CLAIM_MAX = 400;
 const SENIOR_RE = /\b(chief|c[etfo]o|cto|cfo|ceo|vp|vice president|head of|director|principal|staff|distinguished|lead)\b/i;
 
 interface Posting {
@@ -203,11 +198,8 @@ function normalizeSlug(value?: string | null): string | null {
 }
 
 function secondLevelDomain(domain?: string): string | null {
-  if (!domain) return null;
-  const host = domain
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/.*$/, "");
+  const host = bareHost(domain);
+  if (!host) return null;
   const parts = host.split(".").filter(Boolean);
   return parts.length >= 2 ? parts[parts.length - 2] : null;
 }
@@ -226,8 +218,4 @@ function topCounts(values: (string | null)[], limit = 4): [string, number][] {
 function clean(s?: string | null): string | null {
   const t = s?.trim();
   return t ? t : null;
-}
-
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
 }

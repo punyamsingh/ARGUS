@@ -1,5 +1,6 @@
 import type { ResolvedEntity } from "@/types/brief";
 import type { GatherTool, RawEvidence } from "./types";
+import { stripLegalSuffix } from "./shared";
 
 /**
  * SEC EDGAR (#27) — free, official-grade filings (public companies).
@@ -185,11 +186,7 @@ async function fetchSubmissions(
 
 /** Normalise a company name for matching: lowercase, drop legal suffix + punctuation. */
 function normName(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[,\s]+(inc|incorporated|llc|ltd|limited|corp|corporation|co|plc|gmbh|s\.?a|ag|nv)\.?$/i, "")
-    .replace(/[^a-z0-9]+/g, "")
-    .trim();
+  return stripLegalSuffix(name.toLowerCase()).replace(/[^a-z0-9]+/g, "");
 }
 
 function filingUrl(cikNum: string, accession?: string, doc?: string): string {

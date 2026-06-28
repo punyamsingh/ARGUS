@@ -1,5 +1,6 @@
 import type { ResolvedEntity } from "@/types/brief";
 import type { GatherTool, RawEvidence } from "./types";
+import { htmlHeaders as HEADERS, bareHost, CLAIM_MAX, truncate } from "./shared";
 
 /**
  * Company website fetch (#25) — first-party truth.
@@ -10,14 +11,8 @@ import type { GatherTool, RawEvidence } from "./types";
  * UA, a best-effort robots.txt check, per-page timeouts, and tight caps.
  */
 
-const HEADERS = {
-  "User-Agent": "ARGUS/0.1 (+https://github.com/punyamsingh/ARGUS)",
-  Accept: "text/html,application/xhtml+xml",
-};
-
 const PER_PAGE_TIMEOUT_MS = 6_000;
 const MAX_HTML_BYTES = 600_000;
-const CLAIM_MAX = 400;
 
 const CANDIDATES: { path: string; label: string }[] = [
   { path: "/", label: "Homepage" },
@@ -159,20 +154,11 @@ function decodeEntities(s: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
-function truncate(text: string, max: number): string {
-  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
-}
-
 // ── domain + robots ──────────────────────────────────────────
 
 function normalizeHost(domain?: string): string | null {
-  if (!domain) return null;
-  const host = domain
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/.*$/, "")
-    .replace(/\/$/, "");
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host) ? host : null;
+  const host = bareHost(domain);
+  return host && /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(host) ? host : null;
 }
 
 async function fetchDisallows(
