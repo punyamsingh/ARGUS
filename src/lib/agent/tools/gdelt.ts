@@ -144,7 +144,9 @@ async function query(
  * Company names are often common words ("Stripe", "Apple"); requiring the name
  * AND an industry term keeps results on-topic instead of matching the dictionary
  * word. GDELT ANDs space-separated terms, so `"Stripe" (financial OR saas)`
- * means: mentions Stripe and at least one industry term.
+ * means: mentions Stripe and at least one industry term. NB: GDELT only allows
+ * parentheses around an OR group — a single term must be appended bare, or it
+ * rejects the query ("Parentheses may only be used around OR'd statements").
  */
 function searchTerm(name: string, industry?: string): string | null {
   const cleaned = name
@@ -155,7 +157,9 @@ function searchTerm(name: string, industry?: string): string | null {
 
   const quoted = `"${base}"`;
   const terms = industryTerms(industry);
-  return terms.length ? `${quoted} (${terms.join(" OR ")})` : quoted;
+  if (terms.length === 0) return quoted;
+  if (terms.length === 1) return `${quoted} ${terms[0]}`;
+  return `${quoted} (${terms.join(" OR ")})`;
 }
 
 const INDUSTRY_STOPWORDS = new Set([
