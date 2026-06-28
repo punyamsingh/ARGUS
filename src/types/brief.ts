@@ -26,11 +26,24 @@ export const sellerProfileSchema = z.object({
 });
 export type SellerProfile = z.infer<typeof sellerProfileSchema>;
 
+/** The kind of meeting — a light hint that sharpens the inferred objective and
+ *  (in #73) the ordering of brief sections. Optional; free-text context remains
+ *  the primary signal. */
+export const MEETING_TYPES = [
+  "discovery",
+  "demo",
+  "renewal",
+  "negotiation",
+] as const;
+export const meetingTypeSchema = z.enum(MEETING_TYPES);
+export type MeetingType = z.infer<typeof meetingTypeSchema>;
+
 export const briefInputSchema = z.object({
   company: z.string().trim().min(1, "Company is required"),
   person: z.string().trim().min(1, "Who you're meeting is required"),
   context: z.string().trim().min(1, "Meeting context is required"),
   seller: sellerProfileSchema.optional(),
+  meetingType: meetingTypeSchema.optional(),
 });
 export type BriefInput = z.infer<typeof briefInputSchema>;
 

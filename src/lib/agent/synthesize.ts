@@ -48,7 +48,7 @@ Rules:
 - Never invent an evidence id. If a section has no support in the evidence, return an empty array for it.
 - Keep each item to one or two sharp sentences a rep can say out loud.
 - snapshot: one line on the company (and the person if known).
-- objective: infer the meeting's goal from the provided context.
+- objective: infer the meeting's goal from the provided context (and the meeting type, if given).
 - Prefer specific, recent, decision-useful points over generic ones.
 
 Seller context (when provided):
@@ -110,6 +110,7 @@ export async function synthesizeBrief(
           `Company: ${input.company}`,
           `Person: ${input.person}`,
           `Context: ${input.context}`,
+          ...(input.meetingType ? [`Meeting type: ${input.meetingType}`] : []),
           ``,
           `Resolved: ${entity.company.name}; meeting ${personLine}`,
           ...sellerBlock,
