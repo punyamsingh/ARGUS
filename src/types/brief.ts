@@ -80,6 +80,30 @@ export const briefItemSchema = z.object({
 });
 export type BriefItem = z.infer<typeof briefItemSchema>;
 
+/**
+ * The "two kinds of truth" model. A `BriefItem` is a **sourced claim** about the
+ * buyer — every one cites real evidence. A `GuidanceItem` is **derived guidance**
+ * (a question to ask, a fit hypothesis, a follow-up answer): not a public fact,
+ * so it can't carry a citation, but it is still traceable to the evidence and
+ * seller-stated input that *motivated* it via `anchors`. The two are kept
+ * structurally distinct so generative value never masquerades as a sourced fact.
+ *
+ * - `kind: "sourced-premise"` — the guidance rests on a concrete signal; its
+ *   `anchors` must resolve to real evidence (e.g. "you've opened 12 backend
+ *   roles → ask how that maps to their data-infra roadmap").
+ * - `kind: "strategic"` — a purely strategic prompt; `anchors` may be empty.
+ *
+ * Consumed by the questions/fit sections (#73) and the follow-up engine (#74).
+ */
+export const guidanceItemSchema = z.object({
+  text: z.string(),
+  /** Evidence/seller ids that motivate this guidance. Filtered to real ids;
+   *  never fabricated. Required to be non-empty when `kind` is "sourced-premise". */
+  anchors: z.array(z.string()).default([]),
+  kind: z.enum(["sourced-premise", "strategic"]).default("strategic"),
+});
+export type GuidanceItem = z.infer<typeof guidanceItemSchema>;
+
 export const briefSchema = z.object({
   /** One-line who/what framing. */
   snapshot: z.string(),

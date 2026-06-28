@@ -5,6 +5,7 @@ import type {
   BriefResult,
   BriefStage,
   Evidence,
+  GuidanceItem,
 } from "@/types/brief";
 import { withObservation } from "@/lib/telemetry";
 import { resolveEntity } from "./resolve";
@@ -78,6 +79,7 @@ async function runPipeline(
 
 function citedEvidence(brief: Brief, evidence: Evidence[]): Evidence[] {
   const cited = new Set<string>();
+  // Sourced claims cite via `citations`.
   for (const section of [
     brief.talkingPoints,
     brief.decisionAsks,
@@ -86,6 +88,14 @@ function citedEvidence(brief: Brief, evidence: Evidence[]): Evidence[] {
   ]) {
     for (const item of section) {
       for (const id of item.citations) cited.add(id);
+    }
+  }
+  // Derived guidance cites via `anchors` (questions/fit, added in #73) — so a
+  // guidance item's premise still renders in the Sources list. Empty until then.
+  const guidanceSections: GuidanceItem[][] = [];
+  for (const section of guidanceSections) {
+    for (const item of section) {
+      for (const id of item.anchors) cited.add(id);
     }
   }
   return evidence.filter((e) => cited.has(e.id));

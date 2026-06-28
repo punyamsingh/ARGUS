@@ -7,6 +7,7 @@ import {
   type BriefInput,
   type BriefItem,
   type Evidence,
+  type GuidanceItem,
   type ResolvedEntity,
 } from "@/types/brief";
 
@@ -104,26 +105,60 @@ export async function synthesizeBrief(
     (r) => ({ output: r.object, usage: r.usage }),
   );
 
-  // Keep only citations that resolve to real evidence; drop unsupported items.
-  // The model often also echoes the ids inline in prose ("…apps. [e1, e3]") —
-  // strip those so the UI's own citation chips are the single source of truth.
   const validIds = new Set(evidence.map((e) => e.id));
-  const ground = (items: BriefItem[]): BriefItem[] =>
-    items
-      .map((item) => ({
-        text: stripInlineCitations(item.text),
-        citations: item.citations.filter((c) => validIds.has(c)),
-      }))
-      .filter((item) => item.text.length > 0 && item.citations.length > 0);
 
   return {
     snapshot: stripInlineCitations(object.snapshot),
     objective: stripInlineCitations(object.objective),
-    talkingPoints: ground(object.talkingPoints),
-    decisionAsks: ground(object.decisionAsks),
-    riskAlerts: ground(object.riskAlerts),
-    buyingSignals: ground(object.buyingSignals),
+    talkingPoints: groundClaim(object.talkingPoints, validIds),
+    decisionAsks: groundClaim(object.decisionAsks, validIds),
+    riskAlerts: groundClaim(object.riskAlerts, validIds),
+    buyingSignals: groundClaim(object.buyingSignals, validIds),
   };
+}
+
+/**
+ * Ground a **sourced claim** section: keep only citations that resolve to real
+ * evidence and drop any item left unsupported — no source, no item. The model
+ * often echoes the ids inline in prose ("…apps. [e1, e3]"); strip those so the
+ * UI's own citation chips are the single source of truth.
+ */
+export function groundClaim(
+  items: BriefItem[],
+  validIds: Set<string>,
+): BriefItem[] {
+  return items
+    .map((item) => ({
+      text: stripInlineCitations(item.text),
+      citations: item.citations.filter((c) => validIds.has(c)),
+    }))
+    .filter((item) => item.text.length > 0 && item.citations.length > 0);
+}
+
+/**
+ * Ground a **derived guidance** section (questions, fit hypotheses, follow-up
+ * answers — #73/#74). Unlike a claim, guidance is kept even with no anchors, but
+ * its `anchors` are filtered to real ids (never fabricated) and a
+ * "sourced-premise" item whose anchors don't resolve is downgraded to
+ * "strategic" so it is never presented as resting on a citation it lacks.
+ */
+export function groundGuidance(
+  items: GuidanceItem[],
+  validIds: Set<string>,
+): GuidanceItem[] {
+  return items
+    .map((item) => {
+      const anchors = item.anchors.filter((a) => validIds.has(a));
+      return {
+        text: stripInlineCitations(item.text),
+        anchors,
+        kind:
+          item.kind === "sourced-premise" && anchors.length === 0
+            ? ("strategic" as const)
+            : item.kind,
+      };
+    })
+    .filter((item) => item.text.length > 0);
 }
 
 /**
