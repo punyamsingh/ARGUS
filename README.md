@@ -87,7 +87,11 @@ a crash. The default model is `gemini-2.5-flash`.
 2. Project **Settings → API Keys** → create a key pair.
 3. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASEURL`.
 
-ARGUS runs fine without Langfuse; it just won't emit traces.
+With the keys set, each brief is exported to Langfuse as **one trace tree** —
+`brief → resolve → each gather tool → synthesize` — with per-step latency, token
+usage, model, and cost (via the Vercel AI SDK's OpenTelemetry output, shipped by
+`@vercel/otel`). ARGUS runs fine without Langfuse; with no keys, no exporter is
+registered and nothing is emitted.
 
 ### Tool keys — optional
 

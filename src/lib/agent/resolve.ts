@@ -1,5 +1,6 @@
 import { generateObject } from "ai";
 import { getModel, llmDefaults } from "@/lib/llm";
+import { aiTelemetry } from "@/lib/telemetry";
 import {
   resolvedEntitySchema,
   type BriefInput,
@@ -47,6 +48,7 @@ export async function resolveEntity(input: BriefInput): Promise<ResolvedEntity> 
       schema: resolvedEntitySchema,
       maxRetries: llmDefaults.maxRetries,
       abortSignal: controller.signal,
+      experimental_telemetry: aiTelemetry("resolve-entity"),
       system: SYSTEM,
       prompt: [
         `Company: ${input.company}`,

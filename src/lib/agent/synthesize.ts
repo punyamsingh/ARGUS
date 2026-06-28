@@ -1,6 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getModel, llmDefaults } from "@/lib/llm";
+import { aiTelemetry } from "@/lib/telemetry";
 import {
   type Brief,
   type BriefInput,
@@ -80,6 +81,9 @@ export async function synthesizeBrief(
     schema: modelBriefSchema,
     maxRetries: llmDefaults.maxRetries,
     abortSignal: AbortSignal.timeout(25_000),
+    experimental_telemetry: aiTelemetry("synthesize-brief", {
+      "argus.evidenceCount": evidence.length,
+    }),
     system: SYSTEM,
     prompt: [
       `Meeting input:`,
