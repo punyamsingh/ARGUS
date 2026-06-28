@@ -18,9 +18,14 @@ import type { GatherTool, RawEvidence } from "./types";
 
 const SUBMISSIONS = "https://data.sec.gov/submissions";
 const FTS = "https://efts.sec.gov/LATEST/search-index";
-// SEC requires a descriptive User-Agent identifying the requester.
+// SEC fair-access requires a User-Agent that identifies the requester AND
+// includes a contact email — without one, requests get HTTP 403. Override with
+// EDGAR_USER_AGENT in the environment to use a real contact; the default uses a
+// non-personal GitHub no-reply address.
 const HEADERS = {
-  "User-Agent": "ARGUS research agent (+https://github.com/punyamsingh/ARGUS)",
+  "User-Agent":
+    process.env.EDGAR_USER_AGENT ??
+    "ARGUS/0.1 (https://github.com/punyamsingh/ARGUS; contact: argus-agent@users.noreply.github.com)",
   Accept: "application/json",
 };
 
