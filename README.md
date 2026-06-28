@@ -143,7 +143,11 @@ from `package.json` at build time.
   `package.json`, updates `CHANGELOG.md`, commits both back to `main` (with
   `[skip ci]`), tags `vX.Y.Z`, and publishes a GitHub Release. `docs`/`chore`/
   `style`/`ci`/`test` commits ship no release.
-- Behaviour is configured in [`.releaserc.json`](./.releaserc.json).
+- Behaviour is configured in [`.releaserc.json`](./.releaserc.json). The release job
+  authenticates with a `SEMANTIC_RELEASE_TOKEN` secret (a fine-grained PAT) that only
+  needs **Contents: write** — issue/PR comments and labels are disabled, so no other
+  scopes are required. When `main` is protected, the token's identity must be on the
+  ruleset bypass list so it can push the `chore(release)` commit and tag.
 - The baseline version `0.18.3` (tagged `v0.18.3`) was computed by replaying this
   scheme over the full history — run `npm run version:compute` for the per-commit
   ledger. semantic-release picks up from that tag.
