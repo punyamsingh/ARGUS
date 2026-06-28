@@ -129,18 +129,24 @@ commit real keys.**
 
 ## Versioning & releases
 
-ARGUS uses **semantic versioning driven by [Conventional Commits](https://www.conventionalcommits.org/)**.
-The current version is shown in the top-right of the site (linking to its release)
-and is read from `package.json` at build time.
+ARGUS uses **[semantic-release](https://semantic-release.gitbook.io/)** driven by
+**[Conventional Commits](https://www.conventionalcommits.org/)**. The current
+version is shown in the top-right of the site (linking to its release) and is read
+from `package.json` at build time.
 
 - **PR titles are enforced** by CI (`.github/workflows/pr-title.yml`) to follow
-  `type(scope)!: subject`, e.g. `feat: add LinkedIn gather tool`.
-- **On merge to `main`** (`.github/workflows/release.yml`) the PR title decides
-  the bump — `feat` → minor, `fix`/`refactor`/`perf` → patch, breaking (`!`) →
-  minor while pre-1.0 — then `package.json` is bumped, the commit is tagged, and
-  a GitHub Release is cut. `docs`/`chore`/`style`/`ci`/`test` PRs ship no release.
-- The starting version `0.18.3` was computed by replaying this scheme over the
-  full history — run `npm run version:compute` to see the per-commit ledger.
+  `type(scope)!: subject`, e.g. `feat: add LinkedIn gather tool`. Squash-merge so
+  this title becomes the commit semantic-release analyses.
+- **On every push to `main`** (`.github/workflows/release.yml`) semantic-release
+  reads the commits since the last `v*` tag and decides the bump — `feat` → minor,
+  `fix`/`refactor`/`perf` → patch, `!`/`BREAKING CHANGE` → major — then bumps
+  `package.json`, updates `CHANGELOG.md`, commits both back to `main` (with
+  `[skip ci]`), tags `vX.Y.Z`, and publishes a GitHub Release. `docs`/`chore`/
+  `style`/`ci`/`test` commits ship no release.
+- Behaviour is configured in [`.releaserc.json`](./.releaserc.json).
+- The baseline version `0.18.3` (tagged `v0.18.3`) was computed by replaying this
+  scheme over the full history — run `npm run version:compute` for the per-commit
+  ledger. semantic-release picks up from that tag.
 
 ## Project layout
 
