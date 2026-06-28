@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f0c468"/>
+      <stop offset="52%" stop-color="#e6b450"/>
+      <stop offset="100%" stop-color="#b4842f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0a0b0e"/>
+  <g transform="translate(256 256) scale(2.2) translate(-50 -50)">
+    <!-- outer ring -->
+    <circle cx="50" cy="50" r="42" fill="none" stroke="url(#gold)" stroke-width="3.4"/>
+    <!-- the A -->
+    <path d="M33 73 L50 26 L67 73" fill="none" stroke="url(#gold)" stroke-width="3.4"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37 65 L63 65" fill="none" stroke="url(#gold)" stroke-width="3.4" stroke-linecap="round"/>
+    <!-- 4-point star -->
+    <path d="M50 45 L51.9 51.1 L58 53 L51.9 54.9 L50 61 L48.1 54.9 L42 53 L48.1 51.1 Z"
+          fill="url(#gold)"/>
+  </g>
+</svg>
