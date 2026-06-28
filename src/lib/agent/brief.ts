@@ -6,7 +6,7 @@ import type {
   BriefStage,
   Evidence,
 } from "@/types/brief";
-import { withSpan } from "@/lib/telemetry";
+import { withObservation } from "@/lib/telemetry";
 import { resolveEntity } from "./resolve";
 import { gather } from "./gather";
 import { synthesizeBrief } from "./synthesize";
@@ -25,16 +25,18 @@ export async function generateBrief(
   input: BriefInput,
   { onProgress }: GenerateBriefOptions = {},
 ): Promise<BriefResult> {
-  // Wrap the whole pipeline in one span so resolve, each gather tool, and
-  // synthesis nest under a single per-brief trace in Langfuse (#15).
-  return withSpan(
+  // Wrap the whole pipeline in one observation so resolve, each gather tool, and
+  // synthesis nest under a single per-brief trace in Langfuse (#15). Input is set
+  // to just the meeting fields (not raw args); output to a compact summary.
+  return withObservation(
     "brief",
-    {
-      "argus.company": input.company,
-      "argus.person": input.person,
-      "argus.context": input.context,
-    },
+    { company: input.company, person: input.person, context: input.context },
     () => runPipeline(input, onProgress),
+    (result) => ({
+      entity: result.entity.company.name,
+      sources: result.evidence.length,
+      elapsedMs: result.meta.elapsedMs,
+    }),
   );
 }
 
