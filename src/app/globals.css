@@ -128,6 +128,20 @@ body {
   color: transparent;
 }
 
+/* NOVA — gold gradient lockup that sits beside the ARGUS wordmark */
+.text-nova {
+  background: linear-gradient(
+    180deg,
+    var(--color-accent-strong) 0%,
+    var(--color-accent) 50%,
+    var(--color-accent-deep) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow: 0 0 18px color-mix(in oklab, var(--color-accent) 30%, transparent);
+}
+
 /* ── Motion ────────────────────────────────────────────────── */
 
 @keyframes rise {

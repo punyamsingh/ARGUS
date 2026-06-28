@@ -1,6 +1,6 @@
 {
   "name": "argus",
-  "version": "0.1.0",
+  "version": "0.18.3",
   "private": true,
   "engines": {
     "node": ">=22"
@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "version:compute": "node scripts/version-from-history.mjs --table"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.0",
@@ -24,6 +25,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -31,6 +34,7 @@
     "@types/three": "^0.185.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "semantic-release": "^25.0.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

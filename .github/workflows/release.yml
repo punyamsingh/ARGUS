@@ -1,0 +1,53 @@
+name: Release
+
+# Runs semantic-release on every push to main (i.e. after a PR merges).
+# It analyzes the Conventional Commits since the last v* tag, decides the next
+# version (feat -> minor, fix/refactor/perf -> patch, ! / BREAKING -> major),
+# bumps package.json, updates CHANGELOG.md, tags the commit, commits those
+# files back to main (with [skip ci]), and publishes a GitHub Release.
+#
+# The app header reads package.json, so the displayed version updates on the
+# next deploy. docs/chore/style/ci/test commits produce no release.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write # create tags, releases, and push the version-bump commit
+  issues: write # comment on issues/PRs included in a release
+  pull-requests: write
+
+# Never run two releases at once.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: semantic-release
+    runs-on: ubuntu-latest
+    # Don't loop on semantic-release's own version-bump commit.
+    if: ${{ !contains(github.event.head_commit.message, 'chore(release):') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags so commit analysis works
+          persist-credentials: false # let semantic-release use GITHUB_TOKEN below
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Release
+        env:
+          # Use a PAT/App token (SEMANTIC_RELEASE_TOKEN) when main is protected
+          # so the bot can push the version-bump commit and tag; otherwise the
+          # default GITHUB_TOKEN is used.
+          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
