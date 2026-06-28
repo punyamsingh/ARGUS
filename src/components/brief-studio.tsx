@@ -1,16 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { BriefResult } from "@/types/brief";
+import { useState } from "react";
+import type {
+  BriefResult,
+  BriefStage,
+  BriefStreamMessage,
+} from "@/types/brief";
 import { BriefResultView } from "@/components/brief-result";
 import { BriefPreview } from "@/components/brief-preview";
 
 type Status = "idle" | "loading" | "done" | "error";
 
-const STAGES = [
-  "Resolving the company & person…",
-  "Gathering signals across sources…",
-  "Synthesising your brief…",
+const STAGES: { key: BriefStage; label: string }[] = [
+  { key: "resolving", label: "Resolving the company & person…" },
+  { key: "gathering", label: "Gathering signals across sources…" },
+  { key: "synthesizing", label: "Synthesising your brief…" },
 ];
 
 export function BriefStudio() {
@@ -18,6 +22,7 @@ export function BriefStudio() {
   const [person, setPerson] = useState("");
   const [context, setContext] = useState("");
   const [status, setStatus] = useState<Status>("idle");
+  const [stage, setStage] = useState<BriefStage>("resolving");
   const [result, setResult] = useState<BriefResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,6 +33,7 @@ export function BriefStudio() {
     if (!canSubmit || status === "loading") return;
 
     setStatus("loading");
+    setStage("resolving");
     setError(null);
     setResult(null);
 
@@ -37,12 +43,47 @@ export function BriefStudio() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ company, person, context }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.ok) {
+
+      // Validation failures come back as a plain JSON error (4xx).
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => null);
         throw new Error(data?.error ?? "Something went wrong.");
       }
-      setResult(data.result as BriefResult);
-      setStatus("done");
+
+      // Otherwise the route streams newline-delimited JSON: stage events, then a
+      // terminal result or error.
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let settled = false;
+
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        let newline: number;
+        while ((newline = buffer.indexOf("\n")) >= 0) {
+          const line = buffer.slice(0, newline).trim();
+          buffer = buffer.slice(newline + 1);
+          if (!line) continue;
+
+          const msg = JSON.parse(line) as BriefStreamMessage;
+          if (msg.type === "stage") {
+            setStage(msg.stage);
+          } else if (msg.type === "result") {
+            setResult(msg.result);
+            setStatus("done");
+            settled = true;
+          } else {
+            throw new Error(msg.error);
+          }
+        }
+      }
+
+      if (!settled) {
+        throw new Error("The brief ended unexpectedly. Please try again.");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setStatus("error");
@@ -103,7 +144,7 @@ export function BriefStudio() {
             <BriefPreview />
           </div>
         )}
-        {status === "loading" && <Loader />}
+        {status === "loading" && <Loader stage={stage} />}
         {status === "error" && (
           <ErrorCard message={error} onRetry={() => void run()} />
         )}
@@ -153,12 +194,8 @@ function Field({
   );
 }
 
-function Loader() {
-  const [stage, setStage] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setStage((s) => Math.min(s + 1, STAGES.length - 1)), 4000);
-    return () => clearInterval(id);
-  }, []);
+function Loader({ stage }: { stage: BriefStage }) {
+  const current = STAGES.findIndex((s) => s.key === stage);
 
   return (
     <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-line-strong bg-surface/50 p-8 text-center">
@@ -169,16 +206,16 @@ function Loader() {
       <div className="mt-6 space-y-2">
         {STAGES.map((s, i) => (
           <p
-            key={s}
+            key={s.key}
             className={
-              i === stage
+              i === current
                 ? "text-sm text-ivory"
-                : i < stage
+                : i < current
                   ? "text-sm text-faint line-through decoration-line-strong"
                   : "text-sm text-faint"
             }
           >
-            {s}
+            {s.label}
           </p>
         ))}
       </div>

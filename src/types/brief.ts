@@ -110,3 +110,14 @@ export const briefResultSchema = z.object({
   meta: briefMetaSchema,
 });
 export type BriefResult = z.infer<typeof briefResultSchema>;
+
+// ── Streaming protocol (#10) ─────────────────────────────────
+// /api/brief streams newline-delimited JSON: zero or more `stage` messages as
+// the pipeline progresses, then exactly one terminal `result` or `error`.
+
+export type BriefStage = "resolving" | "gathering" | "synthesizing";
+
+export type BriefStreamMessage =
+  | { type: "stage"; stage: BriefStage }
+  | { type: "result"; result: BriefResult }
+  | { type: "error"; error: string };

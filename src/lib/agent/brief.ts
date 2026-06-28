@@ -1,18 +1,38 @@
 import { llmModelId, llmProvider } from "@/lib/llm";
-import type { Brief, BriefInput, BriefResult, Evidence } from "@/types/brief";
+import type {
+  Brief,
+  BriefInput,
+  BriefResult,
+  BriefStage,
+  Evidence,
+} from "@/types/brief";
 import { resolveEntity } from "./resolve";
 import { gather } from "./gather";
 import { synthesizeBrief } from "./synthesize";
 
+export interface GenerateBriefOptions {
+  /** Called as each stage begins, so callers can stream progress. */
+  onProgress?: (stage: BriefStage) => void;
+}
+
 /**
  * The end-to-end brief pipeline (#7): resolve → gather → synthesize.
- * Returns the full `BriefResult` contract for the API and UI.
+ * Returns the full `BriefResult` contract for the API and UI. `onProgress` fires
+ * at the start of each stage to drive live progress in the UI (#10).
  */
-export async function generateBrief(input: BriefInput): Promise<BriefResult> {
+export async function generateBrief(
+  input: BriefInput,
+  { onProgress }: GenerateBriefOptions = {},
+): Promise<BriefResult> {
   const start = Date.now();
 
+  onProgress?.("resolving");
   const entity = await resolveEntity(input);
+
+  onProgress?.("gathering");
   const { evidence } = await gather(entity);
+
+  onProgress?.("synthesizing");
   const brief = await synthesizeBrief(input, entity, evidence);
 
   return {
