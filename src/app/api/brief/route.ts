@@ -35,6 +35,13 @@ export async function POST(req: Request) {
     );
   }
 
+  // Optional client session id, used only to group briefs in Langfuse. Capped
+  // and sanitised — it's untrusted input that ends up as a span attribute.
+  const sessionId = req.headers
+    .get("x-argus-session-id")
+    ?.replace(/[^a-zA-Z0-9._-]/g, "")
+    .slice(0, 200) || undefined;
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -43,6 +50,7 @@ export async function POST(req: Request) {
       try {
         const result = await generateBrief(parsed.data, {
           onProgress: (stage) => send({ type: "stage", stage }),
+          sessionId,
         });
         send({ type: "result", result });
       } catch (err) {

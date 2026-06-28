@@ -7,6 +7,7 @@ import type {
   BriefStreamMessage,
 } from "@/types/brief";
 import { clsx } from "@/lib/cn";
+import { getSessionId } from "@/lib/session-id";
 import { BriefResultView } from "@/components/brief-result";
 import { BriefActions } from "@/components/brief-actions";
 import { BriefPreview } from "@/components/brief-preview";
@@ -58,6 +59,8 @@ export function BriefStudio() {
           // The route streams NDJSON; ask for it explicitly so the contract is
           // unambiguous and a future JSON fallback wouldn't desync the reader.
           Accept: "application/x-ndjson, application/json",
+          // Groups this browser's briefs into one Langfuse session.
+          "x-argus-session-id": getSessionId(),
         },
         body: JSON.stringify({ company, person, context }),
       });

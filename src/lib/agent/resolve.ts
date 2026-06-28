@@ -1,6 +1,6 @@
 import { generateObject } from "ai";
-import { getModel, llmDefaults } from "@/lib/llm";
-import { aiTelemetry } from "@/lib/telemetry";
+import { getModel, llmDefaults, llmModelId } from "@/lib/llm";
+import { withGeneration } from "@/lib/telemetry";
 import {
   resolvedEntitySchema,
   type BriefInput,
@@ -43,21 +43,33 @@ export async function resolveEntity(input: BriefInput): Promise<ResolvedEntity> 
   const timeout = setTimeout(() => controller.abort(), 15_000);
 
   try {
-    const { object } = await generateObject({
-      model: getModel(),
-      schema: resolvedEntitySchema,
-      maxRetries: llmDefaults.maxRetries,
-      abortSignal: controller.signal,
-      experimental_telemetry: aiTelemetry("resolve-entity"),
-      system: SYSTEM,
-      prompt: [
-        `Company: ${input.company}`,
-        `Person: ${input.person}`,
-        `Meeting context: ${input.context}`,
-      ].join("\n"),
-    });
+    const result = await withGeneration(
+      "resolve-entity",
+      {
+        model: llmModelId,
+        input: {
+          company: input.company,
+          person: input.person,
+          context: input.context,
+        },
+      },
+      () =>
+        generateObject({
+          model: getModel(),
+          schema: resolvedEntitySchema,
+          maxRetries: llmDefaults.maxRetries,
+          abortSignal: controller.signal,
+          system: SYSTEM,
+          prompt: [
+            `Company: ${input.company}`,
+            `Person: ${input.person}`,
+            `Meeting context: ${input.context}`,
+          ].join("\n"),
+        }),
+      (r) => ({ output: r.object, usage: r.usage }),
+    );
 
-    return object;
+    return result.object;
   } finally {
     clearTimeout(timeout);
   }
