@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/punyamsingh/ARGUS/compare/v1.5.0...v1.6.0) (2026-06-28)
+
+
+### Features
+
+* questions-to-ask + fit hypotheses as derived guidance ([2a69dca](https://github.com/punyamsingh/ARGUS/commit/2a69dcac8a0b9d088f52d5ef05c525b507662e16)), closes [#70](https://github.com/punyamsingh/ARGUS/issues/70) [#73](https://github.com/punyamsingh/ARGUS/issues/73)
+
 # [1.5.0](https://github.com/punyamsingh/ARGUS/compare/v1.4.0...v1.5.0) (2026-06-28)
 
 
