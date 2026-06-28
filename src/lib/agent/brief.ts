@@ -6,6 +6,7 @@ import type {
   BriefStage,
   Evidence,
 } from "@/types/brief";
+import { withSpan } from "@/lib/telemetry";
 import { resolveEntity } from "./resolve";
 import { gather } from "./gather";
 import { synthesizeBrief } from "./synthesize";
@@ -23,6 +24,23 @@ export interface GenerateBriefOptions {
 export async function generateBrief(
   input: BriefInput,
   { onProgress }: GenerateBriefOptions = {},
+): Promise<BriefResult> {
+  // Wrap the whole pipeline in one span so resolve, each gather tool, and
+  // synthesis nest under a single per-brief trace in Langfuse (#15).
+  return withSpan(
+    "brief",
+    {
+      "argus.company": input.company,
+      "argus.person": input.person,
+      "argus.context": input.context,
+    },
+    () => runPipeline(input, onProgress),
+  );
+}
+
+async function runPipeline(
+  input: BriefInput,
+  onProgress?: (stage: BriefStage) => void,
 ): Promise<BriefResult> {
   const start = Date.now();
 
