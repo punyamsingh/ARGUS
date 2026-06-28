@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/punyamsingh/ARGUS/compare/v1.1.1...v1.2.0) (2026-06-28)
+
+
+### Features
+
+* add GitHub open-source footprint tool ([#31](https://github.com/punyamsingh/ARGUS/issues/31)) ([4e19e2b](https://github.com/punyamsingh/ARGUS/commit/4e19e2b85f2e1a0151fe460325e9b12c83811372))
+
 ## [1.1.1](https://github.com/punyamsingh/ARGUS/compare/v1.1.0...v1.1.1) (2026-06-28)
 
 # [1.1.0](https://github.com/punyamsingh/ARGUS/compare/v1.0.1...v1.1.0) (2026-06-28)
