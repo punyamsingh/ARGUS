@@ -48,7 +48,7 @@ export const gdeltTool: GatherTool = {
   appliesTo: (entity) => Boolean(entity.company.name),
 
   async run(entity: ResolvedEntity, signal: AbortSignal): Promise<RawEvidence[]> {
-    const term = searchTerm(entity.company.name);
+    const term = searchTerm(entity.company.name, entity.company.industry);
     if (!term) return [];
 
     const now = new Date();
@@ -139,16 +139,50 @@ async function query(
 
 /**
  * Build a GDELT search term from the company name: drop a trailing legal suffix
- * (Inc., LLC, Ltd, …) so coverage actually matches, and quote multi-word names
- * for phrase search while leaving single tokens unquoted (broader recall).
+ * (Inc., LLC, Ltd, …) so coverage actually matches, always quote the name for a
+ * phrase match, and — crucially — AND in an industry context clause when known.
+ * Company names are often common words ("Stripe", "Apple"); requiring the name
+ * AND an industry term keeps results on-topic instead of matching the dictionary
+ * word. GDELT ANDs space-separated terms, so `"Stripe" (financial OR saas)`
+ * means: mentions Stripe and at least one industry term.
  */
-function searchTerm(name: string): string | null {
+function searchTerm(name: string, industry?: string): string | null {
   const cleaned = name
     .replace(/[,\s]+(inc|incorporated|llc|ltd|limited|corp|corporation|co|plc|gmbh|s\.?a|ag|nv)\.?$/i, "")
     .trim();
   const base = cleaned || name.trim();
   if (!base) return null;
-  return /\s/.test(base) ? `"${base}"` : base;
+
+  const quoted = `"${base}"`;
+  const terms = industryTerms(industry);
+  return terms.length ? `${quoted} (${terms.join(" OR ")})` : quoted;
+}
+
+const INDUSTRY_STOPWORDS = new Set([
+  "and",
+  "the",
+  "of",
+  "for",
+  "services",
+  "service",
+  "company",
+  "industry",
+  "sector",
+  "solutions",
+  "technology",
+  "technologies",
+  "global",
+  "international",
+]);
+
+/** A few salient, lowercased industry keywords to disambiguate the name. */
+function industryTerms(industry?: string): string[] {
+  if (!industry) return [];
+  return industry
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w.length > 2 && !INDUSTRY_STOPWORDS.has(w))
+    .slice(0, 3);
 }
 
 function toEvidence(
