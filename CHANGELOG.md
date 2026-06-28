@@ -1,3 +1,11 @@
+# [1.5.0](https://github.com/punyamsingh/ARGUS/compare/v1.4.0...v1.5.0) (2026-06-28)
+
+
+### Features
+
+* **agent:** seller context as a grounded synthesis channel ([cde49cf](https://github.com/punyamsingh/ARGUS/commit/cde49cf0c8d9c6e312c89f4b2c007574c08e4feb)), closes [#71](https://github.com/punyamsingh/ARGUS/issues/71)
+* **ui:** persistent, progressive seller profile + meeting-type picker ([cae0a8a](https://github.com/punyamsingh/ARGUS/commit/cae0a8afe49aee6930d895a63382cc6bb7113a82)), closes [#72](https://github.com/punyamsingh/ARGUS/issues/72)
+
 # [1.4.0](https://github.com/punyamsingh/ARGUS/compare/v1.3.1...v1.4.0) (2026-06-28)
 
 
