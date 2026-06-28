@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/punyamsingh/ARGUS/compare/v1.3.0...v1.3.1) (2026-06-28)
+
+
+### Bug Fixes
+
+* capture LLM generations + session ids in Langfuse traces ([#15](https://github.com/punyamsingh/ARGUS/issues/15)) ([897ccfb](https://github.com/punyamsingh/ARGUS/commit/897ccfb032064427d7aa1033af31adc11e5947de))
+
 # [1.3.0](https://github.com/punyamsingh/ARGUS/compare/v1.2.0...v1.3.0) (2026-06-28)
 
 
