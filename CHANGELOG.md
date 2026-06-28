@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/punyamsingh/ARGUS/compare/v1.3.1...v1.4.0) (2026-06-28)
+
+
+### Features
+
+* **types:** two-truths content model — sourced claims vs. derived guidance ([0a9f297](https://github.com/punyamsingh/ARGUS/commit/0a9f2973348e57f0818efa532958459a2474e291)), closes [#73](https://github.com/punyamsingh/ARGUS/issues/73) [#74](https://github.com/punyamsingh/ARGUS/issues/74) [#70](https://github.com/punyamsingh/ARGUS/issues/70)
+
 ## [1.3.1](https://github.com/punyamsingh/ARGUS/compare/v1.3.0...v1.3.1) (2026-06-28)
 
 
