@@ -105,6 +105,13 @@ export function saveToHistory(result: BriefResult): void {
   emit();
 }
 
+/** Look up a stored brief by its id (the brief's generatedAt timestamp). Reads
+ *  straight from storage so it works on a freshly-loaded focused-brief page. */
+export function getBriefById(id: string): BriefResult | null {
+  const list = hydrated ? snapshot : readStorage();
+  return list.find((e) => e.id === id)?.result ?? null;
+}
+
 /** React hook: the current recent-briefs list, kept in sync across the app. */
 export function useBriefHistory(): HistoryEntry[] {
   return useSyncExternalStore(
