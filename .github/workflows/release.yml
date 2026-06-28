@@ -15,8 +15,9 @@ on:
 
 permissions:
   contents: write # create tags, releases, and push the version-bump commit
-  issues: write # comment on issues/PRs included in a release
-  pull-requests: write
+  # No issues/pull-requests write needed: the @semantic-release/github plugin is
+  # configured (.releaserc.json) to skip issue/PR comments and labels, so the
+  # release token only needs Contents: write.
 
 # Never run two releases at once.
 concurrency:
