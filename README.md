@@ -85,12 +85,16 @@ a crash. The default model is `gemini-2.5-flash`.
 1. Create a free project at **[cloud.langfuse.com](https://cloud.langfuse.com)**
    (or self-host the OSS version).
 2. Project **Settings → API Keys** → create a key pair.
-3. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASEURL`.
+3. Set `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, and `LANGFUSE_BASE_URL`
+   (EU `https://cloud.langfuse.com` · US `https://us.cloud.langfuse.com`).
 
 With the keys set, each brief is exported to Langfuse as **one trace tree** —
 `brief → resolve → each gather tool → synthesize` — with per-step latency, token
-usage, model, and cost (via the Vercel AI SDK's OpenTelemetry output, shipped by
-`@vercel/otel`). ARGUS runs fine without Langfuse; with no keys, no exporter is
+usage, model, and cost. The Vercel AI SDK emits OpenTelemetry spans
+(`experimental_telemetry`) and the pipeline adds spans via `@langfuse/tracing`;
+the `@langfuse/otel` `LangfuseSpanProcessor` (registered in `instrumentation.ts`,
+`exportMode: "immediate"` for serverless) ships them, and the route force-flushes
+via `after()`. ARGUS runs fine without Langfuse; with no keys, nothing is
 registered and nothing is emitted.
 
 ### Tool keys — optional

@@ -1,42 +1,41 @@
-import { SpanStatusCode, trace } from "@opentelemetry/api";
+import { startActiveObservation } from "@langfuse/tracing";
 
 /**
- * Thin telemetry helpers (#15). When the Langfuse keys are set, the OTel SDK is
- * registered in `instrumentation.ts` and these emit real spans; when they're
- * not, `withSpan` just runs the function (zero overhead) and `aiTelemetry`
- * disables the AI SDK's emitter. Telemetry is always best-effort — a tracing
- * failure must never affect a brief.
+ * Telemetry helpers (#15), built on the first-party `@langfuse/tracing` SDK so
+ * our manual spans are real Langfuse observations (exported by default and shown
+ * as a proper trace tree). When the Langfuse keys are unset everything no-ops:
+ * `withObservation` just runs the function and `aiTelemetry` disables the AI
+ * SDK's emitter. Tracing is best-effort and must never affect a brief.
  */
 
 export const telemetryEnabled = Boolean(
   process.env.LANGFUSE_PUBLIC_KEY && process.env.LANGFUSE_SECRET_KEY,
 );
 
-const tracer = trace.getTracer("argus");
+type Json = Record<string, unknown>;
 
-type Attrs = Record<string, string | number | boolean>;
-
-/** Run `fn` inside an active span (so nested AI-SDK spans attach under it). */
-export async function withSpan<T>(
+/**
+ * Run `fn` inside an active Langfuse observation. Nested AI-SDK generations and
+ * child observations attach under it automatically, so the whole brief becomes
+ * one trace tree. `input` is set explicitly (only the relevant data — never raw
+ * function args) and the resolved value is recorded as the observation output.
+ */
+export async function withObservation<T>(
   name: string,
-  attributes: Attrs,
+  input: Json,
   fn: () => Promise<T>,
+  toOutput?: (result: T) => Json,
 ): Promise<T> {
   if (!telemetryEnabled) return fn();
-  return tracer.startActiveSpan(name, { attributes }, async (span) => {
-    try {
-      return await fn();
-    } catch (err) {
-      span.recordException(err as Error);
-      span.setStatus({ code: SpanStatusCode.ERROR });
-      throw err;
-    } finally {
-      span.end();
-    }
+  return startActiveObservation(name, async (span) => {
+    span.update({ input });
+    const result = await fn();
+    if (toOutput) span.update({ output: toOutput(result) });
+    return result;
   });
 }
 
-/** `experimental_telemetry` config for an AI SDK call, on only when enabled. */
-export function aiTelemetry(functionId: string, metadata?: Attrs) {
+/** `experimental_telemetry` config for an AI SDK call — on only when enabled. */
+export function aiTelemetry(functionId: string, metadata?: Json) {
   return { isEnabled: telemetryEnabled, functionId, metadata };
 }

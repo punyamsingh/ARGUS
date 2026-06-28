@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { generateBrief } from "@/lib/agent/brief";
+import { langfuseSpanProcessor } from "@/instrumentation";
 import { briefInputSchema, type BriefStreamMessage } from "@/types/brief";
 
 /**
@@ -54,6 +56,13 @@ export async function POST(req: Request) {
         controller.close();
       }
     },
+  });
+
+  // Flush any buffered Langfuse spans once the response has finished streaming,
+  // so traces aren't lost when the serverless function freezes. No-op when
+  // tracing isn't configured.
+  after(async () => {
+    await langfuseSpanProcessor?.forceFlush();
   });
 
   return new Response(stream, {
