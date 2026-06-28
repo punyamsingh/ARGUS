@@ -127,6 +127,21 @@ commit real keys.**
 - The `/api/brief` route runs on the Node runtime with `maxDuration` set to fit
   the sub-60s brief target.
 
+## Versioning & releases
+
+ARGUS uses **semantic versioning driven by [Conventional Commits](https://www.conventionalcommits.org/)**.
+The current version is shown in the top-right of the site (linking to its release)
+and is read from `package.json` at build time.
+
+- **PR titles are enforced** by CI (`.github/workflows/pr-title.yml`) to follow
+  `type(scope)!: subject`, e.g. `feat: add LinkedIn gather tool`.
+- **On merge to `main`** (`.github/workflows/release.yml`) the PR title decides
+  the bump — `feat` → minor, `fix`/`refactor`/`perf` → patch, breaking (`!`) →
+  minor while pre-1.0 — then `package.json` is bumped, the commit is tagged, and
+  a GitHub Release is cut. `docs`/`chore`/`style`/`ci`/`test` PRs ship no release.
+- The starting version `0.18.3` was computed by replaying this scheme over the
+  full history — run `npm run version:compute` to see the per-commit ledger.
+
 ## Project layout
 
 ```
