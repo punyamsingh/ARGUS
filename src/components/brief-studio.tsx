@@ -14,6 +14,7 @@ import { getSessionId } from "@/lib/session-id";
 import { BriefResultView } from "@/components/brief-result";
 import { BriefActions } from "@/components/brief-actions";
 import { BriefPreview } from "@/components/brief-preview";
+import { BriefFollowUps } from "@/components/brief-followups";
 import {
   saveToHistory,
   useBriefHistory,
@@ -289,6 +290,9 @@ export function BriefStudio() {
                 New brief
               </button>
             </div>
+            {/* Conversational layer — keyed to the brief so each new brief starts
+                a fresh conversation. The brief above stays the pinned artifact. */}
+            <BriefFollowUps key={result.meta.generatedAt} result={result} />
           </div>
         )}
       </div>
