@@ -7,92 +7,144 @@ import { animate, utils } from "animejs";
 /**
  * ARGUS — interactive background.
  *
- * A three.js particle field ("a thousand watching eyes") that drifts with the
- * cursor and ripples on click, choreographed with anime.js. It lives in a
- * fixed, full-screen canvas pinned behind everything with `pointer-events:none`
- * so it is purely decorative — every click, hover and scroll passes straight
- * through to the real UI. Mouse/touch are read from passive window listeners,
- * never by capturing events, so the foreground is never interrupted.
+ * An analytics-themed node-and-circuit network rendered with three.js and
+ * choreographed with anime.js. Nodes sit on a jittered grid, wired together
+ * with orthogonal "circuit traces"; faint data pulses flow along the wires,
+ * and the circuitry brightens around the cursor. Restrained on purpose — thin
+ * lines, normal (non-additive) blending, and a soft fade at the screen edges
+ * so it reads as a backdrop, never a distraction.
+ *
+ * It lives in a fixed, full-screen canvas pinned behind everything with
+ * `pointer-events:none`, so every click, hover and scroll passes straight
+ * through to the real UI. Pointer/touch are read from passive window
+ * listeners, never captured.
  *
  * Honours `prefers-reduced-motion`: renders a single static frame and stops.
  */
 
 // Brand palette (mirrors globals.css @theme).
 const GOLD = new THREE.Color("#e6b450");
-const SIGNAL = new THREE.Color("#43d39e");
-const INK = new THREE.Color("#0a0b0e");
+const TEAL = new THREE.Color("#43d39e");
 
-const VERTEX_SHADER = /* glsl */ `
-  uniform float uTime;
-  uniform vec2 uPointer;     // normalised pointer in clip space (-1..1)
-  uniform float uRipple;     // 0..1 click ripple progress
-  uniform float uPixelRatio;
+// Orthographic view + generous network extent (covers any viewport).
+const VIEW_H = 18; // world units of vertical view
+const EXT_X = 28;
+const EXT_Y = 17;
+const STEP = 2.3; // grid spacing
+const JIT = 0.7; // grid jitter
+const PROX_R = 3.2; // cursor highlight radius (world units)
 
-  attribute float aScale;
-  attribute float aSeed;
+// ── Shared GLSL helpers ─────────────────────────────────────────
+const VIGNETTE = /* glsl */ `
+  float edgeFade(vec2 ndc) {
+    vec2 f = 1.0 - smoothstep(vec2(0.62), vec2(1.04), abs(ndc));
+    return f.x * f.y;
+  }
+`;
+
+// Lines (circuit traces) ------------------------------------------------------
+const LINE_VERT = /* glsl */ `
   attribute vec3 aColor;
-
+  uniform vec2 uPointer;
   varying vec3 vColor;
-  varying float vGlow;
-
+  varying vec2 vNdc;
+  varying float vProx;
   void main() {
     vColor = aColor;
-    vec3 pos = position;
-
-    // Gentle organic drift.
-    float t = uTime * 0.18;
-    pos.x += sin(t + aSeed * 6.2831) * 0.18;
-    pos.y += cos(t * 0.9 + aSeed * 6.2831) * 0.18;
-    pos.z += sin(t * 0.7 + aSeed * 3.14159) * 0.25;
-
-    vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
-
-    // Pointer proximity in clip-ish space — brighten + lift nearby points.
-    vec2 screen = pos.xy * 0.14;
-    float d = distance(screen, uPointer * 1.6);
-    float prox = smoothstep(1.4, 0.0, d);
-
-    // Expanding ripple ring from the pointer on click.
-    float ring = 1.0 - smoothstep(0.0, 0.35, abs(d - uRipple * 2.4));
-    ring *= (1.0 - uRipple);
-
-    float lift = prox * 0.5 + ring * 0.8;
-    mvPosition.z += lift;
-
-    vGlow = clamp(prox + ring * 1.2, 0.0, 1.6);
-
-    gl_Position = projectionMatrix * mvPosition;
-
-    float size = aScale * (1.0 + lift * 1.6);
-    gl_PointSize = size * uPixelRatio * (220.0 / -mvPosition.z);
+    vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vNdc = clip.xy / clip.w;
+    vProx = 1.0 - smoothstep(0.0, ${PROX_R.toFixed(1)}, distance(position.xy, uPointer));
+    gl_Position = clip;
   }
 `;
-
-const FRAGMENT_SHADER = /* glsl */ `
+const LINE_FRAG = /* glsl */ `
+  precision mediump float;
+  ${VIGNETTE}
+  uniform float uOpacity;
   varying vec3 vColor;
-  varying float vGlow;
-
+  varying vec2 vNdc;
+  varying float vProx;
   void main() {
-    // Soft round sprite with a brighter core — an "iris".
-    vec2 uv = gl_PointCoord - 0.5;
-    float r = length(uv);
-    float core = smoothstep(0.5, 0.0, r);
-    float halo = smoothstep(0.5, 0.12, r) * 0.6;
-    float alpha = core * 0.9 + halo;
-    if (alpha < 0.01) discard;
-
-    vec3 col = vColor + vGlow * 0.6;
-    gl_FragColor = vec4(col, alpha * (0.55 + vGlow * 0.45));
+    float a = (0.12 + vProx * 0.5) * edgeFade(vNdc) * uOpacity;
+    if (a < 0.004) discard;
+    vec3 col = vColor + vProx * 0.35;
+    gl_FragColor = vec4(col, a);
   }
 `;
+
+// Nodes -----------------------------------------------------------------------
+const NODE_VERT = /* glsl */ `
+  attribute float aScale;
+  attribute vec3 aColor;
+  uniform vec2 uPointer;
+  uniform float uPixelRatio;
+  varying vec3 vColor;
+  varying vec2 vNdc;
+  varying float vProx;
+  void main() {
+    vColor = aColor;
+    vProx = 1.0 - smoothstep(0.0, ${PROX_R.toFixed(1)}, distance(position.xy, uPointer));
+    vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vNdc = clip.xy / clip.w;
+    gl_PointSize = aScale * (1.0 + vProx * 1.8) * uPixelRatio;
+    gl_Position = clip;
+  }
+`;
+const NODE_FRAG = /* glsl */ `
+  precision mediump float;
+  ${VIGNETTE}
+  uniform float uOpacity;
+  varying vec3 vColor;
+  varying vec2 vNdc;
+  varying float vProx;
+  void main() {
+    float r = length(gl_PointCoord - 0.5);
+    if (r > 0.5) discard;
+    float disc = smoothstep(0.5, 0.32, r);     // crisp filled dot
+    float ring = smoothstep(0.5, 0.46, r) * 0.5;
+    float a = (disc * (0.32 + vProx * 0.55) + ring * vProx) * edgeFade(vNdc) * uOpacity;
+    if (a < 0.004) discard;
+    gl_FragColor = vec4(vColor + vProx * 0.4, a);
+  }
+`;
+
+// Data pulses (travelling dots) ----------------------------------------------
+const PULSE_VERT = /* glsl */ `
+  attribute float aScale;
+  attribute vec3 aColor;
+  uniform float uPixelRatio;
+  varying vec3 vColor;
+  varying vec2 vNdc;
+  void main() {
+    vColor = aColor;
+    vec4 clip = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vNdc = clip.xy / clip.w;
+    gl_PointSize = aScale * uPixelRatio;
+    gl_Position = clip;
+  }
+`;
+const PULSE_FRAG = /* glsl */ `
+  precision mediump float;
+  ${VIGNETTE}
+  uniform float uOpacity;
+  varying vec3 vColor;
+  varying vec2 vNdc;
+  void main() {
+    float r = length(gl_PointCoord - 0.5);
+    if (r > 0.5) discard;
+    float core = smoothstep(0.5, 0.0, r);
+    gl_FragColor = vec4(vColor, core * 0.9 * edgeFade(vNdc) * uOpacity);
+  }
+`;
+
+type Trace = { pts: [THREE.Vector2, THREE.Vector2, THREE.Vector2]; color: THREE.Color };
 
 export function InteractiveBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (typeof window === "undefined") return;
+    if (!canvas || typeof window === "undefined") return;
 
     const prefersReduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -104,166 +156,285 @@ export function InteractiveBackground() {
       antialias: true,
       powerPreference: "low-power",
     });
-    renderer.setClearColor(INK, 0); // transparent — CSS background shows through
     const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
     renderer.setPixelRatio(pixelRatio);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-    camera.position.set(0, 0, 18);
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100);
+    camera.position.z = 10;
 
-    // ── Build the particle field ──────────────────────────────────
-    const COUNT = 1400;
-    const positions = new Float32Array(COUNT * 3);
-    const scales = new Float32Array(COUNT);
-    const seeds = new Float32Array(COUNT);
-    const colors = new Float32Array(COUNT * 3);
+    // ── Build the network (nodes + orthogonal circuit traces) ─────
+    type Node = { x: number; y: number; color: THREE.Color; scale: number };
+    const cols = Math.ceil((EXT_X * 2) / STEP);
+    const rows = Math.ceil((EXT_Y * 2) / STEP);
+    const grid: (Node | null)[][] = [];
 
-    const tmp = new THREE.Color();
-    for (let i = 0; i < COUNT; i++) {
-      // Distribute across a wide, shallow slab facing the camera.
-      positions[i * 3 + 0] = (Math.random() - 0.5) * 46;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 28;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 14;
-
-      scales[i] = 0.6 + Math.random() * 1.8;
-      seeds[i] = Math.random();
-
-      // Mostly gold, a sparse scatter of signal-teal.
-      tmp.copy(Math.random() > 0.88 ? SIGNAL : GOLD);
-      tmp.lerp(INK, Math.random() * 0.35);
-      colors[i * 3 + 0] = tmp.r;
-      colors[i * 3 + 1] = tmp.g;
-      colors[i * 3 + 2] = tmp.b;
-    }
-
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    geometry.setAttribute("aScale", new THREE.BufferAttribute(scales, 1));
-    geometry.setAttribute("aSeed", new THREE.BufferAttribute(seeds, 1));
-    geometry.setAttribute("aColor", new THREE.BufferAttribute(colors, 3));
-
-    const uniforms = {
-      uTime: { value: 0 },
-      uPointer: { value: new THREE.Vector2(0, 0) },
-      uRipple: { value: 0 },
-      uPixelRatio: { value: pixelRatio },
+    const pick = (tealChance: number) => {
+      const base = Math.random() < tealChance ? TEAL : GOLD;
+      // Dim toward ink so the default state is calm.
+      return base.clone().multiplyScalar(0.5 + Math.random() * 0.25);
     };
 
-    const material = new THREE.ShaderMaterial({
-      uniforms,
-      vertexShader: VERTEX_SHADER,
-      fragmentShader: FRAGMENT_SHADER,
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
+    for (let i = 0; i < cols; i++) {
+      grid[i] = [];
+      for (let j = 0; j < rows; j++) {
+        if (Math.random() < 0.12) {
+          grid[i][j] = null; // sparse gaps → irregular, circuit-like
+          continue;
+        }
+        grid[i][j] = {
+          x: -EXT_X + i * STEP + (Math.random() - 0.5) * 2 * JIT,
+          y: -EXT_Y + j * STEP + (Math.random() - 0.5) * 2 * JIT,
+          color: pick(0.14),
+          scale: 2.2 + Math.random() * 2.6,
+        };
+      }
+    }
+
+    const linePos: number[] = [];
+    const lineCol: number[] = [];
+    const traces: Trace[] = [];
+
+    const addTrace = (a: Node, b: Node, horizFirst: boolean) => {
+      const corner = horizFirst
+        ? new THREE.Vector2(b.x, a.y)
+        : new THREE.Vector2(a.x, b.y);
+      const A = new THREE.Vector2(a.x, a.y);
+      const B = new THREE.Vector2(b.x, b.y);
+      // Trace inherits a dim wire color (teal if either end is teal-ish).
+      const isTeal = a.color.g > a.color.r || b.color.g > b.color.r;
+      const c = (isTeal ? TEAL : GOLD).clone().multiplyScalar(0.4);
+      for (const [p, q] of [
+        [A, corner],
+        [corner, B],
+      ] as const) {
+        linePos.push(p.x, p.y, 0, q.x, q.y, 0);
+        lineCol.push(c.r, c.g, c.b, c.r, c.g, c.b);
+      }
+      traces.push({ pts: [A, corner, B], color: (isTeal ? TEAL : GOLD).clone() });
+    };
+
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        const n = grid[i][j];
+        if (!n) continue;
+        const right = i + 1 < cols ? grid[i + 1][j] : null;
+        const down = j + 1 < rows ? grid[i][j + 1] : null;
+        if (right && Math.random() < 0.82) addTrace(n, right, (i + j) % 2 === 0);
+        if (down && Math.random() < 0.82) addTrace(n, down, (i + j) % 2 === 1);
+      }
+    }
+
+    // Node buffers
+    const nodes = grid.flat().filter(Boolean) as Node[];
+    const nPos = new Float32Array(nodes.length * 3);
+    const nCol = new Float32Array(nodes.length * 3);
+    const nScale = new Float32Array(nodes.length);
+    nodes.forEach((n, k) => {
+      nPos.set([n.x, n.y, 0], k * 3);
+      nCol.set([n.color.r, n.color.g, n.color.b], k * 3);
+      nScale[k] = n.scale;
     });
 
-    const points = new THREE.Points(geometry, material);
-    scene.add(points);
+    const uPointer = { value: new THREE.Vector2(999, 999) };
+    const uPixelRatio = { value: pixelRatio };
+    const uOpacity = { value: prefersReduced ? 1 : 0 };
 
-    // ── Sizing ────────────────────────────────────────────────────
+    // Lines mesh
+    const lineGeo = new THREE.BufferGeometry();
+    lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePos, 3));
+    lineGeo.setAttribute("aColor", new THREE.Float32BufferAttribute(lineCol, 3));
+    const lineMat = new THREE.ShaderMaterial({
+      uniforms: { uPointer, uOpacity },
+      vertexShader: LINE_VERT,
+      fragmentShader: LINE_FRAG,
+      transparent: true,
+      depthWrite: false,
+    });
+    const lines = new THREE.LineSegments(lineGeo, lineMat);
+    scene.add(lines);
+
+    // Nodes mesh
+    const nodeGeo = new THREE.BufferGeometry();
+    nodeGeo.setAttribute("position", new THREE.BufferAttribute(nPos, 3));
+    nodeGeo.setAttribute("aColor", new THREE.BufferAttribute(nCol, 3));
+    nodeGeo.setAttribute("aScale", new THREE.BufferAttribute(nScale, 1));
+    const nodeMat = new THREE.ShaderMaterial({
+      uniforms: { uPointer, uPixelRatio, uOpacity },
+      vertexShader: NODE_VERT,
+      fragmentShader: NODE_FRAG,
+      transparent: true,
+      depthWrite: false,
+    });
+    const nodePoints = new THREE.Points(nodeGeo, nodeMat);
+    scene.add(nodePoints);
+
+    // ── Data pulses travelling along a subset of traces ───────────
+    const PULSE_N = Math.min(42, traces.length);
+    const pulsePos = new Float32Array(PULSE_N * 3);
+    const pulseCol = new Float32Array(PULSE_N * 3);
+    const pulseScale = new Float32Array(PULSE_N);
+    const pulseState = Array.from({ length: PULSE_N }, () => ({ t: 0 }));
+    const pulseTrace: Trace[] = [];
+
+    const stride = Math.max(1, Math.floor(traces.length / PULSE_N));
+    for (let k = 0; k < PULSE_N; k++) {
+      const tr = traces[(k * stride) % traces.length];
+      pulseTrace.push(tr);
+      const c = tr.color;
+      pulseCol.set([c.r, c.g, c.b], k * 3);
+      pulseScale[k] = 3.2 + Math.random() * 1.6;
+      pulsePos.set([tr.pts[0].x, tr.pts[0].y, 0.1], k * 3);
+    }
+
+    const pulseGeo = new THREE.BufferGeometry();
+    const pulsePosAttr = new THREE.BufferAttribute(pulsePos, 3);
+    pulseGeo.setAttribute("position", pulsePosAttr);
+    pulseGeo.setAttribute("aColor", new THREE.BufferAttribute(pulseCol, 3));
+    pulseGeo.setAttribute("aScale", new THREE.BufferAttribute(pulseScale, 1));
+    const pulseMat = new THREE.ShaderMaterial({
+      uniforms: { uPixelRatio, uOpacity },
+      vertexShader: PULSE_VERT,
+      fragmentShader: PULSE_FRAG,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending, // tiny dots — a gentle glow, not a wash
+    });
+    const pulses = new THREE.Points(pulseGeo, pulseMat);
+    if (!prefersReduced) scene.add(pulses);
+
+    // Map progress t∈[0,1] to a point along the 2-segment trace.
+    const seg = new THREE.Vector2();
+    const placePulse = (k: number) => {
+      const { pts } = pulseTrace[k];
+      const t = pulseState[k].t;
+      const l1 = seg.subVectors(pts[1], pts[0]).length();
+      const l2 = seg.subVectors(pts[2], pts[1]).length();
+      const total = l1 + l2 || 1;
+      const d = t * total;
+      let x: number, y: number;
+      if (d <= l1) {
+        const u = l1 ? d / l1 : 0;
+        x = pts[0].x + (pts[1].x - pts[0].x) * u;
+        y = pts[0].y + (pts[1].y - pts[0].y) * u;
+      } else {
+        const u = l2 ? (d - l1) / l2 : 0;
+        x = pts[1].x + (pts[2].x - pts[1].x) * u;
+        y = pts[1].y + (pts[2].y - pts[1].y) * u;
+      }
+      pulsePos[k * 3] = x;
+      pulsePos[k * 3 + 1] = y;
+    };
+
+    if (!prefersReduced) {
+      pulseState.forEach((s) =>
+        animate(s, {
+          t: [0, 1],
+          duration: 3200 + Math.random() * 3200,
+          delay: Math.random() * 3000,
+          loop: true,
+          ease: "linear",
+        }),
+      );
+    }
+
+    // ── Sizing (orthographic frustum tracks the viewport) ─────────
     const resize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
       renderer.setSize(w, h, false);
-      camera.aspect = w / h;
+      const aspect = w / h;
+      const halfH = VIEW_H / 2;
+      const halfW = halfH * aspect;
+      camera.left = -halfW;
+      camera.right = halfW;
+      camera.top = halfH;
+      camera.bottom = -halfH;
       camera.updateProjectionMatrix();
     };
     resize();
 
-    // ── Pointer (read passively; never blocks the page) ───────────
-    const pointer = new THREE.Vector2(0, 0);
-    const targetPointer = new THREE.Vector2(0, 0);
+    // ── Pointer (passive; never blocks the page) ──────────────────
+    const ndc = new THREE.Vector2(0, 0);
+    const targetNdc = new THREE.Vector2(0, 0);
+    let pointerInside = false;
 
-    const setFromClient = (clientX: number, clientY: number) => {
-      targetPointer.set(
-        (clientX / window.innerWidth) * 2 - 1,
-        -((clientY / window.innerHeight) * 2 - 1),
+    const setFromClient = (cx: number, cy: number) => {
+      targetNdc.set(
+        (cx / window.innerWidth) * 2 - 1,
+        -((cy / window.innerHeight) * 2 - 1),
       );
+      pointerInside = true;
     };
     const onMouseMove = (e: MouseEvent) => setFromClient(e.clientX, e.clientY);
     const onTouchMove = (e: TouchEvent) => {
       const t = e.touches[0];
       if (t) setFromClient(t.clientX, t.clientY);
     };
-
-    // Click anywhere → a ripple emanates from the pointer (anime.js).
-    let rippleAnim: ReturnType<typeof animate> | null = null;
-    const onPointerDown = (e: MouseEvent) => {
-      setFromClient(e.clientX, e.clientY);
-      pointer.copy(targetPointer); // snap so the ring starts at the click
-      uniforms.uRipple.value = 0;
-      rippleAnim?.pause();
-      rippleAnim = animate(uniforms.uRipple, {
-        value: 1,
-        duration: 1100,
-        ease: "outQuad",
-      });
+    const onLeave = () => {
+      pointerInside = false;
     };
 
     if (!prefersReduced) {
       window.addEventListener("mousemove", onMouseMove, { passive: true });
       window.addEventListener("touchmove", onTouchMove, { passive: true });
-      window.addEventListener("pointerdown", onPointerDown, { passive: true });
+      window.addEventListener("mouseout", onLeave, { passive: true });
     }
     window.addEventListener("resize", resize);
 
-    // ── Entrance: ease the field in with anime.js ─────────────────
+    // Entrance fade-in (anime.js).
     const intro = { v: prefersReduced ? 1 : 0 };
     if (!prefersReduced) {
-      points.scale.setScalar(0.6);
-      animate(intro, {
-        v: 1,
-        duration: 1600,
-        ease: "outCubic",
-        onUpdate: () => {
-          points.scale.setScalar(0.6 + intro.v * 0.4);
-          material.opacity = intro.v;
-        },
-      });
+      animate(intro, { v: 1, duration: 1400, ease: "outCubic" });
     }
 
     // ── Render loop ───────────────────────────────────────────────
-    const clock = new THREE.Clock();
     let raf = 0;
     let running = true;
+    const pointerWorld = new THREE.Vector2(999, 999);
 
     const renderFrame = () => {
-      uniforms.uTime.value = clock.getElapsedTime();
+      ndc.lerp(targetNdc, 0.08);
 
-      // Smoothly chase the pointer for parallax + uniform.
-      pointer.lerp(targetPointer, 0.06);
-      uniforms.uPointer.value.copy(pointer);
+      // Subtle parallax so the board reacts; the page never moves.
+      camera.position.x += (ndc.x * 0.8 - camera.position.x) * 0.05;
+      camera.position.y += (ndc.y * 0.5 - camera.position.y) * 0.05;
 
-      // Subtle camera parallax — the field reacts, the page does not.
-      camera.position.x += (pointer.x * 2.2 - camera.position.x) * 0.04;
-      camera.position.y += (pointer.y * 1.4 - camera.position.y) * 0.04;
-      camera.lookAt(0, 0, 0);
+      // Pointer → world coords for the highlight (or park it far away).
+      if (pointerInside) {
+        const halfH = VIEW_H / 2;
+        const halfW = halfH * (window.innerWidth / window.innerHeight);
+        pointerWorld.set(
+          ndc.x * halfW + camera.position.x,
+          ndc.y * halfH + camera.position.y,
+        );
+      } else {
+        pointerWorld.set(9999, 9999);
+      }
+      uPointer.value.copy(pointerWorld);
 
-      points.rotation.z = clock.getElapsedTime() * 0.008;
+      // Advance pulses from their anime.js-driven progress.
+      for (let k = 0; k < PULSE_N; k++) placePulse(k);
+      pulsePosAttr.needsUpdate = true;
 
+      uOpacity.value = intro.v;
       renderer.render(scene, camera);
       raf = requestAnimationFrame(renderFrame);
     };
 
     if (prefersReduced) {
-      // Single static frame, then idle.
       renderer.render(scene, camera);
     } else {
       raf = requestAnimationFrame(renderFrame);
     }
 
-    // Pause when the tab is hidden to save the user's battery/CPU.
+    // Pause when the tab is hidden.
     const onVisibility = () => {
-      if (document.hidden) {
-        if (running) {
-          running = false;
-          cancelAnimationFrame(raf);
-        }
-      } else if (!running && !prefersReduced) {
+      if (document.hidden && running) {
+        running = false;
+        cancelAnimationFrame(raf);
+      } else if (!document.hidden && !running && !prefersReduced) {
         running = true;
-        clock.start();
         raf = requestAnimationFrame(renderFrame);
       }
     };
@@ -274,13 +445,17 @@ export function InteractiveBackground() {
       cancelAnimationFrame(raf);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("mouseout", onLeave);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
-      rippleAnim?.pause();
+      pulseState.forEach((s) => utils.remove(s));
       utils.remove(intro);
-      geometry.dispose();
-      material.dispose();
+      lineGeo.dispose();
+      lineMat.dispose();
+      nodeGeo.dispose();
+      nodeMat.dispose();
+      pulseGeo.dispose();
+      pulseMat.dispose();
       renderer.dispose();
     };
   }, []);
