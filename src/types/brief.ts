@@ -180,3 +180,41 @@ export type BriefStreamMessage =
   | { type: "stage"; stage: BriefStage }
   | { type: "result"; result: BriefResult }
   | { type: "error"; error: string };
+
+// ── Follow-up question (#74) ─────────────────────────────────
+// The conversational layer. A follow-up is answered by synthesising over the
+// brief's evidence store (sent by the client), gathering more on demand if it
+// can't be answered — never free-associated. Same grounding discipline as the
+// brief: cite real evidence, or honestly say there's no public signal.
+
+export const askInputSchema = z.object({
+  question: z.string().trim().min(1, "A question is required"),
+  /** The original brief input — carries company/person/context/seller/meetingType. */
+  input: briefInputSchema,
+  /** The resolved entity, so a fresh gather can target the same company. */
+  entity: resolvedEntitySchema,
+  /** The brief's evidence store to answer over (the per-session persistence). */
+  evidence: z.array(evidenceSchema),
+});
+export type AskInput = z.infer<typeof askInputSchema>;
+
+export const askResultSchema = z.object({
+  question: z.string(),
+  /** The grounded answer (or an honest "no public signal" when unsupported). */
+  answer: z.string(),
+  /** Evidence ids the answer cites. Empty when unsupported. */
+  citations: z.array(z.string()),
+  /** True only when the answer rests on real cited evidence. */
+  supported: z.boolean(),
+  /** The cited evidence, for rendering the answer's source chips. */
+  evidence: z.array(evidenceSchema),
+  meta: briefMetaSchema,
+});
+export type AskResult = z.infer<typeof askResultSchema>;
+
+export type AskStage = "thinking" | "gathering";
+
+export type AskStreamMessage =
+  | { type: "stage"; stage: AskStage }
+  | { type: "result"; result: AskResult }
+  | { type: "error"; error: string };
