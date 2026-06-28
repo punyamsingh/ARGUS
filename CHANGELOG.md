@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/punyamsingh/ARGUS/compare/v1.6.0...v1.7.0) (2026-06-28)
+
+
+### Features
+
+* **agent:** grounded follow-up engine + /api/brief/ask ([2143398](https://github.com/punyamsingh/ARGUS/commit/2143398f976ae985ea04d76c5efdf2020bfee4f1)), closes [#74](https://github.com/punyamsingh/ARGUS/issues/74)
+
 # [1.6.0](https://github.com/punyamsingh/ARGUS/compare/v1.5.0...v1.6.0) (2026-06-28)
 
 
