@@ -3,9 +3,15 @@ import { ArgusMark } from "@/components/argus-mark";
 
 const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
+const NAV = [
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
+
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-50">
+    <header id="top" className="sticky top-0 z-50 scroll-mt-0">
       <div className="glass border-b border-line/80">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-6">
           <Link href="/" className="group flex items-center gap-3">
@@ -19,26 +25,35 @@ export function SiteHeader() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-3">
-            <a
-              href={`https://github.com/punyamsingh/ARGUS/releases/tag/v${version}`}
-              target="_blank"
-              rel="noreferrer"
+          <nav className="flex items-center gap-3" aria-label="Main">
+            <div className="hidden items-center gap-5 md:flex">
+              {NAV.map((item) => (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  className="text-[13px] text-muted transition-colors hover:text-ivory"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+
+            <Link
+              href="/about#releases"
               title={`ARGUS v${version}`}
               className="hidden items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted transition-colors hover:border-line-strong hover:text-ivory md:inline-flex"
             >
               <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
               v{version}
-            </a>
-            <a
-              href="https://github.com/punyamsingh/ARGUS"
-              target="_blank"
-              rel="noreferrer"
+            </Link>
+
+            <Link
+              href="/#studio"
               className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
             >
-              GitHub
-            </a>
-          </div>
+              Generate a brief
+            </Link>
+          </nav>
         </div>
       </div>
     </header>

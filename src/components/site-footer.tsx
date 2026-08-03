@@ -1,49 +1,165 @@
+import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
 
+const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
+
+/**
+ * Site footer. Every destination here is a real page or a real anchor on the
+ * landing page — the source repository is deliberately reachable only from
+ * /about, so the footer reads as product navigation rather than a link dump.
+ */
+
+type FooterLink = { label: string; href: string };
+
+const COLUMNS: { heading: string; links: FooterLink[] }[] = [
+  {
+    heading: "Product",
+    links: [
+      { label: "Generate a brief", href: "/#studio" },
+      { label: "How it works", href: "/#how-it-works" },
+      { label: "Sources", href: "/#sources" },
+      { label: "What's new", href: "/about#releases" },
+    ],
+  },
+  {
+    heading: "Project",
+    links: [
+      { label: "About Argus", href: "/about" },
+      { label: "The team", href: "/about#team" },
+      { label: "Open source", href: "/about#open-source" },
+      { label: "Contact us", href: "/contact" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms of use", href: "/terms" },
+      { label: "Data & retention", href: "/privacy#data" },
+      { label: "Licence", href: "/about#open-source" },
+    ],
+  },
+];
+
 export function SiteFooter() {
+  const year = new Date().getFullYear();
+
   return (
-    <footer className="mt-auto border-t border-line">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <ArgusMark size={26} />
-          <div>
-            <p className="font-display text-sm font-semibold tracking-[0.14em]">
-              <span className="text-ivory">ARGUS</span>
-              <span className="text-nova font-extrabold italic">NOVA</span>
+    <footer className="mt-auto border-t border-line bg-ink-2/40">
+      <div className="mx-auto max-w-6xl px-6">
+        {/* ── Primary ─────────────────────────────────────────── */}
+        <div className="grid gap-10 py-14 md:grid-cols-12">
+          <div className="md:col-span-5 lg:col-span-4">
+            <Link href="/" className="flex items-center gap-3">
+              <ArgusMark size={28} />
+              <span className="font-display text-base font-semibold tracking-[0.14em]">
+                <span className="text-ivory">ARGUS</span>
+                <span className="text-nova font-extrabold italic">NOVA</span>
+              </span>
+            </Link>
+
+            <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-muted">
+              Pre-meeting intelligence for sellers. One cited, conversation-ready
+              brief — synthesised from real-time public signals in the minutes
+              before your meeting.
             </p>
-            <p className="mt-0.5 text-[12px] text-muted">
+
+            <p className="mt-4 text-[12px] leading-relaxed text-faint">
               <span className="text-accent">A</span>gentic{" "}
               <span className="text-accent">R</span>esearch{" "}
               <span className="text-accent">G</span>enerated to{" "}
               <span className="text-accent">U</span>nburden{" "}
               <span className="text-accent">S</span>alespeople
             </p>
-            <p className="mt-0.5 text-[12px] text-faint">
-              Capstone · Product Management with Generative &amp; Agentic AI
-            </p>
+
+            <Link
+              href="/contact"
+              className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+            >
+              <MailIcon />
+              Talk to the team
+            </Link>
           </div>
+
+          <nav
+            aria-label="Footer"
+            className="grid gap-8 sm:grid-cols-3 md:col-span-7 lg:col-span-7 lg:col-start-6"
+          >
+            {COLUMNS.map((column) => (
+              <div key={column.heading}>
+                <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">
+                  {column.heading}
+                </h2>
+                <ul className="mt-4 space-y-2.5">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-[14px] text-muted transition-colors hover:text-ivory"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        <div className="flex items-center gap-6 text-[13px] text-muted">
-          <a
-            href="https://github.com/punyamsingh/ARGUS/blob/main/PLAN.md"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-colors hover:text-ivory"
-          >
-            Plan
-          </a>
-          <a
-            href="https://github.com/punyamsingh/ARGUS/issues"
-            target="_blank"
-            rel="noreferrer"
-            className="transition-colors hover:text-ivory"
-          >
-            Roadmap
-          </a>
-          <span className="text-faint">© {new Date().getFullYear()} Team Argus</span>
+        {/* ── Disclosure ──────────────────────────────────────── */}
+        <div className="rule" />
+        <p className="py-5 text-[12px] leading-relaxed text-faint">
+          Briefs are generated by AI from publicly available sources and can be
+          incomplete or out of date. Every claim carries a citation — check it
+          before you act on anything material.
+        </p>
+
+        {/* ── Meta bar ────────────────────────────────────────── */}
+        <div className="flex flex-col gap-4 border-t border-line py-6 text-[12px] text-faint sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span>© {year} Team Argus</span>
+            <span aria-hidden className="hidden text-line-strong sm:inline">
+              ·
+            </span>
+            <span>Capstone — Product Management with Generative &amp; Agentic AI</span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/about#releases"
+              className="inline-flex items-center gap-2 rounded-full border border-line px-2.5 py-1 transition-colors hover:border-line-strong hover:text-muted"
+              title={`ARGUS v${version}`}
+            >
+              <span className="size-1.5 rounded-full bg-signal shadow-[0_0_8px_var(--color-signal)]" />
+              v{version}
+            </Link>
+            <a
+              href="#top"
+              className="transition-colors hover:text-muted"
+              aria-label="Back to top"
+            >
+              Back to top ↑
+            </a>
+          </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+function MailIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      className="size-3.5 text-accent"
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <path d="m3.5 7 8.5 6 8.5-6" strokeLinecap="round" />
+    </svg>
   );
 }
