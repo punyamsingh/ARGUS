@@ -30,9 +30,8 @@ export function SiteFooter() {
           </div>
 
           <p className="mt-3 max-w-md text-[13px] leading-relaxed text-muted">
-            Pre-meeting intelligence for sellers. One cited, conversation-ready
-            brief — synthesised from real-time public signals in the minutes
-            before your meeting.
+            Pre-meeting intelligence for sellers — one cited, conversation-ready
+            brief, synthesised from real-time public signals.
           </p>
         </div>
 
@@ -47,13 +46,6 @@ export function SiteFooter() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3.5 py-1.5 font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
-            >
-              <MailIcon />
-              Talk to the team
-            </Link>
           </nav>
 
           <span className="text-[12px] text-faint">
@@ -62,21 +54,5 @@ export function SiteFooter() {
         </div>
       </div>
     </footer>
-  );
-}
-
-function MailIcon() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      className="size-3.5 text-accent"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2.5" />
-      <path d="m3.5 7 8.5 6 8.5-6" strokeLinecap="round" />
-    </svg>
   );
 }
