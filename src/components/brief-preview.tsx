@@ -31,17 +31,39 @@ function SectionLabel({ children, tone = "default" }: { children: React.ReactNod
   );
 }
 
-export function BriefPreview() {
+export function BriefPreview({ onClose }: { onClose?: () => void }) {
   return (
     <div className="relative">
       {/* soft glow behind the card */}
       <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-glow opacity-70 blur-2xl" />
 
       <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm">
-        {/* window chrome */}
+        {/* window chrome — the corner light really closes when `onClose` is
+            given, so it reads like the macOS control people reach for. */}
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
-          <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-line-strong" />
+          <div className="group/chrome flex items-center gap-1.5">
+            {onClose ? (
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Dismiss example"
+                title="Dismiss example"
+                className="flex size-2.5 items-center justify-center rounded-full bg-line-strong text-ink transition-colors hover:bg-risk focus-visible:bg-risk"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="size-[7px] opacity-0 transition-opacity group-hover/chrome:opacity-100 group-focus-within/chrome:opacity-100"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="4.5"
+                  aria-hidden="true"
+                >
+                  <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+                </svg>
+              </button>
+            ) : (
+              <span className="size-2.5 rounded-full bg-line-strong" />
+            )}
             <span className="size-2.5 rounded-full bg-line-strong" />
             <span className="size-2.5 rounded-full bg-line-strong" />
           </div>

@@ -212,34 +212,14 @@ export function BriefStudio() {
           </div>
         ) : exampleDismissed ? null : (
           <div className="relative">
-            <div className="absolute -top-3 left-4 z-10 flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setExampleDismissed(true)}
-                aria-label="Dismiss example"
-                title="Dismiss example"
-                className="flex size-6 items-center justify-center rounded-full border border-line bg-ink text-faint transition-colors hover:border-line-strong hover:text-ivory"
-              >
-                <CloseIcon />
-              </button>
-              <span className="rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
-                Example
-              </span>
-            </div>
-            <BriefPreview />
+            <span className="absolute -top-3 left-4 z-10 rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
+              Example
+            </span>
+            <BriefPreview onClose={() => setExampleDismissed(true)} />
           </div>
         )}
       </div>
     </div>
-  );
-}
-
-/** The cross on the example panel — icon-only, so the button carries the label. */
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
-      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-    </svg>
   );
 }
 
