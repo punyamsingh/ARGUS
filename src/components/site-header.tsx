@@ -38,14 +38,13 @@ export function SiteHeader() {
               ))}
             </div>
 
-            <Link
-              href="/about#releases"
+            <span
               title={`ARGUS v${version}`}
-              className="hidden items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted transition-colors hover:border-line-strong hover:text-ivory md:inline-flex"
+              className="hidden items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted md:inline-flex"
             >
               <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
               v{version}
-            </Link>
+            </span>
 
             <Link
               href="/#studio"
