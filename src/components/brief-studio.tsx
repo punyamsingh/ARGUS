@@ -30,7 +30,10 @@ export function BriefStudio() {
   const [opened, setOpened] = useState<BriefResult | null>(null);
   // The example is a one-time explainer; once dismissed it stays gone for the
   // session (deliberately not persisted — a fresh visit gets the pitch again).
+  // `leaving` runs the fade first; the unmount waits for it so the layout
+  // reflow reads as one motion rather than a jump.
   const [exampleDismissed, setExampleDismissed] = useState(false);
+  const [exampleLeaving, setExampleLeaving] = useState(false);
   const history = useBriefHistory();
 
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
@@ -125,8 +128,19 @@ export function BriefStudio() {
     setOpened(entry.result);
   }
 
+  // Nothing left in the right column → the form settles into a centred single
+  // column. Opening a recent brief later fills it again and this reverses.
+  const soloForm = exampleDismissed && !opened;
+
   return (
-    <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 md:grid-cols-[0.9fr_1.1fr]">
+    <div
+      className={clsx(
+        "mx-auto grid items-start gap-y-10 px-6 transition-[max-width,grid-template-columns,column-gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        soloForm
+          ? "max-w-xl gap-x-0 md:grid-cols-[1fr_0fr]"
+          : "max-w-6xl gap-x-10 md:grid-cols-[0.9fr_1.1fr]",
+      )}
+    >
       {/* Form */}
       <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="md:sticky md:top-24">
         <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-cast/30 backdrop-blur-sm sm:p-5">
@@ -211,11 +225,24 @@ export function BriefStudio() {
             <BriefConversation result={opened} />
           </div>
         ) : exampleDismissed ? null : (
-          <div className="relative">
+          <div
+            className={clsx(
+              "relative transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+              exampleLeaving && "pointer-events-none scale-[0.97] opacity-0",
+            )}
+            // Unmount only once the fade has finished, so the column collapse
+            // starts from an already-invisible panel. Under reduced motion the
+            // global override shortens this to ~0ms and it still fires.
+            onTransitionEnd={(e) => {
+              if (e.target === e.currentTarget && e.propertyName === "opacity") {
+                setExampleDismissed(true);
+              }
+            }}
+          >
             <span className="absolute -top-3 left-4 z-10 rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
               Example
             </span>
-            <BriefPreview onClose={() => setExampleDismissed(true)} />
+            <BriefPreview onClose={() => setExampleLeaving(true)} />
           </div>
         )}
       </div>
