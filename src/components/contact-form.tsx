@@ -5,7 +5,7 @@ import { useState } from "react";
 /**
  * Contact form. Rather than posting to a mail backend, the form composes a
  * well-formed message and hands it to the visitor's own mail client — nothing
- * is transmitted or stored by us, which is what the privacy page promises.
+ * is transmitted or stored by us until the visitor sends it themselves.
  */
 
 /**
