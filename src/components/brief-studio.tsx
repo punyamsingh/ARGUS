@@ -126,8 +126,8 @@ export function BriefStudio() {
     <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 md:grid-cols-[0.9fr_1.1fr]">
       {/* Form */}
       <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="md:sticky md:top-24">
-        <div className="rounded-2xl border border-line-strong bg-surface/70 p-2 shadow-xl shadow-black/30 backdrop-blur-sm">
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-black/30 backdrop-blur-sm sm:p-5">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Company"
               value={company}
@@ -146,18 +146,18 @@ export function BriefStudio() {
             value={context}
             onChange={setContext}
             placeholder="e.g. renewal + expansion call"
-            className="mt-2"
+            className="mt-3 block"
           />
           <MeetingTypePicker value={meetingType} onChange={setMeetingType} />
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-opacity hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-opacity hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
           >
             Generate brief
           </button>
         </div>
-        <p className="mt-3 px-1 text-[12px] text-faint">
+        <p className="mt-3 px-1.5 text-[12px] leading-relaxed text-faint">
           Free, grounded in public sources. Every claim is cited.{" "}
           <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
         </p>
@@ -258,7 +258,7 @@ function MeetingTypePicker({
   onChange: (v: MeetingType | "") => void;
 }) {
   return (
-    <div className="mt-2 flex flex-wrap gap-1.5 px-1">
+    <div className="mt-3 flex flex-wrap gap-2">
       {MEETING_TYPES.map((t) => {
         const active = value === t;
         return (
@@ -316,12 +316,12 @@ function SellerPanel({
   onClear: () => void;
 }) {
   return (
-    <div className="mt-3">
+    <div className="mt-4">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong"
+        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3 text-left transition-colors hover:border-line-strong"
       >
         <span className="flex items-center gap-2 text-[13px] text-ivory">
           Your product
@@ -333,8 +333,8 @@ function SellerPanel({
       </button>
 
       {open && (
-        <div className="mt-2 grid gap-2 rounded-xl border border-line bg-surface/30 p-2">
-          <div className="grid gap-2 sm:grid-cols-2">
+        <div className="mt-2 grid gap-3 rounded-xl border border-line bg-surface/30 p-4">
+          <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Your company"
               value={company}
@@ -360,8 +360,8 @@ function SellerPanel({
             onChange={onValueProp}
             placeholder="e.g. ship insights without a data team"
           />
-          <div className="flex items-center justify-between px-1">
-            <p className="text-[11px] text-faint">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] leading-relaxed text-faint">
               Remembered on this device. Only “what you sell” is used to tailor;
               never invented.
             </p>
@@ -390,7 +390,7 @@ function RecentBriefs({
   onOpen: (e: HistoryEntry) => void;
 }) {
   return (
-    <div className="mt-5 px-1">
+    <div className="mt-6 px-1.5">
       <p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-faint">
         Recent briefs
       </p>
