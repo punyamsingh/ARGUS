@@ -158,7 +158,7 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
         <button
           type="submit"
           disabled={busy || question.trim() === ""}
-          className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-opacity hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+          className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-muted"
         >
           {busy ? "…" : "Ask"}
         </button>
