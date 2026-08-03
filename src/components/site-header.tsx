@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
-import { version } from "@/lib/version";
+
+const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
 
 const NAV = [
   { label: "How it works", href: "/#how-it-works" },

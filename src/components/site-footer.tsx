@@ -1,161 +1,40 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
-import { version } from "@/lib/version";
 
-/**
- * Site footer. Every destination here is a real page or a real anchor on the
- * landing page — the source repository is deliberately reachable only from
- * /about, so the footer reads as product navigation rather than a link dump.
- */
-
-type FooterLink = { label: string; href: string };
-
-const COLUMNS: { heading: string; links: FooterLink[] }[] = [
-  {
-    heading: "Product",
-    links: [
-      { label: "Generate a brief", href: "/#studio" },
-      { label: "How it works", href: "/#how-it-works" },
-      { label: "Sources", href: "/#sources" },
-    ],
-  },
-  {
-    heading: "Project",
-    links: [
-      { label: "About Argus", href: "/about" },
-      { label: "How the agent works", href: "/about#how-it-works" },
-      { label: "The team", href: "/about#team" },
-      { label: "Contact us", href: "/contact" },
-    ],
-  },
-  {
-    heading: "Legal",
-    links: [
-      { label: "Privacy", href: "/privacy" },
-      { label: "Data & retention", href: "/privacy#data" },
-      { label: "Responsible use", href: "/privacy#responsible-use" },
-    ],
-  },
+const LINKS = [
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function SiteFooter() {
-  const year = new Date().getFullYear();
-
   return (
-    <footer className="mt-auto border-t border-line bg-ink-2/40">
-      <div className="mx-auto max-w-6xl px-6">
-        {/* ── Primary ─────────────────────────────────────────── */}
-        <div className="grid gap-10 py-14 md:grid-cols-12">
-          <div className="md:col-span-5 lg:col-span-4">
-            <Link href="/" className="flex items-center gap-3">
-              <ArgusMark size={28} />
-              <span className="font-display text-base font-semibold tracking-[0.14em]">
-                <span className="text-ivory">ARGUS</span>
-                <span className="text-nova font-extrabold italic">NOVA</span>
-              </span>
-            </Link>
+    <footer className="mt-auto border-t border-line">
+      <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-6 py-8 sm:flex-row sm:justify-between">
+        <Link href="/" className="flex items-center gap-2.5">
+          <ArgusMark size={24} />
+          <span className="font-display text-sm font-semibold tracking-[0.14em]">
+            <span className="text-ivory">ARGUS</span>
+            <span className="text-nova font-extrabold italic">NOVA</span>
+          </span>
+        </Link>
 
-            <p className="mt-4 max-w-xs text-[14px] leading-relaxed text-muted">
-              Pre-meeting intelligence for sellers. One cited, conversation-ready
-              brief — synthesised from real-time public signals in the minutes
-              before your meeting.
-            </p>
-
-            <p className="mt-4 text-[12px] leading-relaxed text-faint">
-              <span className="text-accent">A</span>gentic{" "}
-              <span className="text-accent">R</span>esearch{" "}
-              <span className="text-accent">G</span>enerated to{" "}
-              <span className="text-accent">U</span>nburden{" "}
-              <span className="text-accent">S</span>alespeople
-            </p>
-
+        <nav aria-label="Footer" className="flex items-center gap-6 text-[13px]">
+          {LINKS.map((link) => (
             <Link
-              href="/contact"
-              className="mt-6 inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+              key={link.label}
+              href={link.href}
+              className="text-muted transition-colors hover:text-ivory"
             >
-              <MailIcon />
-              Talk to the team
+              {link.label}
             </Link>
-          </div>
+          ))}
+        </nav>
 
-          <nav
-            aria-label="Footer"
-            className="grid gap-8 sm:grid-cols-3 md:col-span-7 lg:col-span-7 lg:col-start-6"
-          >
-            {COLUMNS.map((column) => (
-              <div key={column.heading}>
-                <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">
-                  {column.heading}
-                </h2>
-                <ul className="mt-4 space-y-2.5">
-                  {column.links.map((link) => (
-                    <li key={link.label}>
-                      <Link
-                        href={link.href}
-                        className="text-[14px] text-muted transition-colors hover:text-ivory"
-                      >
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </nav>
-        </div>
-
-        {/* ── Disclosure ──────────────────────────────────────── */}
-        <div className="rule" />
-        <p className="py-5 text-[12px] leading-relaxed text-faint">
-          Briefs are generated by AI from publicly available sources and can be
-          incomplete or out of date. Every claim carries a citation — check it
-          before you act on anything material.
-        </p>
-
-        {/* ── Meta bar ────────────────────────────────────────── */}
-        <div className="flex flex-col gap-4 border-t border-line py-6 text-[12px] text-faint sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span>© {year} Team Argus</span>
-            <span aria-hidden className="hidden text-line-strong sm:inline">
-              ·
-            </span>
-            <span>All rights reserved</span>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span
-              className="inline-flex items-center gap-2 rounded-full border border-line px-2.5 py-1"
-              title={`ARGUS v${version}`}
-            >
-              <span className="size-1.5 rounded-full bg-signal shadow-[0_0_8px_var(--color-signal)]" />
-              v{version}
-            </span>
-            <a
-              href="#top"
-              className="transition-colors hover:text-muted"
-              aria-label="Back to top"
-            >
-              Back to top ↑
-            </a>
-          </div>
-        </div>
+        <span className="text-[12px] text-faint">
+          © {new Date().getFullYear()} Team Argus
+        </span>
       </div>
     </footer>
-  );
-}
-
-function MailIcon() {
-  return (
-    <svg
-      aria-hidden
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      className="size-3.5 text-accent"
-    >
-      <rect x="3" y="5" width="18" height="14" rx="2.5" />
-      <path d="m3.5 7 8.5 6 8.5-6" strokeLinecap="round" />
-    </svg>
   );
 }

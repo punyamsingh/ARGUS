@@ -86,11 +86,7 @@ export default function ContactPage() {
         <p>
           The form on this page drafts a message in your own mail client; nothing
           is transmitted to us until you press send. We use what you send only to
-          answer you and to fix what you reported. See the{" "}
-          <a href="/privacy" className="text-accent underline-offset-4 hover:underline">
-            privacy notice
-          </a>{" "}
-          for the rest.
+          answer you and to fix what you reported.
         </p>
       </Section>
     </PageShell>
