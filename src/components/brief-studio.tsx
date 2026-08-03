@@ -28,6 +28,9 @@ export function BriefStudio() {
   const [meetingType, setMeetingType] = useState<MeetingType | "">("");
   // A recent brief opened inline in the panel (null → show the example).
   const [opened, setOpened] = useState<BriefResult | null>(null);
+  // The example is a one-time explainer; once dismissed it stays gone for the
+  // session (deliberately not persisted — a fresh visit gets the pitch again).
+  const [exampleDismissed, setExampleDismissed] = useState(false);
   const history = useBriefHistory();
 
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
@@ -207,16 +210,36 @@ export function BriefStudio() {
             </div>
             <BriefConversation result={opened} />
           </div>
-        ) : (
+        ) : exampleDismissed ? null : (
           <div className="relative">
-            <span className="absolute -top-3 left-4 z-10 rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
-              Example
-            </span>
+            <div className="absolute -top-3 left-4 z-10 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setExampleDismissed(true)}
+                aria-label="Dismiss example"
+                title="Dismiss example"
+                className="flex size-6 items-center justify-center rounded-full border border-line bg-ink text-faint transition-colors hover:border-line-strong hover:text-ivory"
+              >
+                <CloseIcon />
+              </button>
+              <span className="rounded-full border border-line bg-ink px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-faint">
+                Example
+              </span>
+            </div>
             <BriefPreview />
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+/** The cross on the example panel — icon-only, so the button carries the label. */
+function CloseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+    </svg>
   );
 }
 
