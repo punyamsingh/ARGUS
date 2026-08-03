@@ -37,13 +37,13 @@ export function BriefPreview() {
       {/* soft glow behind the card */}
       <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-glow opacity-70 blur-2xl" />
 
-      <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-black/40 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm">
         {/* window chrome */}
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
           <div className="flex items-center gap-1.5">
-            <span className="size-2.5 rounded-full bg-[#3a3f49]" />
-            <span className="size-2.5 rounded-full bg-[#3a3f49]" />
-            <span className="size-2.5 rounded-full bg-[#3a3f49]" />
+            <span className="size-2.5 rounded-full bg-line-strong" />
+            <span className="size-2.5 rounded-full bg-line-strong" />
+            <span className="size-2.5 rounded-full bg-line-strong" />
           </div>
           <span className="font-mono text-[11px] text-faint">argus · meeting brief</span>
           <span className="font-mono text-[11px] text-signal">ready · 38s</span>

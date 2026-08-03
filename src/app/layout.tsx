@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { InteractiveBackground } from "@/components/interactive-background";
+import { THEME_BOOTSTRAP } from "@/lib/theme-bootstrap";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -52,8 +53,15 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-theme="dark"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
+      <head>
+        {/* Resolves the stored/system theme before first paint — without this
+            a light-mode visitor gets a frame of the dark palette. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <InteractiveBackground />
         {children}

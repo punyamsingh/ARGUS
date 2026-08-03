@@ -126,7 +126,7 @@ export function BriefStudio() {
     <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 md:grid-cols-[0.9fr_1.1fr]">
       {/* Form */}
       <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="md:sticky md:top-24">
-        <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-black/30 backdrop-blur-sm sm:p-5">
+        <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-cast/30 backdrop-blur-sm sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Company"
