@@ -8,6 +8,13 @@ import { useState } from "react";
  * is transmitted or stored by us, which is what the privacy page promises.
  */
 
+/**
+ * Cap on the message field. Mail clients and browsers impose their own limits
+ * on `mailto:` URL length and truncate silently past them, so we bound the
+ * message and show the remaining count rather than let a long note get cut.
+ */
+const MESSAGE_MAX = 2000;
+
 const TOPICS = [
   "Product feedback",
   "Using Argus with my team",
@@ -100,12 +107,16 @@ export function ContactForm({ email }: { email: string }) {
           <textarea
             required
             rows={5}
+            maxLength={MESSAGE_MAX}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder="What's on your mind? If it's about a brief, the company and person you searched for helps us reproduce it."
             className={`${inputClass} resize-y`}
           />
         </Field>
+        <p className="mt-1.5 text-right text-[11px] tabular-nums text-faint">
+          {message.length} / {MESSAGE_MAX}
+        </p>
       </div>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
-
-const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
+import { version } from "@/lib/version";
 
 /**
  * Site footer. Every destination here is a real page or a real anchor on the
