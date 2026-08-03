@@ -58,12 +58,12 @@ export default function Home() {
         </section>
 
         {/* ── The studio ───────────────────────────────────── */}
-        <section className="rise pb-20 [animation-delay:120ms]">
+        <section id="studio" className="rise scroll-mt-24 pb-20 [animation-delay:120ms]">
           <BriefStudio />
         </section>
 
         {/* ── Tool belt ────────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-6">
+        <section id="sources" className="mx-auto max-w-6xl scroll-mt-24 px-6">
           <div className="rule" />
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3 py-6 text-faint">
             <span className="font-mono text-[11px] uppercase tracking-[0.18em]">
@@ -80,7 +80,7 @@ export default function Home() {
         </section>
 
         {/* ── How it works ─────────────────────────────────── */}
-        <section className="mx-auto max-w-6xl px-6 py-20">
+        <section id="how-it-works" className="mx-auto max-w-6xl scroll-mt-24 px-6 py-20">
           <div className="max-w-2xl">
             <h2 className="font-display text-3xl font-semibold tracking-tight text-ivory sm:text-4xl">
               An agent, not another dashboard.
