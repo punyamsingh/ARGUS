@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
 
-const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
-
 const NAV = [
   { label: "How it works", href: "/#how-it-works" },
   { label: "About", href: "/about" },
@@ -37,14 +35,6 @@ export function SiteHeader() {
                 </Link>
               ))}
             </div>
-
-            <span
-              title={`ARGUS v${version}`}
-              className="hidden items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted md:inline-flex"
-            >
-              <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
-              v{version}
-            </span>
 
             <Link
               href="/#studio"
