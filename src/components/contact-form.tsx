@@ -122,7 +122,7 @@ export function ContactForm({ email }: { email: string }) {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2 text-[14px] font-semibold text-ink transition-colors hover:bg-accent-strong disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2 text-[14px] font-semibold text-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-muted"
           disabled={!message.trim()}
         >
           Open in my mail app

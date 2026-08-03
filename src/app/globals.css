@@ -68,15 +68,22 @@
   --color-line: #e2ded4;
   --color-line-strong: #c9c4b6;
 
-  /* Type — `ivory` keeps its name but carries the primary ink colour */
+  /* Type — `ivory` keeps its name but carries the primary ink colour.
+     `faint` is darker than its dark-theme counterpart on purpose: light
+     grey on paper is the first thing to fail, and it carries the smallest
+     text on the page (placeholders, captions). 5.1:1 on the ink ground. */
   --color-ivory: #16181d;
   --color-muted: #5a616b;
-  --color-faint: #868d97;
+  --color-faint: #656b73;
 
-  /* Accent — gold, deepened for contrast on a light ground */
-  --color-accent: #a8761f;
-  --color-accent-strong: #8d6216;
-  --color-accent-deep: #b8811f;
+  /* Accent — gold, deepened until it clears 4.5:1 as small text on the ink
+     ground. That same ratio governs the primary button, which is ink text on
+     an accent fill, so one value fixes both. `strong` is the hover step and
+     must stay darker still; `deep` is the light end of the NOVA gradient and
+     is capped so the lockup's lightest stop still passes. */
+  --color-accent: #8c6619;
+  --color-accent-strong: #755515;
+  --color-accent-deep: #946b1b;
 
   /* Semantic */
   --color-risk: #c23b42;
