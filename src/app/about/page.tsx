@@ -1,13 +1,10 @@
 import type { Metadata } from "next";
 import { PageShell, Section } from "@/components/page-shell";
 
-const version = process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0";
-const REPO = "https://github.com/punyamsingh/ARGUS";
-
 export const metadata: Metadata = {
   title: "About",
   description:
-    "What Argus is, how the agent builds a cited pre-meeting brief, who builds it, and where the source code lives.",
+    "What Argus is, how the agent builds a cited pre-meeting brief, and who builds it.",
 };
 
 const PIPELINE = [
@@ -35,14 +32,6 @@ const SOURCES = [
   ["GDELT news", "Recent coverage and tone across global news."],
   ["SEC EDGAR", "Filings and disclosures for public companies."],
   ["Web search", "Fills the gaps the specialised tools do not cover."],
-];
-
-const LINKS = [
-  { label: "Source repository", href: REPO, note: "The full codebase, MIT licensed." },
-  { label: "Product plan", href: `${REPO}/blob/main/PLAN.md`, note: "Where the product is heading and why." },
-  { label: "Roadmap & issues", href: `${REPO}/issues`, note: "Everything being worked on, in the open." },
-  { label: "Contributing guide", href: `${REPO}/blob/main/CONTRIBUTING.md`, note: "How to propose or ship a change." },
-  { label: "Licence (MIT)", href: `${REPO}/blob/main/LICENSE`, note: "Use it, fork it, ship it." },
 ];
 
 export default function AboutPage() {
@@ -108,11 +97,10 @@ export default function AboutPage() {
 
       <Section id="team" title="Who builds it">
         <p>
-          Argus is built by <strong className="text-ivory">Team Argus</strong> as a
-          capstone for <em>Product Management with Generative &amp; Agentic AI</em>.
-          It is a real product built in the open — scoped, planned, shipped and
-          versioned the way a small product team would run it, not a demo assembled
-          the week before a deadline.
+          Argus is built by <strong className="text-ivory">Team Argus</strong> — a
+          product team working on agentic AI for revenue teams. It is scoped,
+          planned, shipped and versioned like the product it is, and every release
+          goes out the door the same way.
         </p>
         <p>
           Have a question, a use case, or feedback from a real sales motion? We
@@ -122,58 +110,6 @@ export default function AboutPage() {
           </a>
           .
         </p>
-      </Section>
-
-      <Section id="open-source" title="Open source">
-        <p>
-          The entire codebase is public under the MIT licence. Direction lives in
-          the plan, work lives in issues, and every release is cut from
-          conventional commits.
-        </p>
-        <ul className="mt-2 divide-y divide-line/70 border-y border-line/70">
-          {LINKS.map((link) => (
-            <li key={link.label}>
-              <a
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="group flex items-center justify-between gap-4 py-3 transition-colors hover:text-ivory"
-              >
-                <span>
-                  <span className="text-[14px] font-medium text-ivory">
-                    {link.label}
-                  </span>
-                  <span className="mt-0.5 block text-[13px] text-muted">
-                    {link.note}
-                  </span>
-                </span>
-                <span
-                  aria-hidden
-                  className="text-faint transition-transform group-hover:translate-x-0.5 group-hover:text-accent"
-                >
-                  ↗
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      <Section id="releases" title="Releases">
-        <p>
-          This site is running{" "}
-          <span className="font-mono text-ivory">v{version}</span>. Versions are
-          derived automatically from commit history, so the number always matches
-          what is deployed.
-        </p>
-        <a
-          href={`${REPO}/blob/main/CHANGELOG.md`}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
-        >
-          Read the changelog ↗
-        </a>
       </Section>
     </PageShell>
   );

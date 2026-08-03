@@ -3,10 +3,9 @@
 import { useState } from "react";
 
 /**
- * Contact form. Argus has no mail backend (and a capstone shouldn't stand one
- * up just to collect three fields), so the form composes a well-formed message
- * and hands it to the visitor's own mail client. Nothing is sent or stored by
- * us — which is also what the privacy page promises.
+ * Contact form. Rather than posting to a mail backend, the form composes a
+ * well-formed message and hands it to the visitor's own mail client — nothing
+ * is transmitted or stored by us, which is what the privacy page promises.
  */
 
 const TOPICS = [

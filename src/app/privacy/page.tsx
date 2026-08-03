@@ -69,15 +69,23 @@ export default function PrivacyPage() {
         </p>
       </Section>
 
-      <Section title="Information about other people">
+      <Section id="responsible-use" title="Responsible use">
         <p>
-          Briefs describe real people in their professional capacity, assembled
-          from sources that are already public. Argus does not attempt to gather
-          personal, private or sensitive information, and it does not access
-          anything behind a login. If you are the subject of a brief and want to
-          raise a concern, write to us via the{" "}
+          Briefs describe people in their professional capacity, assembled from
+          sources that are already public. Argus does not gather personal, private
+          or sensitive information, and it never accesses anything behind a login.
+        </p>
+        <p>
+          Argus is built for meeting preparation. It must not be used to profile,
+          monitor or harass individuals, and its output must not be the basis for
+          a decision about someone&apos;s employment, credit or similar. Briefs are
+          model-generated and carry citations for a reason — verify a claim before
+          you rely on it.
+        </p>
+        <p>
+          If you are the subject of a brief and want to raise a concern,{" "}
           <a href="/contact" className="text-accent underline-offset-4 hover:underline">
-            contact page
+            write to us
           </a>{" "}
           and we will respond.
         </p>
@@ -94,12 +102,12 @@ export default function PrivacyPage() {
 
       <Section title="Questions">
         <p>
-          Anything unclear or anything you want removed —{" "}
+          Anything unclear, or anything you want removed —{" "}
           <a href="/contact" className="text-accent underline-offset-4 hover:underline">
             contact us
           </a>
-          . This is a student capstone project, not a commercial data broker, and
-          we would rather over-explain than leave you guessing.
+          . If this notice changes materially, the date at the top of the page
+          changes with it.
         </p>
       </Section>
     </PageShell>

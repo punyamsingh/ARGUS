@@ -18,15 +18,14 @@ const COLUMNS: { heading: string; links: FooterLink[] }[] = [
       { label: "Generate a brief", href: "/#studio" },
       { label: "How it works", href: "/#how-it-works" },
       { label: "Sources", href: "/#sources" },
-      { label: "What's new", href: "/about#releases" },
     ],
   },
   {
     heading: "Project",
     links: [
       { label: "About Argus", href: "/about" },
+      { label: "How the agent works", href: "/about#how-it-works" },
       { label: "The team", href: "/about#team" },
-      { label: "Open source", href: "/about#open-source" },
       { label: "Contact us", href: "/contact" },
     ],
   },
@@ -34,9 +33,8 @@ const COLUMNS: { heading: string; links: FooterLink[] }[] = [
     heading: "Legal",
     links: [
       { label: "Privacy", href: "/privacy" },
-      { label: "Terms of use", href: "/terms" },
       { label: "Data & retention", href: "/privacy#data" },
-      { label: "Licence", href: "/about#open-source" },
+      { label: "Responsible use", href: "/privacy#responsible-use" },
     ],
   },
 ];
@@ -122,18 +120,17 @@ export function SiteFooter() {
             <span aria-hidden className="hidden text-line-strong sm:inline">
               ·
             </span>
-            <span>Capstone — Product Management with Generative &amp; Agentic AI</span>
+            <span>All rights reserved</span>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link
-              href="/about#releases"
-              className="inline-flex items-center gap-2 rounded-full border border-line px-2.5 py-1 transition-colors hover:border-line-strong hover:text-muted"
+            <span
+              className="inline-flex items-center gap-2 rounded-full border border-line px-2.5 py-1"
               title={`ARGUS v${version}`}
             >
               <span className="size-1.5 rounded-full bg-signal shadow-[0_0_8px_var(--color-signal)]" />
               v{version}
-            </Link>
+            </span>
             <a
               href="#top"
               className="transition-colors hover:text-muted"

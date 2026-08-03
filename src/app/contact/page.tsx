@@ -39,7 +39,7 @@ export default function ContactPage() {
           Talk to <span className="text-gleam italic">Team Argus</span>.
         </>
       }
-      lede="A small team builds this in the open, and reads everything that comes in. Expect a reply within a couple of working days."
+      lede="We read everything that comes in — product feedback, a brief that came back wrong, or a team that wants to run Argus on real accounts. Expect a reply within two working days."
     >
       <Section title="Send us a message">
         <ContactForm email={CONTACT_EMAIL} />
@@ -75,14 +75,10 @@ export default function ContactPage() {
 
       <Section title="Reporting a bug">
         <p>
-          Argus is developed in the open, so the fastest route for anything
-          reproducible is an issue on the project tracker — you&apos;ll see it get
-          picked up, and so will everyone else hitting the same thing. The{" "}
-          <a href="/about#open-source" className="text-accent underline-offset-4 hover:underline">
-            about page
-          </a>{" "}
-          links the repository and tracker. If you&apos;d rather not do that
-          publicly, email works just as well.
+          Send it straight to us with the details that make it reproducible: the
+          company and person you searched for, the meeting context you gave, and
+          what came back wrong. Screenshots help. We triage bug reports ahead of
+          everything else in the inbox.
         </p>
       </Section>
 
