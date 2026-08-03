@@ -29,6 +29,9 @@
   --color-risk: #f0676d;
   --color-signal: #43d39e;
 
+  /* Drop-shadow cast — pure black under the dark palette, warm grey on light */
+  --color-cast: #000000;
+
   /* Fonts */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -40,6 +43,52 @@
 
 :root {
   color-scheme: dark;
+  /* Tuning knobs the decorative layers below read, so a theme flip is a token
+     swap rather than a second copy of every rule. */
+  --glow-strength: 16%;
+  --glass-opacity: 70%;
+  --gleam-end: #c7c2b7;
+  --nova-glow: 30%;
+  --scroll-thumb-hover: #3c414d;
+}
+
+/* ── Light theme ───────────────────────────────────────────────
+   Same dossier, printed on paper: warm ivory stock, near-black ink,
+   and the gold deepened to #a8761f so it still clears 4.5:1 as text.
+   Every utility in the app compiles to var(--color-*), so redefining
+   the tokens here flips the whole surface — no component-level forks. */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces */
+  --color-ink: #faf9f6;
+  --color-ink-2: #f2f0ea;
+  --color-surface: #ffffff;
+  --color-surface-2: #f5f3ee;
+  --color-line: #e2ded4;
+  --color-line-strong: #c9c4b6;
+
+  /* Type — `ivory` keeps its name but carries the primary ink colour */
+  --color-ivory: #16181d;
+  --color-muted: #5a616b;
+  --color-faint: #868d97;
+
+  /* Accent — gold, deepened for contrast on a light ground */
+  --color-accent: #a8761f;
+  --color-accent-strong: #8d6216;
+  --color-accent-deep: #b8811f;
+
+  /* Semantic */
+  --color-risk: #c23b42;
+  --color-signal: #12805c;
+
+  --color-cast: #a99e88;
+
+  --glow-strength: 7%;
+  --glass-opacity: 88%;
+  --gleam-end: #4a4f59;
+  --nova-glow: 0%;
+  --scroll-thumb-hover: #b3ada0;
 }
 
 * {
@@ -52,6 +101,9 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 220ms ease,
+    color 220ms ease;
 }
 
 ::selection {
@@ -73,7 +125,7 @@ body {
   border: 2px solid var(--color-ink);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3c414d;
+  background: var(--scroll-thumb-hover);
 }
 
 /* Visible, on-brand focus */
@@ -95,11 +147,11 @@ body {
   -webkit-mask-image: radial-gradient(ellipse 90% 60% at 50% 0%, #000 0%, transparent 75%);
 }
 
-/* Gold spotlight glow */
+/* Gold spotlight glow — dialled back on light, where a bloom reads as a smudge */
 .bg-glow {
   background:
-    radial-gradient(60% 50% at 50% -10%, color-mix(in oklab, var(--color-accent) 16%, transparent) 0%, transparent 60%),
-    radial-gradient(40% 40% at 85% 10%, color-mix(in oklab, var(--color-signal) 7%, transparent) 0%, transparent 55%);
+    radial-gradient(60% 50% at 50% -10%, color-mix(in oklab, var(--color-accent) var(--glow-strength), transparent) 0%, transparent 60%),
+    radial-gradient(40% 40% at 85% 10%, color-mix(in oklab, var(--color-signal) calc(var(--glow-strength) * 0.44), transparent) 0%, transparent 55%);
 }
 
 /* Hairline gradient divider */
@@ -113,16 +165,16 @@ body {
   );
 }
 
-/* Glass surface */
+/* Glass surface — needs more body on light, where blur alone loses the edge */
 .glass {
-  background: color-mix(in oklab, var(--color-surface) 70%, transparent);
+  background: color-mix(in oklab, var(--color-surface) var(--glass-opacity), transparent);
   backdrop-filter: blur(12px) saturate(140%);
   -webkit-backdrop-filter: blur(12px) saturate(140%);
 }
 
 /* Text gradient for the wordmark */
 .text-gleam {
-  background: linear-gradient(180deg, var(--color-ivory) 0%, #c7c2b7 100%);
+  background: linear-gradient(180deg, var(--color-ivory) 0%, var(--gleam-end) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -139,7 +191,7 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 18px color-mix(in oklab, var(--color-accent) 30%, transparent);
+  text-shadow: 0 0 18px color-mix(in oklab, var(--color-accent) var(--nova-glow), transparent);
 }
 
 /* ── Motion ────────────────────────────────────────────────── */

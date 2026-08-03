@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { animate, utils } from "animejs";
+import { getResolvedTheme, subscribeResolvedTheme, type ResolvedTheme } from "@/lib/theme";
 
 /**
  * ARGUS — interactive background.
@@ -20,11 +21,29 @@ import { animate, utils } from "animejs";
  * listeners, never captured.
  *
  * Honours `prefers-reduced-motion`: renders a single static frame and stops.
+ *
+ * Theme-aware: the network is laid out once, but its colours, its blending and
+ * the direction of the cursor highlight are all re-derived when the theme
+ * flips — on a light ground the wires must darken to be seen, not brighten.
  */
 
-// Brand palette (mirrors globals.css @theme).
-const GOLD = new THREE.Color("#e6b450");
-const TEAL = new THREE.Color("#43d39e");
+// Brand palette (mirrors globals.css @theme) — one entry per theme.
+const PALETTE: Record<ResolvedTheme, { gold: THREE.Color; teal: THREE.Color }> = {
+  dark: { gold: new THREE.Color("#e6b450"), teal: new THREE.Color("#43d39e") },
+  light: { gold: new THREE.Color("#a8761f"), teal: new THREE.Color("#12805c") },
+};
+const PAPER = new THREE.Color("#faf9f6"); // light-mode ground, for fading toward
+
+/**
+ * Push a colour toward the page background by `1 - f`. On dark that means
+ * multiplying toward black; on light it means lerping toward the paper — the
+ * same perceived "dim this wire" in both directions.
+ */
+function towardGround(c: THREE.Color, f: number, theme: ResolvedTheme): THREE.Color {
+  return theme === "dark"
+    ? c.clone().multiplyScalar(f)
+    : c.clone().lerp(PAPER, (1 - f) * 0.6);
+}
 
 // Orthographic view + generous network extent (covers any viewport).
 const VIEW_H = 18; // world units of vertical view
@@ -61,13 +80,15 @@ const LINE_FRAG = /* glsl */ `
   precision mediump float;
   ${VIGNETTE}
   uniform float uOpacity;
+  uniform float uLift;      // +1 on dark (brighten near cursor), -1 on light
+  uniform float uAlphaGain; // light needs more alpha to register on paper
   varying vec3 vColor;
   varying vec2 vNdc;
   varying float vProx;
   void main() {
-    float a = (0.12 + vProx * 0.5) * edgeFade(vNdc) * uOpacity;
+    float a = (0.12 + vProx * 0.5) * uAlphaGain * edgeFade(vNdc) * uOpacity;
     if (a < 0.004) discard;
-    vec3 col = vColor + vProx * 0.35;
+    vec3 col = vColor + uLift * vProx * 0.35;
     gl_FragColor = vec4(col, a);
   }
 `;
@@ -94,6 +115,8 @@ const NODE_FRAG = /* glsl */ `
   precision mediump float;
   ${VIGNETTE}
   uniform float uOpacity;
+  uniform float uLift;
+  uniform float uAlphaGain;
   varying vec3 vColor;
   varying vec2 vNdc;
   varying float vProx;
@@ -102,9 +125,9 @@ const NODE_FRAG = /* glsl */ `
     if (r > 0.5) discard;
     float disc = smoothstep(0.5, 0.32, r);     // crisp filled dot
     float ring = smoothstep(0.5, 0.46, r) * 0.5;
-    float a = (disc * (0.32 + vProx * 0.55) + ring * vProx) * edgeFade(vNdc) * uOpacity;
+    float a = (disc * (0.32 + vProx * 0.55) + ring * vProx) * uAlphaGain * edgeFade(vNdc) * uOpacity;
     if (a < 0.004) discard;
-    gl_FragColor = vec4(vColor + vProx * 0.4, a);
+    gl_FragColor = vec4(vColor + uLift * vProx * 0.4, a);
   }
 `;
 
@@ -127,17 +150,18 @@ const PULSE_FRAG = /* glsl */ `
   precision mediump float;
   ${VIGNETTE}
   uniform float uOpacity;
+  uniform float uAlphaGain;
   varying vec3 vColor;
   varying vec2 vNdc;
   void main() {
     float r = length(gl_PointCoord - 0.5);
     if (r > 0.5) discard;
     float core = smoothstep(0.5, 0.0, r);
-    gl_FragColor = vec4(vColor, core * 0.9 * edgeFade(vNdc) * uOpacity);
+    gl_FragColor = vec4(vColor, core * 0.9 * uAlphaGain * edgeFade(vNdc) * uOpacity);
   }
 `;
 
-type Trace = { pts: [THREE.Vector2, THREE.Vector2, THREE.Vector2]; color: THREE.Color };
+type Trace = { pts: [THREE.Vector2, THREE.Vector2, THREE.Vector2]; teal: boolean };
 
 export function InteractiveBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -164,16 +188,13 @@ export function InteractiveBackground() {
     camera.position.z = 10;
 
     // ── Build the network (nodes + orthogonal circuit traces) ─────
-    type Node = { x: number; y: number; color: THREE.Color; scale: number };
+    // Nodes and traces store *which* brand colour they wear and how far it is
+    // dimmed, never the resolved RGB — so a theme flip re-derives every buffer
+    // from the same layout instead of rebuilding the network.
+    type Node = { x: number; y: number; teal: boolean; dim: number; scale: number };
     const cols = Math.ceil((EXT_X * 2) / STEP);
     const rows = Math.ceil((EXT_Y * 2) / STEP);
     const grid: (Node | null)[][] = [];
-
-    const pick = (tealChance: number) => {
-      const base = Math.random() < tealChance ? TEAL : GOLD;
-      // Dim toward ink so the default state is calm.
-      return base.clone().multiplyScalar(0.5 + Math.random() * 0.25);
-    };
 
     for (let i = 0; i < cols; i++) {
       grid[i] = [];
@@ -185,15 +206,18 @@ export function InteractiveBackground() {
         grid[i][j] = {
           x: -EXT_X + i * STEP + (Math.random() - 0.5) * 2 * JIT,
           y: -EXT_Y + j * STEP + (Math.random() - 0.5) * 2 * JIT,
-          color: pick(0.14),
+          teal: Math.random() < 0.14,
+          // Dimmed toward the page ground so the default state is calm.
+          dim: 0.5 + Math.random() * 0.25,
           scale: 2.2 + Math.random() * 2.6,
         };
       }
     }
 
     const linePos: number[] = [];
-    const lineCol: number[] = [];
     const traces: Trace[] = [];
+    /** One entry per line vertex pair, parallel to `linePos`. */
+    const lineTeal: boolean[] = [];
 
     const addTrace = (a: Node, b: Node, horizFirst: boolean) => {
       const corner = horizFirst
@@ -201,17 +225,16 @@ export function InteractiveBackground() {
         : new THREE.Vector2(a.x, b.y);
       const A = new THREE.Vector2(a.x, a.y);
       const B = new THREE.Vector2(b.x, b.y);
-      // Trace inherits a dim wire color (teal if either end is teal-ish).
-      const isTeal = a.color.g > a.color.r || b.color.g > b.color.r;
-      const c = (isTeal ? TEAL : GOLD).clone().multiplyScalar(0.4);
+      // Trace inherits a dim wire color (teal if either end is teal).
+      const isTeal = a.teal || b.teal;
       for (const [p, q] of [
         [A, corner],
         [corner, B],
       ] as const) {
         linePos.push(p.x, p.y, 0, q.x, q.y, 0);
-        lineCol.push(c.r, c.g, c.b, c.r, c.g, c.b);
+        lineTeal.push(isTeal, isTeal);
       }
-      traces.push({ pts: [A, corner, B], color: (isTeal ? TEAL : GOLD).clone() });
+      traces.push({ pts: [A, corner, B], teal: isTeal });
     };
 
     for (let i = 0; i < cols; i++) {
@@ -232,20 +255,23 @@ export function InteractiveBackground() {
     const nScale = new Float32Array(nodes.length);
     nodes.forEach((n, k) => {
       nPos.set([n.x, n.y, 0], k * 3);
-      nCol.set([n.color.r, n.color.g, n.color.b], k * 3);
       nScale[k] = n.scale;
     });
+    const lineCol = new Float32Array(lineTeal.length * 3);
 
     const uPointer = { value: new THREE.Vector2(999, 999) };
     const uPixelRatio = { value: pixelRatio };
     const uOpacity = { value: prefersReduced ? 1 : 0 };
+    const uLift = { value: 1 };
+    const uAlphaGain = { value: 1 };
 
     // Lines mesh
     const lineGeo = new THREE.BufferGeometry();
     lineGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePos, 3));
-    lineGeo.setAttribute("aColor", new THREE.Float32BufferAttribute(lineCol, 3));
+    const lineColAttr = new THREE.BufferAttribute(lineCol, 3);
+    lineGeo.setAttribute("aColor", lineColAttr);
     const lineMat = new THREE.ShaderMaterial({
-      uniforms: { uPointer, uOpacity },
+      uniforms: { uPointer, uOpacity, uLift, uAlphaGain },
       vertexShader: LINE_VERT,
       fragmentShader: LINE_FRAG,
       transparent: true,
@@ -257,10 +283,11 @@ export function InteractiveBackground() {
     // Nodes mesh
     const nodeGeo = new THREE.BufferGeometry();
     nodeGeo.setAttribute("position", new THREE.BufferAttribute(nPos, 3));
-    nodeGeo.setAttribute("aColor", new THREE.BufferAttribute(nCol, 3));
+    const nodeColAttr = new THREE.BufferAttribute(nCol, 3);
+    nodeGeo.setAttribute("aColor", nodeColAttr);
     nodeGeo.setAttribute("aScale", new THREE.BufferAttribute(nScale, 1));
     const nodeMat = new THREE.ShaderMaterial({
-      uniforms: { uPointer, uPixelRatio, uOpacity },
+      uniforms: { uPointer, uPixelRatio, uOpacity, uLift, uAlphaGain },
       vertexShader: NODE_VERT,
       fragmentShader: NODE_FRAG,
       transparent: true,
@@ -281,8 +308,6 @@ export function InteractiveBackground() {
     for (let k = 0; k < PULSE_N; k++) {
       const tr = traces[(k * stride) % traces.length];
       pulseTrace.push(tr);
-      const c = tr.color;
-      pulseCol.set([c.r, c.g, c.b], k * 3);
       pulseScale[k] = 3.2 + Math.random() * 1.6;
       pulsePos.set([tr.pts[0].x, tr.pts[0].y, 0.1], k * 3);
     }
@@ -290,18 +315,57 @@ export function InteractiveBackground() {
     const pulseGeo = new THREE.BufferGeometry();
     const pulsePosAttr = new THREE.BufferAttribute(pulsePos, 3);
     pulseGeo.setAttribute("position", pulsePosAttr);
-    pulseGeo.setAttribute("aColor", new THREE.BufferAttribute(pulseCol, 3));
+    const pulseColAttr = new THREE.BufferAttribute(pulseCol, 3);
+    pulseGeo.setAttribute("aColor", pulseColAttr);
     pulseGeo.setAttribute("aScale", new THREE.BufferAttribute(pulseScale, 1));
     const pulseMat = new THREE.ShaderMaterial({
-      uniforms: { uPixelRatio, uOpacity },
+      uniforms: { uPixelRatio, uOpacity, uAlphaGain },
       vertexShader: PULSE_VERT,
       fragmentShader: PULSE_FRAG,
       transparent: true,
       depthWrite: false,
-      blending: THREE.AdditiveBlending, // tiny dots — a gentle glow, not a wash
     });
     const pulses = new THREE.Points(pulseGeo, pulseMat);
     if (!prefersReduced) scene.add(pulses);
+
+    // ── Palette ───────────────────────────────────────────────────
+    // Re-derives every colour buffer plus the two theme uniforms. Called once
+    // at setup and again on each theme flip; the geometry never moves.
+    const applyPalette = (theme: ResolvedTheme) => {
+      const { gold, teal } = PALETTE[theme];
+      const base = (isTeal: boolean) => (isTeal ? teal : gold);
+
+      nodes.forEach((n, k) => {
+        const c = towardGround(base(n.teal), n.dim, theme);
+        nCol.set([c.r, c.g, c.b], k * 3);
+      });
+      lineTeal.forEach((isTeal, k) => {
+        const c = towardGround(base(isTeal), 0.4, theme);
+        lineCol.set([c.r, c.g, c.b], k * 3);
+      });
+      for (let k = 0; k < PULSE_N; k++) {
+        const c = base(pulseTrace[k].teal);
+        pulseCol.set([c.r, c.g, c.b], k * 3);
+      }
+      nodeColAttr.needsUpdate = true;
+      lineColAttr.needsUpdate = true;
+      pulseColAttr.needsUpdate = true;
+
+      const dark = theme === "dark";
+      // On dark the cursor brightens the circuitry; on paper it must darken it.
+      uLift.value = dark ? 1 : -1;
+      uAlphaGain.value = dark ? 1 : 0.95;
+      // Additive glow only reads against ink — on paper it washes out entirely.
+      pulseMat.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+      pulseMat.needsUpdate = true;
+    };
+
+    applyPalette(getResolvedTheme());
+    const unsubscribeTheme = subscribeResolvedTheme((theme) => {
+      applyPalette(theme);
+      // A static (reduced-motion) render has no loop to pick the change up.
+      if (prefersReduced) renderer.render(scene, camera);
+    });
 
     // Map progress t∈[0,1] to a point along the 2-segment trace.
     const seg = new THREE.Vector2();
@@ -448,6 +512,7 @@ export function InteractiveBackground() {
       window.removeEventListener("mouseout", onLeave);
       window.removeEventListener("resize", resize);
       document.removeEventListener("visibilitychange", onVisibility);
+      unsubscribeTheme();
       pulseState.forEach((s) => utils.remove(s));
       utils.remove(intro);
       lineGeo.dispose();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const LINKS = [
   { label: "How it works", href: "/#how-it-works" },
@@ -48,9 +49,12 @@ export function SiteFooter() {
             ))}
           </nav>
 
-          <span className="text-[12px] text-faint">
-            © {new Date().getFullYear()} Team Argus
-          </span>
+          <div className="flex flex-wrap items-center gap-4">
+            <ThemeToggle />
+            <span className="text-[12px] text-faint">
+              © {new Date().getFullYear()} Team Argus
+            </span>
+          </div>
         </div>
       </div>
     </footer>

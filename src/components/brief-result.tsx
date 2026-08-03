@@ -194,7 +194,7 @@ export function BriefResultView({ result }: { result: BriefResult }) {
 
       <article
         id="brief-print-root"
-        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-black/40 backdrop-blur-sm"
+        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm"
       >
         {/* header */}
         <header className="border-b border-line px-6 py-5">
