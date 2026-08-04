@@ -19,10 +19,10 @@ import { useInDemo } from "@/lib/demo/mode";
  * presenter to `/brief/<id>`, and the exit has to follow them there.
  *
  * One rule decides its responsive behaviour: the way out is never hidden, the
- * invitation can be. "Demo" yields space below `sm` like the other nav items,
- * reachable from the menu panel; "Exit demo" always stays in the bar, because
- * being stuck in demo mode with the exit behind a disclosure is worse than a
- * slightly busier header. There's room — the CTA drops out at that width.
+ * invitation can be. "Try a demo" yields space below `sm` like the other nav
+ * items, reachable from the menu panel; "Exit demo" always stays in the bar,
+ * because being stuck in demo mode with the exit behind a disclosure is worse
+ * than a slightly busier header. There's room — "Home" drops out at that width.
  */
 export function DemoChip() {
   const inDemo = useInDemo();
@@ -30,7 +30,7 @@ export function DemoChip() {
   return (
     <Link
       href={inDemo ? "/" : DEMO_PATH}
-      aria-label={inDemo ? "Exit demo mode" : "Try the demo"}
+      aria-label={inDemo ? "Exit demo mode" : "Try a demo"}
       title={
         inDemo ? "Exit demo mode" : "A scripted account, briefed live by the model"
       }
@@ -51,7 +51,7 @@ export function DemoChip() {
         )}
         <span className="size-2 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
       </span>
-      {inDemo ? "Exit demo" : "Demo"}
+      {inDemo ? "Exit demo" : "Try a demo"}
     </Link>
   );
 }

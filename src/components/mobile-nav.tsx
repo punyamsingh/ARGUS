@@ -18,12 +18,12 @@ type NavLink = { label: string; href: string };
 
 export function MobileNav({
   items,
-  cta,
+  home,
   demo,
 }: {
   items: NavLink[];
-  /** The header's primary action, which does not fit in the bar below `sm`. */
-  cta: NavLink;
+  /** The bar's "Home" link, which does not fit alongside the wordmark below `sm`. */
+  home: NavLink;
   /** The demo *invitation*, which yields space in the bar below `sm`. Never the
    *  exit — that stays in the bar at every width, so nobody has to open a menu
    *  to get out of a demo. */
@@ -135,7 +135,17 @@ export function MobileNav({
             ))}
           </ul>
 
-          {/* Both only rendered below `sm`, where the header bar drops them. */}
+          {/* Both only rendered below `sm`, where the header bar drops them.
+              Plain links, matching the list above rather than standing out as a
+              primary action: neither "Home" nor the demo invitation is one. */}
+          <Link
+            href={home.href}
+            onClick={() => setOpen(false)}
+            className="block py-2.5 text-[15px] text-muted transition-colors hover:text-ivory sm:hidden"
+          >
+            {home.label}
+          </Link>
+
           {demo && (
             <Link
               href={demo.href}
@@ -145,14 +155,6 @@ export function MobileNav({
               {demo.label}
             </Link>
           )}
-
-          <Link
-            href={cta.href}
-            onClick={() => setOpen(false)}
-            className="mt-2 flex items-center justify-center rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong sm:hidden"
-          >
-            {cta.label}
-          </Link>
         </div>
       </div>
     </div>
