@@ -1,3 +1,11 @@
+## [3.17.1](https://github.com/punyamsingh/ARGUS/compare/v3.17.0...v3.17.1) (2026-08-04)
+
+### Bug Fixes
+
+* **demo:** keep the header's nav on the demo surface inside a brief ([cf7d0f9](https://github.com/punyamsingh/ARGUS/commit/cf7d0f987c5222f8f72fb6612ea1c6d788799236))
+* **ui:** centre the menu panel, lead with Home, and keep the chip a chip ([1c98989](https://github.com/punyamsingh/ARGUS/commit/1c9898901900dc9bdc1a83b3c1879610714449ab))
+* **ui:** keep the header from overflowing once auth shares the bar ([59291ed](https://github.com/punyamsingh/ARGUS/commit/59291ed98cf8527b64e0f70bb820866d77a9a8ab))
+
 ## [3.17.0](https://github.com/punyamsingh/ARGUS/compare/v2.1.0...v3.17.0) (2026-08-04)
 
 Version realignment. **No functional changes** — no code differs between v2.1.0
