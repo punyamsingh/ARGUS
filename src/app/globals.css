@@ -102,6 +102,33 @@
   border-color: var(--color-line);
 }
 
+/* ── Layout shell ──────────────────────────────────────────────
+   One container for every band of the page. Wide enough that a desktop
+   window reads as a laid-out page rather than a narrow column pinned to
+   the middle, with gutters that open up as the viewport grows. Declared
+   in the components layer so a utility (`max-w-2xl`, `px-0`) still wins
+   where a band wants to narrow itself. */
+@layer components {
+  .shell {
+    width: 100%;
+    margin-inline: auto;
+    max-width: 90rem;
+    padding-inline: 1.5rem;
+  }
+
+  @media (min-width: 1024px) {
+    .shell {
+      padding-inline: 2.5rem;
+    }
+  }
+
+  @media (min-width: 1536px) {
+    .shell {
+      padding-inline: 4rem;
+    }
+  }
+}
+
 body {
   background-color: var(--color-ink);
   color: var(--color-ivory);

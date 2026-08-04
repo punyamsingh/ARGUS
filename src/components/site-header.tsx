@@ -20,7 +20,7 @@ export function SiteHeader({ base = "/" }: { base?: string }) {
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
       <div className="glass border-b border-line/80">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-6 sm:gap-4">
+        <div className="shell flex h-16 items-center justify-between gap-3 sm:gap-4">
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
             <ArgusMark size={30} />
             {/* Steps down a size on the narrowest screens: at full size the

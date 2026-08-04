@@ -151,12 +151,14 @@ export function BriefStudio() {
   return (
     <div
       className={clsx(
-        "mx-auto grid items-start gap-y-10 px-6 transition-[max-width,grid-template-columns,column-gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        "shell grid items-start gap-y-10 transition-[max-width,grid-template-columns,column-gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
         // Splits at `lg`, not `md`: at 768px each column is ~350px and the brief
         // card degrades to three or four words a line.
         soloForm
           ? "max-w-xl gap-x-0 lg:grid-cols-[1fr_0fr]"
-          : "max-w-6xl gap-x-10 lg:grid-cols-[0.9fr_1.1fr]",
+          : // A fixed-ish form rail with the panel taking whatever the window
+            // gives it — the desktop proportion stays put as the screen grows.
+            "gap-x-10 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-x-16 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]",
       )}
     >
       {/* Form */}
