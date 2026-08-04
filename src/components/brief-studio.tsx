@@ -9,9 +9,10 @@ import { DISABLED_PRIMARY } from "@/lib/button";
 import { BriefPreview } from "@/components/brief-preview";
 import { BriefConversation } from "@/components/brief-conversation";
 import {
-  useBriefHistory,
-  type HistoryEntry,
-} from "@/lib/brief-history";
+  deleteBriefFromAccount,
+  useBriefLibrary,
+  type LibraryEntry,
+} from "@/lib/briefs/library";
 import { saveSellerProfile, useSellerProfile } from "@/lib/seller-profile";
 import { PENDING_BRIEF_KEY, type PendingBrief } from "@/lib/use-brief-stream";
 import { useDemoMode } from "@/lib/demo/mode";
@@ -37,7 +38,12 @@ export function BriefStudio() {
   // reflow reads as one motion rather than a jump.
   const [exampleDismissed, setExampleDismissed] = useState(false);
   const [exampleLeaving, setExampleLeaving] = useState(false);
-  const history = useBriefHistory();
+  // Recent briefs: this browser's localStorage when signed out, the account's
+  // saved briefs when signed in. The id of whichever one is open is tracked
+  // separately because a remote brief's URL is its server id, not its
+  // generatedAt timestamp.
+  const { entries: history, signedIn, open } = useBriefLibrary();
+  const [openedId, setOpenedId] = useState<string | null>(null);
 
   // Demo mode: the form is laced with the scripted account and locked, so a
   // walkthrough always runs the same known-good meeting. What the fields show —
@@ -136,12 +142,27 @@ export function BriefStudio() {
     }
   }
 
-  function openHistory(entry: HistoryEntry) {
-    setCompany(entry.result.input.company);
-    setPerson(entry.result.input.person);
-    setContext(entry.result.input.context);
-    setMeetingType(entry.result.input.meetingType ?? "");
-    setOpened(entry.result);
+  // A saved brief opens inline. Local entries carry their body already; an
+  // account entry is a summary until now, so this is where it's fetched — which
+  // keeps listing a long library cheap.
+  async function openHistory(entry: LibraryEntry) {
+    const result = entry.result ?? (await open(entry));
+    if (!result) return;
+    setCompany(result.input.company);
+    setPerson(result.input.person);
+    setContext(result.input.context);
+    setMeetingType(result.input.meetingType ?? "");
+    setOpened(result);
+    setOpenedId(entry.id);
+  }
+
+  async function removeFromLibrary(entry: LibraryEntry) {
+    if (!(await deleteBriefFromAccount(entry.id))) return;
+    // Close the panel if the brief it was showing is the one that just went.
+    if (openedId === entry.id) {
+      setOpened(null);
+      setOpenedId(null);
+    }
   }
 
   // Nothing left in the right column → the form settles into a centred single
@@ -248,7 +269,11 @@ export function BriefStudio() {
         />
 
         {history.length > 0 && (
-          <RecentBriefs entries={history} onOpen={openHistory} />
+          <RecentBriefs
+            entries={history}
+            onOpen={openHistory}
+            onDelete={signedIn ? removeFromLibrary : undefined}
+          />
         )}
       </form>
 
@@ -258,9 +283,14 @@ export function BriefStudio() {
         {opened ? (
           <BriefConversation
             result={opened}
-            onClose={() => setOpened(null)}
+            onClose={() => {
+              setOpened(null);
+              setOpenedId(null);
+            }}
             onExpand={() =>
-              router.push(`/brief/${encodeURIComponent(opened.meta.generatedAt)}`)
+              router.push(
+                `/brief/${encodeURIComponent(openedId ?? opened.meta.generatedAt)}`,
+              )
             }
           />
         ) : exampleDismissed ? null : (
@@ -516,13 +546,19 @@ function SellerPanel({
   );
 }
 
-/** The "Recent briefs" switcher under the form — opens a saved brief inline. */
+/**
+ * The "Recent briefs" switcher under the form — opens a saved brief inline.
+ * `onDelete` is only passed when signed in: a local brief ages out of
+ * localStorage on its own, so there's nothing meaningful to delete there.
+ */
 function RecentBriefs({
   entries,
   onOpen,
+  onDelete,
 }: {
-  entries: HistoryEntry[];
-  onOpen: (e: HistoryEntry) => void;
+  entries: LibraryEntry[];
+  onOpen: (e: LibraryEntry) => void;
+  onDelete?: (e: LibraryEntry) => void;
 }) {
   return (
     <div className="mt-6 px-1.5">
@@ -531,7 +567,7 @@ function RecentBriefs({
       </p>
       <ul className="space-y-1.5">
         {entries.map((e) => (
-          <li key={e.id}>
+          <li key={e.id} className="group relative">
             <button
               type="button"
               onClick={() => onOpen(e)}
@@ -545,10 +581,37 @@ function RecentBriefs({
                   {e.person} · {e.context}
                 </span>
               </span>
-              <span className="shrink-0 font-mono text-[11px] text-faint">
-                {e.result.evidence.length} src
+              <span
+                className={clsx(
+                  "shrink-0 font-mono text-[11px] text-faint",
+                  onDelete && "group-hover:invisible",
+                )}
+              >
+                {e.evidenceCount} src
               </span>
             </button>
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(e)}
+                aria-label={`Delete the brief for ${e.company}`}
+                className="absolute right-2 top-1/2 hidden -translate-y-1/2 rounded-md p-1.5 text-faint transition-colors hover:bg-surface hover:text-risk group-hover:block"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="size-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    d="M5 7h14M10 7V5.5A1.5 1.5 0 0 1 11.5 4h1A1.5 1.5 0 0 1 14 5.5V7M6.5 7l.7 11a1.5 1.5 0 0 0 1.5 1.4h6.6a1.5 1.5 0 0 0 1.5-1.4l.7-11"
+                  />
+                </svg>
+              </button>
+            )}
           </li>
         ))}
       </ul>
