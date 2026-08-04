@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
 
-const NAV = [
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
+/**
+ * `base` is the route the in-page anchors belong to — "/" normally, "/demo" on
+ * the demo surface — so following "How it works" from a demo doesn't quietly
+ * drop you back onto the live page. About and Contact are always absolute.
+ */
+export function SiteHeader({ base = "/" }: { base?: string }) {
+  const anchor = base === "/" ? "/" : base;
+  const NAV = [
+    { label: "How it works", href: `${anchor}#how-it-works` },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+  ];
 
-export function SiteHeader() {
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
       <div className="glass border-b border-line/80">
@@ -37,7 +43,7 @@ export function SiteHeader() {
             </div>
 
             <Link
-              href="/#studio"
+              href={`${anchor}#studio`}
               className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
             >
               Generate a brief

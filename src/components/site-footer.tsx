@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { DemoToggle } from "@/components/demo-toggle";
 
-const LINKS = [
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
+/** `base` keeps the in-page anchor on the route you're already on — "/demo"
+ *  while presenting, so the footer can't quietly drop you out of the demo. */
+export function SiteFooter({ base = "/" }: { base?: string }) {
+  const LINKS = [
+    { label: "How it works", href: `${base}#how-it-works` },
+    { label: "About", href: "/about" },
+    { label: "Contact", href: "/contact" },
+  ];
 
-export function SiteFooter() {
   return (
     <footer className="mt-auto border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
@@ -52,7 +53,6 @@ export function SiteFooter() {
 
           <div className="flex flex-wrap items-center gap-4">
             <ThemeToggle />
-            <DemoToggle />
             <span className="text-[12px] text-faint">
               © {new Date().getFullYear()} Team Argus
             </span>
