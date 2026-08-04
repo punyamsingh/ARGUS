@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
 import { clsx } from "@/lib/cn";
 import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
@@ -9,55 +10,123 @@ import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
  * The floating demo control — pinned to the bottom-right edge on every page.
  *
  * It's the single way into the demo surface (`/demo`) and back out again, so a
- * presenter never hunts for a setting mid-pitch. Off the demo route it's a
- * collapsed disc that expands into a labelled pill on hover/focus; on the demo
- * route it stays expanded and turns into the exit, because a demo you can't
- * visibly leave is a demo someone forgets they're in.
+ * presenter never hunts for a setting mid-pitch. The label is always visible:
+ * this is an invitation, and an unlabelled disc doesn't invite anything.
+ *
+ * Dismissable, for anyone who'd rather just use the product — and dismissed
+ * only for the session, matching the example brief in the studio: a fresh visit
+ * gets the offer again, so the invitation can't be lost for good on one stray
+ * click. On the demo route itself there's no dismiss, because that button is
+ * the way out.
  */
+
+const DISMISSED_KEY = "argus.demo-fab-dismissed";
+
+/**
+ * The dismissal, as a tiny external store — the same shape as `theme.ts` and
+ * `brief-history.ts`. Read through `useSyncExternalStore` so the server
+ * snapshot (never dismissed) matches the first client render and the real
+ * value is adopted without an effect writing state back.
+ */
+let dismissed = false;
+let hydrated = false;
+const listeners = new Set<() => void>();
+
+function subscribe(cb: () => void): () => void {
+  if (!hydrated) {
+    hydrated = true;
+    try {
+      dismissed = sessionStorage.getItem(DISMISSED_KEY) === "1";
+    } catch {
+      // blocked storage just means the control stays offered
+    }
+    if (dismissed) queueMicrotask(() => listeners.forEach((l) => l()));
+  }
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+function dismiss() {
+  hydrated = true;
+  dismissed = true;
+  try {
+    sessionStorage.setItem(DISMISSED_KEY, "1");
+  } catch {
+    // best-effort; the dismissal still holds for this page
+  }
+  for (const l of listeners) l();
+}
+
 export function DemoFab() {
   const pathname = usePathname();
   const inDemo = isDemoPath(pathname);
+  const isDismissed = useSyncExternalStore(
+    subscribe,
+    () => dismissed,
+    () => false,
+  );
+
+  // The exit is never dismissable — you always need a way out of the demo.
+  if (isDismissed && !inDemo) return null;
 
   return (
-    <Link
-      href={inDemo ? "/" : DEMO_PATH}
-      aria-label={inDemo ? "Exit demo mode" : "Open demo mode"}
-      title={
-        inDemo
-          ? "Exit demo mode"
-          : "Demo mode — a scripted account, briefed live by the model"
-      }
+    <div
       className={clsx(
-        "group fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full border py-3 shadow-xl shadow-cast/40 backdrop-blur-sm transition-[background-color,border-color,padding,color] print:hidden",
-        // Collapsed to a disc until hovered/focused, so it never fights the page.
+        "fixed bottom-6 right-6 z-50 flex items-center rounded-full border shadow-xl shadow-cast/40 backdrop-blur-sm transition-colors print:hidden",
         inDemo
-          ? "border-accent bg-accent/20 px-4 text-accent"
-          : "border-line-strong bg-surface/80 px-3 text-muted hover:border-accent hover:bg-surface hover:px-4 hover:text-accent focus-visible:border-accent focus-visible:px-4 focus-visible:text-accent",
+          ? "border-accent bg-accent/20"
+          : "border-line-strong bg-surface/85 hover:border-accent",
       )}
     >
-      <span
-        aria-hidden="true"
-        className={clsx(
-          "relative flex size-2.5 shrink-0 items-center justify-center",
-        )}
-      >
-        {/* A live pulse while in demo mode; a steady dot outside it. */}
-        {inDemo && (
-          <span className="absolute inset-0 animate-ping rounded-full bg-accent/40" />
-        )}
-        <span className="size-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
-      </span>
-
-      <span
-        className={clsx(
-          "overflow-hidden whitespace-nowrap font-mono text-[11px] uppercase tracking-[0.16em] transition-[max-width,opacity] duration-300",
+      <Link
+        href={inDemo ? "/" : DEMO_PATH}
+        aria-label={inDemo ? "Exit demo mode" : "Try the demo"}
+        title={
           inDemo
-            ? "max-w-[10rem] opacity-100"
-            : "max-w-0 opacity-0 group-hover:max-w-[10rem] group-hover:opacity-100 group-focus-visible:max-w-[10rem] group-focus-visible:opacity-100",
+            ? "Exit demo mode"
+            : "A scripted account, briefed live by the model"
+        }
+        className={clsx(
+          "flex items-center gap-2.5 rounded-full py-3.5 pl-5 transition-colors",
+          inDemo ? "pr-5 text-accent" : "pr-4 text-ivory hover:text-accent",
         )}
       >
-        {inDemo ? "Exit demo" : "Demo"}
-      </span>
-    </Link>
+        <span
+          aria-hidden="true"
+          className="relative flex size-2.5 shrink-0 items-center justify-center"
+        >
+          {/* A live pulse while in demo mode; a steady dot outside it. */}
+          {inDemo && (
+            <span className="absolute inset-0 animate-ping rounded-full bg-accent/40" />
+          )}
+          <span className="size-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
+        </span>
+        <span className="whitespace-nowrap font-mono text-[12px] font-medium uppercase tracking-[0.14em]">
+          {inDemo ? "Exit demo" : "Try demo"}
+        </span>
+      </Link>
+
+      {!inDemo && (
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss the demo invitation"
+          title="Dismiss"
+          // Full-height strip so the 24px touch target doesn't inflate the pill.
+          className="flex h-full items-center rounded-r-full py-3.5 pl-1.5 pr-4 text-faint transition-colors hover:text-ivory"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            className="size-3.5"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            aria-hidden="true"
+          >
+            <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      )}
+    </div>
   );
 }
