@@ -28,6 +28,24 @@ export function MobileNav({
   const panelId = useId();
   const pathname = usePathname();
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  /**
+   * Close, and hand focus back to the toggle. Closing alone strands the
+   * keyboard: the panel goes `inert`, the browser blurs whatever was inside it,
+   * and focus lands on `<body>` — so Escape on a menu link silently drops the
+   * user at the top of the document.
+   *
+   * Only for keyboard dismissal. A pointer dismissal is left alone: the browser
+   * moves focus to whatever was clicked, which is where that user asked to be,
+   * and the guard below covers the case where focus is already elsewhere.
+   */
+  function dismissToButton() {
+    setOpen(false);
+    if (rootRef.current?.contains(document.activeElement)) {
+      buttonRef.current?.focus();
+    }
+  }
 
   // Close on a route change — chiefly the back button, since the links below
   // already close on click. Adjusted during render rather than in an effect so
@@ -42,7 +60,7 @@ export function MobileNav({
   useEffect(() => {
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") dismissToButton();
     }
     function onPointerDown(e: PointerEvent) {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
@@ -58,6 +76,7 @@ export function MobileNav({
   return (
     <div ref={rootRef} className="md:hidden">
       <button
+        ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-controls={panelId}
