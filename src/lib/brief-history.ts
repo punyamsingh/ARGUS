@@ -105,6 +105,12 @@ export function saveToHistory(result: BriefResult): void {
   emit();
 }
 
+/** The full stored history, outside React. Used by the sign-in claim, which
+ *  needs the briefs themselves rather than a subscription to them. */
+export function readLocalBriefs(): HistoryEntry[] {
+  return hydrated ? snapshot : readStorage();
+}
+
 /** Look up a stored brief by its id (the brief's generatedAt timestamp). Reads
  *  straight from storage so it works on a freshly-loaded focused-brief page. */
 export function getBriefById(id: string): BriefResult | null {
