@@ -28,7 +28,10 @@ export function SiteHeader() {
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
-      <div className="glass border-b border-line/80">
+      {/* Opaque, not `.glass`. The bar is sticky, so translucency meant the
+          page's grid and glow slid around underneath it as you scrolled —
+          busy behind the wordmark and the nav, and worse over a brief. */}
+      <div className="border-b border-line/80 bg-surface">
         <div className="shell flex h-16 items-center justify-between gap-3 sm:gap-4">
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
             <ArgusMark size={30} />

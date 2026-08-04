@@ -112,9 +112,9 @@ export function MobileNav({
         )}
         inert={!open}
       >
-        {/* Opaque, not `.glass`: the header bar can afford to be translucent
-            because text only passes behind it, but the hero copy read straight
-            through this panel's own links. */}
+        {/* Opaque like the bar above it, and `bg-ink` rather than the bar's
+            `bg-surface`: the panel hangs over the page, so it reads as a layer
+            dropped onto it rather than a continuation of the header. */}
         <div className="border-b border-line bg-ink px-6 py-3 shadow-lg shadow-cast/20">
           <ul className="flex flex-col">
             {items.map((item) => (
