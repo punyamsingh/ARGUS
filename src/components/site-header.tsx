@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ArgusMark } from "@/components/argus-mark";
 import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
+import { DemoChip } from "@/components/demo-chip";
 import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
 /**
@@ -26,6 +27,9 @@ export function SiteHeader() {
   ];
   // Anchor-aware like NAV, so the demo surface's CTA stays on the demo.
   const CTA = { label: "Generate a brief", href: `${base}#studio` };
+  // The invitation, for the menu panel below `sm` where the chip yields space.
+  // Only the invitation — the exit never hides in there (see `DemoChip`).
+  const DEMO = { label: "Try the demo", href: DEMO_PATH };
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
@@ -61,6 +65,8 @@ export function SiteHeader() {
               ))}
             </div>
 
+            <DemoChip />
+
             {/* Below `sm` the wordmark, this CTA and the menu button no longer
                 fit on one line — at 360px the CTA overlapped the wordmark. It
                 drops out here and leads the menu panel instead. */}
@@ -75,7 +81,7 @@ export function SiteHeader() {
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer. */}
-            <MobileNav items={NAV} cta={CTA} />
+            <MobileNav items={NAV} cta={CTA} demo={DEMO} />
           </nav>
         </div>
       </div>

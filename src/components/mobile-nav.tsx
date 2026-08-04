@@ -19,10 +19,15 @@ type NavLink = { label: string; href: string };
 export function MobileNav({
   items,
   cta,
+  demo,
 }: {
   items: NavLink[];
   /** The header's primary action, which does not fit in the bar below `sm`. */
   cta: NavLink;
+  /** The demo *invitation*, which yields space in the bar below `sm`. Never the
+   *  exit — that stays in the bar at every width, so nobody has to open a menu
+   *  to get out of a demo. */
+  demo?: NavLink;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -130,7 +135,17 @@ export function MobileNav({
             ))}
           </ul>
 
-          {/* Only rendered below `sm`, where the header bar drops the CTA. */}
+          {/* Both only rendered below `sm`, where the header bar drops them. */}
+          {demo && (
+            <Link
+              href={demo.href}
+              onClick={() => setOpen(false)}
+              className="block py-2.5 text-[15px] text-muted transition-colors hover:text-ivory sm:hidden"
+            >
+              {demo.label}
+            </Link>
+          )}
+
           <Link
             href={cta.href}
             onClick={() => setOpen(false)}
