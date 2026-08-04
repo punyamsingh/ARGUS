@@ -5,6 +5,9 @@ import { usePathname } from "next/navigation";
 import { ArgusMark } from "@/components/argus-mark";
 import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
+import { useDemoInviteOffered } from "@/components/demo-fab";
+import { clsx } from "@/lib/cn";
+import { useInDemo } from "@/lib/demo/mode";
 import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
 /**
@@ -27,6 +30,21 @@ export function SiteHeader() {
   // Anchor-aware like NAV, so the demo surface's CTA stays on the demo.
   const CTA = { label: "Generate a brief", href: `${base}#studio` };
 
+  // The demo control below `lg`, where the floating pill would sit on top of
+  // the page's own buttons (see `DemoFab`). It rides in the bar from `sm` and
+  // in the menu panel below that, where the bar is full. There's no dismiss in
+  // either place — neither one covers anything — but a dismissal made on a wide
+  // screen, where the pill does have one, is still honoured.
+  const inDemo = useInDemo();
+  const inviteOffered = useDemoInviteOffered();
+  const demoLink =
+    inDemo || inviteOffered
+      ? {
+          label: inDemo ? "Exit demo" : "Try the demo",
+          href: inDemo ? "/" : DEMO_PATH,
+        }
+      : undefined;
+
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
       {/* Opaque, not `.glass`. The bar is sticky, so translucency meant the
@@ -43,7 +61,11 @@ export function SiteHeader() {
               <span className="text-ivory">ARGUS</span>
               <span className="text-nova font-extrabold italic">NOVA</span>
             </span>
-            <span className="hidden text-[13px] text-faint sm:inline">
+            {/* Held back to `lg` — that's where the demo chip beside it gives
+                way to the floating pill and the bar has room again. At `sm` the
+                wordmark, tagline, CTA, chip and menu button together overran
+                the bar and the tagline broke across two lines. */}
+            <span className="hidden whitespace-nowrap text-[13px] text-faint lg:inline">
               pre-meeting intelligence
             </span>
           </Link>
@@ -71,11 +93,41 @@ export function SiteHeader() {
               {CTA.label}
             </Link>
 
+            {/* The demo control from `sm` to `lg`. Below `sm` the bar already
+                carries the wordmark, the account control and the menu button,
+                and a fourth item ran over the wordmark — so down there it leads
+                the menu panel instead, exactly as the CTA above does. */}
+            {(inDemo || inviteOffered) && (
+              <Link
+                href={inDemo ? "/" : DEMO_PATH}
+                aria-label={inDemo ? "Exit demo mode" : "Try the demo"}
+                className={clsx(
+                  "hidden shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.12em] transition-colors sm:flex lg:hidden",
+                  inDemo
+                    ? "border-accent bg-accent/15 text-accent hover:bg-accent/25"
+                    : "border-line-strong bg-surface/60 text-ivory hover:border-accent hover:text-accent",
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className="relative flex size-2 shrink-0 items-center justify-center"
+                >
+                  {/* A live pulse inside the demo; a steady dot outside it —
+                      the same tell the floating pill uses. */}
+                  {inDemo && (
+                    <span className="absolute inset-0 animate-ping rounded-full bg-accent/40" />
+                  )}
+                  <span className="size-2 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]" />
+                </span>
+                {inDemo ? "Exit demo" : "Demo"}
+              </Link>
+            )}
+
             <AuthMenu />
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer. */}
-            <MobileNav items={NAV} cta={CTA} />
+            <MobileNav items={NAV} cta={CTA} demo={demoLink} />
           </nav>
         </div>
       </div>

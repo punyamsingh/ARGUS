@@ -19,10 +19,17 @@ type NavLink = { label: string; href: string };
 export function MobileNav({
   items,
   cta,
+  demo,
 }: {
   items: NavLink[];
   /** The header's primary action, which does not fit in the bar below `sm`. */
   cta: NavLink;
+  /**
+   * The way into (or out of) the demo. Like the CTA it only appears below `sm`,
+   * where the bar is full; from `sm` to `lg` the header shows it as a chip, and
+   * from `lg` it becomes the floating pill. Absent once dismissed.
+   */
+  demo?: NavLink;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -129,6 +136,20 @@ export function MobileNav({
               </li>
             ))}
           </ul>
+
+          {demo && (
+            <Link
+              href={demo.href}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 border-t border-line py-3 text-[15px] text-muted transition-colors hover:text-ivory sm:hidden"
+            >
+              <span
+                aria-hidden="true"
+                className="size-2 shrink-0 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent)]"
+              />
+              {demo.label}
+            </Link>
+          )}
 
           {/* Only rendered below `sm`, where the header bar drops the CTA. */}
           <Link

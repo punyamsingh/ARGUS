@@ -7,7 +7,7 @@ import { DEMO_PATH } from "@/lib/demo/path";
 import { useInDemo } from "@/lib/demo/mode";
 
 /**
- * The floating demo control — pinned to the bottom-right edge on every page.
+ * The floating demo control — pinned to the bottom-right edge from `lg` up.
  *
  * It's the single way into the demo surface (`/demo`) and back out again, so a
  * presenter never hunts for a setting mid-pitch. The label is always visible:
@@ -23,6 +23,15 @@ import { useInDemo } from "@/lib/demo/mode";
  * only for the session, matching the example brief in the studio: a fresh visit
  * gets the offer again, so the invitation can't be lost for good on one stray
  * click. Inside the demo there's no dismiss, because that button is the way out.
+ *
+ * It floats only from `lg` up, which is where the shell's gutters widen and the
+ * studio splits into two columns, leaving the bottom-right corner empty. Below
+ * that the page is one full-width column and a bottom-right overlay has nothing
+ * to sit over *but* content: at 390px it landed squarely on the studio's
+ * "Generate brief" button, so a tap on the right half of the page's primary
+ * action dismissed the invitation instead of submitting the form, and at 768px
+ * it covered the "Your product" toggle. Below `lg` the control lives in the
+ * header bar instead — see `SiteHeader`, which reads the same store as this.
  */
 
 const DISMISSED_KEY = "argus.demo-fab-dismissed";
@@ -62,21 +71,31 @@ function dismiss() {
   for (const l of listeners) l();
 }
 
-export function DemoFab() {
-  const inDemo = useInDemo();
-  const isDismissed = useSyncExternalStore(
+/**
+ * Whether the demo invitation should still be offered. Shared with the header's
+ * small-screen control so dismissing in one place settles it everywhere.
+ */
+export function useDemoInviteOffered(): boolean {
+  return !useSyncExternalStore(
     subscribe,
     () => dismissed,
     () => false,
   );
+}
+
+export function DemoFab() {
+  const inDemo = useInDemo();
+  const offered = useDemoInviteOffered();
 
   // The exit is never dismissable — you always need a way out of the demo.
-  if (isDismissed && !inDemo) return null;
+  if (!offered && !inDemo) return null;
 
   return (
     <div
       className={clsx(
-        "fixed bottom-6 right-6 z-50 flex items-center rounded-full border shadow-xl shadow-cast/40 backdrop-blur-sm transition-colors print:hidden",
+        // `hidden lg:flex`: below `lg` the control moves into the header rather
+        // than floating over the page's own buttons.
+        "fixed bottom-6 right-6 z-50 hidden items-center rounded-full border shadow-xl shadow-cast/40 backdrop-blur-sm transition-colors lg:flex print:hidden",
         inDemo
           ? "border-accent bg-accent/20"
           : "border-line-strong bg-surface/95 hover:border-accent",
