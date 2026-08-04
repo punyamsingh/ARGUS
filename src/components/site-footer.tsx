@@ -39,12 +39,15 @@ export function SiteFooter({ base = "/" }: { base?: string }) {
         </div>
 
         <div className="flex shrink-0 flex-col gap-4 sm:items-end">
-          <nav aria-label="Footer" className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]">
+          {/* `py-1` on the links, not just spacing between them: at 13px these
+              were 20px-tall tap targets, and on a phone the footer is the whole
+              of the navigation below `md`. */}
+          <nav aria-label="Footer" className="-my-1 flex flex-wrap items-center gap-x-6 text-[13px]">
             {LINKS.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-muted transition-colors hover:text-ivory"
+                className="py-1 text-muted transition-colors hover:text-ivory"
               >
                 {link.label}
               </Link>

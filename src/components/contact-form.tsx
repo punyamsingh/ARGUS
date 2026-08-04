@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DISABLED_PRIMARY } from "@/lib/button";
 
 /**
  * Contact form. Rather than posting to a mail backend, the form composes a
@@ -122,7 +123,7 @@ export function ContactForm({ email }: { email: string }) {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
         <button
           type="submit"
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-2 text-[14px] font-semibold text-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-muted"
+          className={`inline-flex items-center justify-center gap-2 rounded-full border border-transparent bg-accent px-5 py-2 text-[14px] font-semibold text-ink transition-colors hover:bg-accent-strong ${DISABLED_PRIMARY}`}
           disabled={!message.trim()}
         >
           Open in my mail app
@@ -137,6 +138,9 @@ export function ContactForm({ email }: { email: string }) {
       </div>
 
       <p className="mt-4 text-[12px] leading-relaxed text-faint">
+        {message.trim()
+          ? null
+          : "Write a message to enable the mail-app button. "}
         This form doesn&apos;t send anything on its own — it drafts the message in
         your own mail client, so nothing you type here reaches us until you press
         send.
