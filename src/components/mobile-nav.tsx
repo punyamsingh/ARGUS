@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { clsx } from "@/lib/cn";
+import { DemoInvite } from "@/components/demo-chip";
 
 /**
  * The header's small-screen navigation. The desktop header lays the links out
@@ -24,10 +25,10 @@ export function MobileNav({
   items: NavLink[];
   /** The bar's "Home" link, which does not fit alongside the wordmark below `sm`. */
   home: NavLink;
-  /** The demo *invitation*, which yields space in the bar below `sm`. Never the
-   *  exit — that stays in the bar at every width, so nobody has to open a menu
-   *  to get out of a demo. */
-  demo?: NavLink;
+  /** Whether to offer the demo *invitation*, which yields space in the bar
+   *  below `sm`. Never the exit — that stays in the bar at every width, so
+   *  nobody has to open a menu to get out of a demo. */
+  demo?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -121,13 +122,26 @@ export function MobileNav({
             `bg-surface`: the panel hangs over the page, so it reads as a layer
             dropped onto it rather than a continuation of the header. */}
         <div className="border-b border-line bg-ink px-6 py-3 shadow-lg shadow-cast/20">
-          <ul className="flex flex-col">
+          <ul className="flex flex-col items-center">
+            {/* Home leads, and reads like the rest of the list — it's the top of
+                the site, not an action. Only rendered below `sm`, where the bar
+                drops it. */}
+            <li className="sm:hidden">
+              <Link
+                href={home.href}
+                onClick={() => setOpen(false)}
+                className="block py-2.5 text-center text-[15px] text-muted transition-colors hover:text-ivory"
+              >
+                {home.label}
+              </Link>
+            </li>
+
             {items.map((item) => (
               <li key={item.label}>
                 <Link
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="block py-2.5 text-[15px] text-muted transition-colors hover:text-ivory"
+                  className="block py-2.5 text-center text-[15px] text-muted transition-colors hover:text-ivory"
                 >
                   {item.label}
                 </Link>
@@ -135,25 +149,16 @@ export function MobileNav({
             ))}
           </ul>
 
-          {/* Both only rendered below `sm`, where the header bar drops them.
-              Plain links, matching the list above rather than standing out as a
-              primary action: neither "Home" nor the demo invitation is one. */}
-          <Link
-            href={home.href}
-            onClick={() => setOpen(false)}
-            className="block py-2.5 text-[15px] text-muted transition-colors hover:text-ivory sm:hidden"
-          >
-            {home.label}
-          </Link>
-
+          {/* The invitation wears the same chip it wears in the bar, rather than
+              flattening into a list item — it's an offer, not a destination.
+              Never the exit: that stays in the bar at every width. */}
           {demo && (
-            <Link
-              href={demo.href}
-              onClick={() => setOpen(false)}
-              className="block py-2.5 text-[15px] text-muted transition-colors hover:text-ivory sm:hidden"
-            >
-              {demo.label}
-            </Link>
+            <div className="mt-2 flex justify-center pb-1 sm:hidden">
+              <DemoInvite
+                className="inline-flex"
+                onClick={() => setOpen(false)}
+              />
+            </div>
           )}
         </div>
       </div>
