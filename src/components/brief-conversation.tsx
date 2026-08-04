@@ -8,11 +8,22 @@ import { BriefFollowUps } from "@/components/brief-followups";
  * the grounded follow-up panel. Shared between the inline studio view and the
  * focused full-page view so both stay identical. The follow-ups are keyed to the
  * brief so switching briefs starts a fresh conversation.
+ *
+ * Closing and expanding are the brief window's own chrome lights, so each view
+ * just says which of them mean anything here.
  */
-export function BriefConversation({ result }: { result: BriefResult }) {
+export function BriefConversation({
+  result,
+  onClose,
+  onExpand,
+}: {
+  result: BriefResult;
+  onClose?: () => void;
+  onExpand?: () => void;
+}) {
   return (
     <div className="space-y-4">
-      <BriefResultView result={result} />
+      <BriefResultView result={result} onClose={onClose} onExpand={onExpand} />
       <BriefActions result={result} />
       <BriefFollowUps key={result.meta.generatedAt} result={result} />
     </div>

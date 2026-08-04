@@ -95,7 +95,11 @@ export function FocusedBrief({ id }: { id: string }) {
             }}
           />
         )}
-        {!notFound && brief && <BriefConversation result={brief} />}
+        {/* No expand light here — this is already the expanded view. Closing
+            the window returns to the studio. */}
+        {!notFound && brief && (
+          <BriefConversation result={brief} onClose={() => router.push("/")} />
+        )}
       </div>
     </main>
   );
