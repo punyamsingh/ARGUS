@@ -13,6 +13,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "eval": "vitest run",
+    "db:auth-sql": "node scripts/generate-auth-sql.mjs",
     "version:compute": "node scripts/version-from-history.mjs --table"
   },
   "dependencies": {
@@ -25,7 +26,9 @@
     "@opentelemetry/sdk-trace-node": "^2.8.0",
     "ai": "^7.0.3",
     "animejs": "^4.5.0",
+    "better-auth": "^1.6.25",
     "next": "16.2.9",
+    "pg": "^8.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "three": "^0.185.0",
@@ -36,6 +39,7 @@
     "@semantic-release/git": "^10.0.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^24",
+    "@types/pg": "^8.20.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/three": "^0.185.0",
