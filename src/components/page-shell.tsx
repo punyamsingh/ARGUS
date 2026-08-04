@@ -25,18 +25,22 @@ export function PageShell({
         <div className="pointer-events-none absolute inset-0 -z-10 bg-glow" />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-grid" />
 
-        <div className="mx-auto max-w-3xl px-6 pb-24 pt-16">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
-            {eyebrow}
-          </p>
-          <h1 className="mt-3 font-display text-[2.2rem] font-semibold leading-[1.1] tracking-tight text-ivory sm:text-5xl">
-            {title}
-          </h1>
-          {lede ? (
-            <p className="mt-5 text-lg leading-relaxed text-muted">{lede}</p>
-          ) : null}
+        {/* One reading column, as before — it just starts at the page's left
+            gutter, in line with the header, instead of floating mid-window. */}
+        <div className="shell pb-24 pt-16">
+          <div className="max-w-3xl">
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-accent">
+              {eyebrow}
+            </p>
+            <h1 className="mt-3 font-display text-[2.2rem] font-semibold leading-[1.1] tracking-tight text-ivory sm:text-5xl">
+              {title}
+            </h1>
+            {lede ? (
+              <p className="mt-5 text-lg leading-relaxed text-muted">{lede}</p>
+            ) : null}
 
-          <div className="mt-12">{children}</div>
+            <div className="mt-12">{children}</div>
+          </div>
         </div>
       </main>
 
@@ -56,7 +60,10 @@ export function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} className="scroll-mt-24 border-t border-line py-10 first:border-t-0 first:pt-0">
+    <section
+      id={id}
+      className="scroll-mt-24 border-t border-line py-10 first:border-t-0 first:pt-0"
+    >
       <h2 className="font-display text-xl font-semibold text-ivory">{title}</h2>
       <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-muted">
         {children}

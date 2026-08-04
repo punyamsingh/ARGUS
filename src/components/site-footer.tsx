@@ -13,7 +13,7 @@ export function SiteFooter({ base = "/" }: { base?: string }) {
 
   return (
     <footer className="mt-auto border-t border-line">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
+      <div className="shell flex flex-col gap-6 py-8 sm:flex-row sm:items-start sm:justify-between sm:gap-12">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link href="/" className="flex items-center gap-2.5">

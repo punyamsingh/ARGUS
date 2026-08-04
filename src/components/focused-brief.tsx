@@ -80,7 +80,7 @@ export function FocusedBrief({ id }: { id: string }) {
 
         {/* slim focused chrome */}
         <header className="sticky top-0 z-10 border-b border-line bg-ink/70 backdrop-blur-md">
-          <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
+          <div className="shell max-w-4xl flex items-center justify-between py-3">
             <Link
               href="/"
               className="flex items-center gap-2 text-ivory"
@@ -100,7 +100,9 @@ export function FocusedBrief({ id }: { id: string }) {
           </div>
         </header>
 
-        <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+        {/* Still one centred reading column — a brief is a document and a
+            full-window line length is unreadable — just a little wider. */}
+        <div className="shell w-full max-w-4xl flex-1 py-8">
           {notFound && <NotFound />}
           {!notFound && status === "loading" && <BriefLoader stage={stage} />}
           {!notFound && status === "error" && (
@@ -108,13 +110,15 @@ export function FocusedBrief({ id }: { id: string }) {
               message={error}
               onRetry={() => {
                 if (inputRef.current) {
-                  void run(inputRef.current, undefined, { demo: demoRef.current });
+                  void run(inputRef.current, undefined, {
+                    demo: demoRef.current,
+                  });
                 }
               }}
             />
           )}
           {/* No expand light here — this is already the expanded view. Closing
-            the window returns to the studio. */}
+              the window returns to the studio. */}
           {!notFound && brief && (
             <BriefConversation
               result={brief}
@@ -127,7 +131,7 @@ export function FocusedBrief({ id }: { id: string }) {
           outright also stranded the theme control — nothing on this page could
           switch palettes. A slim strip carries it and the routes back. */}
       <footer className="mt-auto border-t border-line print:hidden">
-        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="shell max-w-4xl flex flex-wrap items-center justify-between gap-4 py-4">
           <nav
             aria-label="Footer"
             className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]"
