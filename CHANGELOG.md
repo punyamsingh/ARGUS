@@ -1,3 +1,34 @@
+## [2.1.0](https://github.com/punyamsingh/ARGUS/compare/v2.0.0...v2.1.0) (2026-08-04)
+
+### Features
+
+* **api:** add the brief library routes ([5513871](https://github.com/punyamsingh/ARGUS/commit/551387127ecf67798fa38dbfe97cb4d0e5fe6a14))
+* **auth:** sign in with Google ([9173eda](https://github.com/punyamsingh/ARGUS/commit/9173eda101d64a9574ca9c74f7f6deebfa0e94d1))
+* **briefs:** add the row mapping and owner-scoped repo ([4ab8d13](https://github.com/punyamsingh/ARGUS/commit/4ab8d1397eea16af054e8811282a28423e6f077f))
+* **briefs:** claim local history on first sign-in ([a92034d](https://github.com/punyamsingh/ARGUS/commit/a92034d7d89a309592a00845bae216fb203d04f8))
+* **briefs:** serve the library from the account when signed in ([01d5f3e](https://github.com/punyamsingh/ARGUS/commit/01d5f3e9d133683cfeae3c91981c8797643d66a9))
+* **db:** add Supabase Postgres access and the schema ([c52680e](https://github.com/punyamsingh/ARGUS/commit/c52680e354b6fa5f0407827594d32952cc93c987))
+* **demo:** add demo mode with a scripted account and real synthesis ([67f44e9](https://github.com/punyamsingh/ARGUS/commit/67f44e9c5f27367fe4eb5c243ef4b72edeb571d3))
+* **demo:** keep the demo control honest for the whole run ([2a4e5df](https://github.com/punyamsingh/ARGUS/commit/2a4e5df5fa687008ab8dcead1587ae198dc87f19))
+* **demo:** label the demo control and let it be dismissed ([fddcd68](https://github.com/punyamsingh/ARGUS/commit/fddcd683a94432ed649f9085ddcafd66b80c9d93))
+* **site:** production-grade footer, About/Contact and legal pages ([a990239](https://github.com/punyamsingh/ARGUS/commit/a99023982777e1f7dd9715b37c9ef9392cd8d049)), closes [#studio](https://github.com/punyamsingh/ARGUS/issues/studio) [#sources](https://github.com/punyamsingh/ARGUS/issues/sources) [#how-it-works](https://github.com/punyamsingh/ARGUS/issues/how-it-works)
+* **site:** restore the footer brand block ([6468cbe](https://github.com/punyamsingh/ARGUS/commit/6468cbef845bf7b061dd2d997e4e6afa5f6940bc))
+* **ui:** add light theme with a footer toggle ([f59696b](https://github.com/punyamsingh/ARGUS/commit/f59696bdbf4a4816faeb57137f74d6913817663a)), closes [#a8761f](https://github.com/punyamsingh/ARGUS/issues/a8761f)
+* **ui:** default to dark on every device ([1ffbb1a](https://github.com/punyamsingh/ARGUS/commit/1ffbb1a6d40c4075de7e876f58e9f5bc658f376c))
+* **ui:** ease the studio layout closed when the example goes ([fab703b](https://github.com/punyamsingh/ARGUS/commit/fab703b863a978646d730f12e327aaa7babcb869)), closes [#96](https://github.com/punyamsingh/ARGUS/issues/96)
+* **ui:** give a real brief the example's chrome and its controls ([96a3b90](https://github.com/punyamsingh/ARGUS/commit/96a3b90823558e300d2625cd9f5db297c213594e))
+* **ui:** let the example brief be dismissed ([0a2bdc9](https://github.com/punyamsingh/ARGUS/commit/0a2bdc9164a2e4d97bafe7c59bf1c20e2f811e3b)), closes [#96](https://github.com/punyamsingh/ARGUS/issues/96)
+* **ui:** stop pinning the desktop layout to a narrow centre column ([40f2e8e](https://github.com/punyamsingh/ARGUS/commit/40f2e8e78dffd5de0b66da0a45b1acdbdcc1e1e4))
+
+### Bug Fixes
+
+* **a11y:** return focus to the menu button when Escape closes the nav ([7236d1a](https://github.com/punyamsingh/ARGUS/commit/7236d1a98701e19ab35bbc0d66752ba94489e7c2)), closes [#103](https://github.com/punyamsingh/ARGUS/issues/103)
+* **ui:** give the chrome lights a 24px hit area ([e046844](https://github.com/punyamsingh/ARGUS/commit/e046844732b9a9d1ed5c26f12968afae7e48afb3))
+* **ui:** raise light-theme contrast to WCAG AA ([2076311](https://github.com/punyamsingh/ARGUS/commit/2076311a058e64529e940236ce6c3802038e69d0)), closes [#a8761f](https://github.com/punyamsingh/ARGUS/issues/a8761f) [#868d97](https://github.com/punyamsingh/ARGUS/issues/868d97) [#656b73](https://github.com/punyamsingh/ARGUS/issues/656b73) [#a8761f](https://github.com/punyamsingh/ARGUS/issues/a8761f)
+* **ui:** raise surface opacity so the backdrop stops crossing text ([#110](https://github.com/punyamsingh/ARGUS/issues/110)) ([d1cccd5](https://github.com/punyamsingh/ARGUS/commit/d1cccd50973037bca2e4c39eccb1f1fb1b67cf15))
+* **ui:** repair citation alignment, mobile nav and disabled buttons ([aa1d116](https://github.com/punyamsingh/ARGUS/commit/aa1d11687f8eaee0833892ce9bd15b1cc3dca19a))
+* **ui:** wear the same header and footer on the brief page ([a2adb91](https://github.com/punyamsingh/ARGUS/commit/a2adb9192e6552c9344ecd34ae2b9ada2f393594))
+
 ## [2.0.0](https://github.com/punyamsingh/ARGUS/compare/v1.9.0...v2.0.0) (2026-06-28)
 
 ### ⚠ BREAKING CHANGES
