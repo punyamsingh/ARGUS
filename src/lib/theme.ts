@@ -4,8 +4,10 @@ import { useSyncExternalStore } from "react";
 import { THEME_KEY } from "@/lib/theme-bootstrap";
 
 /**
- * Theme preference — dark (the ARGUS default), light, or "system" (follow the
- * OS). Persisted to localStorage and exposed as a subscribable external store,
+ * Theme preference — dark, light, or "system" (follow the OS). Dark is the
+ * default on every device, and following the OS is an explicit opt-in rather
+ * than the fallback: an unset preference means dark, not "ask the machine".
+ * Persisted to localStorage and exposed as a subscribable external store,
  * mirroring `brief-history.ts`: components read it with `useSyncExternalStore`
  * (no effects, no hydration mismatch) and the WebGL backdrop — which is not a
  * React tree — subscribes directly via `subscribeResolvedTheme`.
@@ -24,7 +26,7 @@ export type ResolvedTheme = "light" | "dark";
 type Snapshot = { choice: ThemeChoice; resolved: ResolvedTheme };
 
 /** Matches what the server renders (and what the pre-paint script assumes). */
-const SERVER: Snapshot = { choice: "system", resolved: "dark" };
+const SERVER: Snapshot = { choice: "dark", resolved: "dark" };
 
 let snapshot: Snapshot = SERVER;
 let hydrated = false;
@@ -47,14 +49,14 @@ function resolve(choice: ThemeChoice): ResolvedTheme {
   return choice === "system" ? systemTheme() : choice;
 }
 
-/** Read the persisted choice; any storage failure degrades to "system". */
+/** Read the persisted choice; nothing stored (or any storage failure) is dark. */
 function readChoice(): ThemeChoice {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "dark";
   try {
     const raw = window.localStorage.getItem(KEY);
-    return isChoice(raw) ? raw : "system";
+    return isChoice(raw) ? raw : "dark";
   } catch {
-    return "system";
+    return "dark";
   }
 }
 
@@ -110,12 +112,15 @@ function subscribe(cb: () => void): () => void {
   return () => listeners.delete(cb);
 }
 
-/** Set (and persist) the theme preference. */
+/**
+ * Set (and persist) the theme preference. "system" is stored like any other
+ * choice rather than cleared: with dark as the default, an absent key means
+ * dark, so clearing it would silently undo the visitor's pick.
+ */
 export function setTheme(choice: ThemeChoice): void {
   hydrated = true;
   try {
-    if (choice === "system") window.localStorage.removeItem(KEY);
-    else window.localStorage.setItem(KEY, choice);
+    window.localStorage.setItem(KEY, choice);
   } catch {
     // best-effort — full/blocked storage just means the choice is session-only
   }
