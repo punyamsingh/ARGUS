@@ -1,3 +1,21 @@
+## [3.17.0](https://github.com/punyamsingh/ARGUS/compare/v2.1.0...v3.17.0) (2026-08-04)
+
+Version realignment. **No functional changes** — no code differs between v2.1.0
+and v3.17.0.
+
+Releases had been failing silently since v2.0.0 (28 June): `SEMANTIC_RELEASE_TOKEN`
+had expired, so semantic-release authenticated, failed to push the tag, and exited
+before writing a version. Thirty-seven commits — seventeen of them features — landed
+on `main` over five weeks without ever being released. When the token was rotated,
+that entire backlog collapsed into a single minor bump, because semantic-release
+takes the highest bump since the last tag rather than one per commit. The result,
+v2.1.0, undersold five weeks of work by a wide margin.
+
+This release renumbers the line to 3.17.0 — the version `pnpm version:compute`
+derives from the full commit history, i.e. what the version would have been had
+every release fired on time. Normal numbering resumes from here; the next feature
+lands as 3.18.0.
+
 ## [2.1.0](https://github.com/punyamsingh/ARGUS/compare/v2.0.0...v2.1.0) (2026-08-04)
 
 ### Features
