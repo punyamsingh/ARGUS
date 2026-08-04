@@ -8,6 +8,7 @@ import type {
   BriefResult,
 } from "@/types/brief";
 import { clsx } from "@/lib/cn";
+import { DISABLED_PRIMARY } from "@/lib/button";
 import { getSessionId } from "@/lib/session-id";
 
 /**
@@ -132,8 +133,10 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
         </p>
       </div>
 
+      {/* Answers stream in after the question is submitted and focus has moved
+          on, so a screen reader would otherwise never hear them arrive. */}
       {turns.length > 0 && (
-        <ul className="divide-y divide-line">
+        <ul className="divide-y divide-line" aria-live="polite" aria-busy={busy}>
           {turns.map((t) => (
             <li key={t.id} className="px-5 py-4">
               <p className="text-[13px] font-medium text-ivory">{t.question}</p>
@@ -161,7 +164,10 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
         <button
           type="submit"
           disabled={busy || question.trim() === ""}
-          className="shrink-0 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-muted"
+          className={clsx(
+            "shrink-0 rounded-xl border border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong",
+            DISABLED_PRIMARY,
+          )}
         >
           {busy ? "…" : "Ask"}
         </button>

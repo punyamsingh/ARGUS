@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { BriefResult, MeetingType, SellerProfile } from "@/types/brief";
 import { MEETING_TYPES } from "@/types/brief";
 import { clsx } from "@/lib/cn";
+import { DISABLED_PRIMARY } from "@/lib/button";
 import { BriefPreview } from "@/components/brief-preview";
 import { BriefConversation } from "@/components/brief-conversation";
 import {
@@ -151,13 +152,15 @@ export function BriefStudio() {
     <div
       className={clsx(
         "mx-auto grid items-start gap-y-10 px-6 transition-[max-width,grid-template-columns,column-gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        // Splits at `lg`, not `md`: at 768px each column is ~350px and the brief
+        // card degrades to three or four words a line.
         soloForm
-          ? "max-w-xl gap-x-0 md:grid-cols-[1fr_0fr]"
-          : "max-w-6xl gap-x-10 md:grid-cols-[0.9fr_1.1fr]",
+          ? "max-w-xl gap-x-0 lg:grid-cols-[1fr_0fr]"
+          : "max-w-6xl gap-x-10 lg:grid-cols-[0.9fr_1.1fr]",
       )}
     >
       {/* Form */}
-      <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="md:sticky md:top-24">
+      <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="lg:sticky lg:top-24">
         {demo && <DemoBanner />}
         <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-cast/30 backdrop-blur-sm sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -181,7 +184,7 @@ export function BriefStudio() {
             value={demo ? DEMO_INPUT.context : context}
             onChange={setContext}
             placeholder="e.g. renewal + expansion call"
-            className="mt-3 block"
+            className="mt-3"
             readOnly={demo}
           />
           <MeetingTypePicker
@@ -192,23 +195,31 @@ export function BriefStudio() {
           <button
             type="submit"
             disabled={!canSubmit}
-            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:bg-line-strong disabled:text-muted"
+            className={clsx(
+              "mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong",
+              DISABLED_PRIMARY,
+            )}
           >
             Generate brief
           </button>
         </div>
         <p className="mt-3 px-1.5 text-[12px] leading-relaxed text-faint">
+          {/* Three states: the demo's own line, the ready line, and — rather
+              than leaving the reader to guess which of the three fields is
+              still missing — why the button is inert. */}
           {demo ? (
             <>
               Scripted sources, real synthesis — the brief is written live by the
               model.{" "}
               <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
             </>
-          ) : (
+          ) : canSubmit ? (
             <>
               Free, grounded in public sources. Every claim is cited.{" "}
               <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
             </>
+          ) : (
+            "Fill in the company, who you're meeting and the meeting context to run."
           )}
         </p>
 
@@ -272,9 +283,16 @@ export function BriefStudio() {
   );
 }
 
-/** A single labelled text input (label is visually hidden, kept for a11y).
- *  `readOnly` is how demo mode pins a field: still focusable and readable, but
- *  the scripted value can't be edited out from under the presenter. */
+/**
+ * A single labelled text input. The label is visible — these fields used to
+ * carry `sr-only` labels and lean on the placeholder, which means the only clue
+ * to what a field is for disappears the moment someone types in it. That is
+ * worst in the seller panel, where four otherwise-identical inputs sit together.
+ * Matches the contact form's field styling so both forms read the same.
+ *
+ * `readOnly` is how demo mode pins a field: still focusable and readable, but
+ * the scripted value can't be edited out from under the presenter.
+ */
 function Field({
   label,
   value,
@@ -291,13 +309,14 @@ function Field({
   readOnly?: boolean;
 }) {
   return (
-    <label className={className}>
-      <span className="sr-only">{label}</span>
+    <label className={clsx("block", className)}>
+      <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
+        {label}
+      </span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        aria-label={label}
         readOnly={readOnly}
         className={clsx(
           "w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong",
