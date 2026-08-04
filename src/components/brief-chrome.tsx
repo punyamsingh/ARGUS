@@ -55,7 +55,11 @@ function ChromeLight({
       aria-label={action.label}
       title={action.label}
       className={clsx(
-        "flex size-2.5 items-center justify-center rounded-full bg-line-strong text-ink transition-colors",
+        "relative flex size-2.5 items-center justify-center rounded-full bg-line-strong text-ink transition-colors",
+        // Roomy hit area (10px + 7px each side = 24px) via a pseudo-element, so
+        // the target grows without the lights growing: sizing the button itself
+        // would space them ~30px apart and lose the tight cluster.
+        "before:absolute before:-inset-[7px] before:content-['']",
         tone === "close" && "hover:bg-risk focus-visible:bg-risk",
         tone === "zoom" && "hover:bg-signal focus-visible:bg-signal",
       )}
