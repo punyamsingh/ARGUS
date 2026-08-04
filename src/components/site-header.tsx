@@ -65,7 +65,7 @@ export function SiteHeader() {
                 drops out here and leads the menu panel instead. */}
             <Link
               href={CTA.href}
-              className="hidden whitespace-nowrap rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2 sm:inline-flex"
+              className="hidden whitespace-nowrap rounded-full border border-line bg-surface/85 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2 sm:inline-flex"
             >
               {CTA.label}
             </Link>

@@ -50,7 +50,7 @@ export function HomePage({ demo = false }: { demo?: boolean }) {
             className={
               demo
                 ? "rise inline-flex items-center gap-2 rounded-full border border-accent/50 bg-accent/10 px-3 py-1 text-[12px] text-accent"
-                : "rise inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-[12px] text-muted"
+                : "rise inline-flex items-center gap-2 rounded-full border border-line bg-surface/85 px-3 py-1 text-[12px] text-muted"
             }
           >
             <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
@@ -130,7 +130,7 @@ export function HomePage({ demo = false }: { demo?: boolean }) {
           {PIPELINE.map((p) => (
             <div
               key={p.step}
-              className="group rounded-2xl border border-line bg-surface/40 p-6 transition-colors hover:border-line-strong hover:bg-surface/70"
+              className="group rounded-2xl border border-line bg-surface/85 p-6 transition-colors hover:border-line-strong hover:bg-surface"
             >
               <span className="font-mono text-[12px] text-accent">
                 {p.step}
@@ -148,7 +148,7 @@ export function HomePage({ demo = false }: { demo?: boolean }) {
 
       {/* ── Closing line ─────────────────────────────────── */}
       <section className="shell pb-24">
-        <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/50 px-8 py-12 text-center">
+        <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/85 px-8 py-12 text-center">
           <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
           <h2 className="font-display text-3xl font-semibold tracking-tight text-ivory sm:text-4xl">
             Context, credibility, command of the room.

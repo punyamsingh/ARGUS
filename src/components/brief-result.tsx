@@ -209,7 +209,7 @@ export function BriefResultView({
 
       <article
         id="brief-print-root"
-        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm"
+        className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/95 shadow-2xl shadow-cast/40 backdrop-blur-md"
       >
         <BriefChrome
           status={`ready · ${Math.max(1, Math.round(meta.elapsedMs / 1000))}s`}

@@ -82,7 +82,7 @@ export function MobileNav({
         aria-controls={panelId}
         aria-label={open ? "Close menu" : "Open menu"}
         onClick={() => setOpen((v) => !v)}
-        className="grid size-9 place-items-center rounded-full border border-line bg-surface/60 text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+        className="grid size-9 place-items-center rounded-full border border-line bg-surface/85 text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
       >
         <svg
           viewBox="0 0 24 24"
