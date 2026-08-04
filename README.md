@@ -10,7 +10,7 @@ account research, distilled into one **cited**, conversation-ready brief.
 [![CI](https://github.com/punyamsingh/ARGUS/actions/workflows/ci.yml/badge.svg)](https://github.com/punyamsingh/ARGUS/actions/workflows/ci.yml)
 [![Release](https://github.com/punyamsingh/ARGUS/actions/workflows/release.yml/badge.svg)](https://github.com/punyamsingh/ARGUS/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![Node 22](https://img.shields.io/badge/node-22-3c873a.svg)](./.nvmrc)
+[![Node 24](https://img.shields.io/badge/node-24-3c873a.svg)](./.nvmrc)
 [![Conventional Commits](https://img.shields.io/badge/commits-conventional-fe5196.svg)](https://www.conventionalcommits.org/)
 
 </div>
@@ -76,7 +76,7 @@ evidence base answers your questions, still cited, no invented extras.
 
 ## Quickstart
 
-Requires **Node 22** (see [`.nvmrc`](./.nvmrc)) and **pnpm**.
+Requires **Node 24** (see [`.nvmrc`](./.nvmrc)) and **pnpm**.
 
 ```bash
 pnpm install
