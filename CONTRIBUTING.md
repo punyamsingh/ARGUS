@@ -28,7 +28,7 @@ or hostility of any kind is not welcome.
 
 ## Getting set up
 
-You need **Node 22** (see [`.nvmrc`](./.nvmrc)) and **pnpm**.
+You need **Node 24** (see [`.nvmrc`](./.nvmrc)) and **pnpm**.
 
 ```bash
 pnpm install
