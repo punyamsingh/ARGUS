@@ -244,6 +244,17 @@ from `package.json` at build time.
   scheme over the full history — run `pnpm version:compute` for the per-commit
   ledger. semantic-release picks up from that tag.
 
+> **If the version stops moving, check the release job first.** An expired
+> `SEMANTIC_RELEASE_TOKEN` fails *quietly from the outside*: merges succeed, CI is
+> green, and only the separate Release workflow goes red with `EGITNOPERMISSION` /
+> `EINVALIDGHTOKEN`. That went unnoticed for five weeks once. Two things to know when
+> it happens: rotating the token is the fix (the secret is the only lever — no code
+> change helps), and the backlog does **not** replay commit-by-commit afterwards.
+> semantic-release takes the single highest bump since the last tag, so thirty-seven
+> commits collapse into one release. `pnpm version:compute` shows what the version
+> *would* have been had every release fired; the two legitimately disagree after an
+> outage.
+
 ## Project layout
 
 ```
