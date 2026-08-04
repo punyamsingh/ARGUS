@@ -31,6 +31,7 @@ asks, risk alerts, and buying signals. **Every claim links to its source.**
 - [How it works](#how-it-works)
 - [Stack](#stack)
 - [Quickstart](#quickstart)
+- [Saved briefs & sign-in](#saved-briefs--sign-in)
 - [Demo mode](#demo-mode)
 - [Getting the free keys](#getting-the-free-keys)
 - [Contributing](#contributing)
@@ -72,6 +73,9 @@ evidence base answers your questions, still cited, no invented extras.
 - **Next.js (App Router) + React + TypeScript + Tailwind v4**
 - **Vercel AI SDK** — provider-agnostic LLM layer (default: free Google Gemini)
 - **Langfuse** — observability (free tier / self-host)
+- **Supabase Postgres + Better Auth** — optional accounts and saved briefs,
+  spoken to with the `pg` driver and plain SQL (no ORM — it's five queries over
+  one table)
 - Deployed on **Vercel** (preview per PR, production on `main`)
 
 ## Quickstart
@@ -93,6 +97,54 @@ pnpm lint       # eslint
 pnpm typecheck  # tsc --noEmit
 pnpm eval       # grounding-invariant evals (vitest)
 ```
+
+## Saved briefs & sign-in
+
+**Optional.** With none of it configured, ARGUS behaves exactly as it always
+has: briefs generate, land in your browser's `localStorage`, and no sign-in
+control is rendered. Configure it and visitors can sign in with Google and have
+their briefs persist to their account — listable, re-openable on another device,
+and deletable.
+
+Sign-in is never required. Anonymous visitors keep the full flow, and `/demo`
+stays public. Demo briefs are never written to an account.
+
+**1. Create a Supabase project** (free tier) and copy two connection strings from
+*Project Settings → Database*:
+
+| Which | Port | Used for |
+|---|---|---|
+| Transaction pooler | `6543` | the running app — set this as `DATABASE_URL` |
+| Direct connection | `5432` | applying the SQL below (the pooler can't run DDL reliably) |
+
+**2. Apply the schema**, in order:
+
+```bash
+psql "$DIRECT_DATABASE_URL" -f sql/0001_auth.sql   # accounts + sessions
+psql "$DIRECT_DATABASE_URL" -f sql/0002_brief.sql  # saved briefs
+```
+
+Or paste each file into the Supabase SQL editor. `sql/0001_auth.sql` is
+**generated** — regenerate it after upgrading `better-auth` with
+`DATABASE_URL=<empty db> pnpm db:auth-sql` and commit the diff, rather than
+editing it by hand.
+
+**3. Create a Google OAuth client** — [Google Cloud console → Credentials](https://console.cloud.google.com/apis/credentials)
+→ *Create credentials → OAuth client ID → Web application*. Add an authorised
+redirect URI of `<BETTER_AUTH_URL>/api/auth/callback/google`.
+
+> ⚠️ Google matches redirect URIs **exactly**, and Vercel gives every preview
+> deployment a fresh URL. Register `http://localhost:3000/api/auth/callback/google`
+> and your production callback; sign-in will not work on ad-hoc preview URLs
+> unless you assign a stable preview domain and register that too.
+
+**4. Set the five variables** from [`.env.example`](./.env.example):
+`DATABASE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`,
+`GOOGLE_CLIENT_SECRET`. They're all-or-nothing — the sign-in control only
+appears once the database *and* the Google credentials are present.
+
+Briefs you generated before signing in aren't lost: on first sign-in this
+browser's saved briefs are moved into your account, once.
 
 ## Demo mode
 
@@ -195,10 +247,15 @@ from `package.json` at build time.
 ## Project layout
 
 ```
+sql/              # schema, applied in order (0001 is generated — see above)
+scripts/          # one-off maintenance (regenerate the auth schema, versioning)
 src/
-  app/            # Next.js App Router — pages + /api/brief route
+  app/            # Next.js App Router — pages + /api/brief, /api/briefs, /api/auth
   components/     # UI (brief studio, brief result, chrome)
+  db/             # lazy pg pool + the parameterised query helper
   lib/
+    auth/         # Better Auth — server instance, browser client
+    briefs/       # saved briefs — row mapping, SQL repo, client library facade
     llm/          # provider-agnostic model factory (Gemini / Claude)
     agent/        # the pipeline
       resolve.ts    # entity resolution
