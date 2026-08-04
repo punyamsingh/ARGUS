@@ -16,6 +16,23 @@ export type GenStatus = "idle" | "loading" | "done" | "error";
  *  focused page (`/brief/new`), which then streams the generation there. */
 export const PENDING_BRIEF_KEY = "argus.pending-brief";
 
+/** What the studio stashes under that key: the input plus the demo flag that
+ *  was in effect when Generate was pressed. */
+export type PendingBrief = { input: BriefInput; demo?: boolean };
+
+/** Read a stashed pending brief, tolerating the older bare-`BriefInput` shape. */
+export function parsePendingBrief(raw: string): PendingBrief | null {
+  try {
+    const parsed = JSON.parse(raw) as PendingBrief | BriefInput;
+    if (parsed && typeof parsed === "object" && "input" in parsed) {
+      return parsed as PendingBrief;
+    }
+    return { input: parsed as BriefInput };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Drives a brief generation: POSTs to /api/brief, consumes the streamed NDJSON
  * (stage events → terminal result/error), persists the result to history, and
@@ -28,7 +45,11 @@ export function useBriefStream() {
   const [result, setResult] = useState<BriefResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function run(input: BriefInput, onResult?: (r: BriefResult) => void) {
+  async function run(
+    input: BriefInput,
+    onResult?: (r: BriefResult) => void,
+    { demo = false }: { demo?: boolean } = {},
+  ) {
     setStatus("loading");
     setStage("resolving");
     setError(null);
@@ -45,7 +66,9 @@ export function useBriefStream() {
           // Groups this browser's briefs into one Langfuse session.
           "x-argus-session-id": getSessionId(),
         },
-        body: JSON.stringify(input),
+        // `demo` rides alongside the input — the route reads it separately, so
+        // the BriefInput contract is untouched.
+        body: JSON.stringify({ ...input, ...(demo ? { demo: true } : {}) }),
       });
 
       // Validation failures come back as a plain JSON error (4xx).

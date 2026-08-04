@@ -158,6 +158,9 @@ export const briefMetaSchema = z.object({
   provider: z.string(),
   model: z.string(),
   elapsedMs: z.number(),
+  /** True when the run used the scripted demo evidence store (demo mode).
+   *  Synthesis was still a real model call — only the sources were fixed. */
+  demo: z.boolean().optional(),
 });
 export type BriefMeta = z.infer<typeof briefMetaSchema>;
 
@@ -195,6 +198,8 @@ export const askInputSchema = z.object({
   entity: resolvedEntitySchema,
   /** The brief's evidence store to answer over (the per-session persistence). */
   evidence: z.array(evidenceSchema),
+  /** Demo mode — answer from the supplied evidence only, never gather live. */
+  demo: z.boolean().optional(),
 });
 export type AskInput = z.infer<typeof askInputSchema>;
 

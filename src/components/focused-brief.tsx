@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { BriefInput, BriefResult } from "@/types/brief";
 import { getBriefById } from "@/lib/brief-history";
-import { PENDING_BRIEF_KEY, useBriefStream } from "@/lib/use-brief-stream";
+import {
+  PENDING_BRIEF_KEY,
+  parsePendingBrief,
+  useBriefStream,
+} from "@/lib/use-brief-stream";
 import { ArgusMark } from "@/components/argus-mark";
 import { BriefConversation } from "@/components/brief-conversation";
 import { BriefError, BriefLoader } from "@/components/brief-loader";
@@ -24,6 +28,7 @@ export function FocusedBrief({ id }: { id: string }) {
   const [loaded, setLoaded] = useState<BriefResult | null>(null);
   const [notFound, setNotFound] = useState(false);
   const inputRef = useRef<BriefInput | null>(null);
+  const demoRef = useRef(false);
   const startedRef = useRef(false);
 
   useEffect(() => {
@@ -41,19 +46,22 @@ export function FocusedBrief({ id }: { id: string }) {
         setNotFound(true);
         return;
       }
-      let input: BriefInput;
-      try {
-        input = JSON.parse(raw) as BriefInput;
-      } catch {
+      const pending = parsePendingBrief(raw);
+      if (!pending) {
         setNotFound(true);
         return;
       }
-      inputRef.current = input;
-      void run(input, (r) => {
-        // Swap the ephemeral /brief/new for the saved brief's own URL so a
-        // refresh or bookmark lands back on it.
-        router.replace(`/brief/${encodeURIComponent(r.meta.generatedAt)}`);
-      });
+      inputRef.current = pending.input;
+      demoRef.current = pending.demo === true;
+      void run(
+        pending.input,
+        (r) => {
+          // Swap the ephemeral /brief/new for the saved brief's own URL so a
+          // refresh or bookmark lands back on it.
+          router.replace(`/brief/${encodeURIComponent(r.meta.generatedAt)}`);
+        },
+        { demo: demoRef.current },
+      );
     } else {
       const found = getBriefById(id);
       if (found) setLoaded(found);
@@ -91,7 +99,9 @@ export function FocusedBrief({ id }: { id: string }) {
           <BriefError
             message={error}
             onRetry={() => {
-              if (inputRef.current) void run(inputRef.current);
+              if (inputRef.current) {
+                void run(inputRef.current, undefined, { demo: demoRef.current });
+              }
             }}
           />
         )}

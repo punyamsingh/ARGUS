@@ -12,7 +12,9 @@ import {
   type HistoryEntry,
 } from "@/lib/brief-history";
 import { saveSellerProfile, useSellerProfile } from "@/lib/seller-profile";
-import { PENDING_BRIEF_KEY } from "@/lib/use-brief-stream";
+import { PENDING_BRIEF_KEY, type PendingBrief } from "@/lib/use-brief-stream";
+import { useDemoMode } from "@/lib/demo/mode";
+import { DEMO_INPUT, DEMO_TOOLS } from "@/lib/demo/scenario";
 
 /**
  * The brief "studio": the input form plus a preview panel. Submitting hands the
@@ -35,6 +37,13 @@ export function BriefStudio() {
   const [exampleDismissed, setExampleDismissed] = useState(false);
   const [exampleLeaving, setExampleLeaving] = useState(false);
   const history = useBriefHistory();
+
+  // Demo mode: the form is laced with the scripted account and locked, so a
+  // walkthrough always runs the same known-good meeting. What the fields show —
+  // and what Generate submits — comes from the scenario, not from local state,
+  // which is why nothing here is overwritten when the switch flips back off.
+  const demo = useDemoMode();
+  const demoSeller = DEMO_INPUT.seller;
 
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
   // 3-field path stays the default). A local draft mirrors the persisted profile
@@ -83,24 +92,30 @@ export function BriefStudio() {
   }
 
   const canSubmit =
-    company.trim() !== "" && person.trim() !== "" && context.trim() !== "";
+    demo ||
+    (company.trim() !== "" && person.trim() !== "" && context.trim() !== "");
 
   /** Stash the input and jump to the focused page, which streams the brief. */
   function startGenerate() {
     if (!canSubmit) return;
 
-    const seller = buildSeller();
+    // In demo mode the scenario is the input, and the rep's real saved seller
+    // profile is left untouched.
+    const seller = demo ? undefined : buildSeller();
     if (seller) saveSellerProfile(seller);
 
-    const input = {
-      company: company.trim(),
-      person: person.trim(),
-      context: context.trim(),
-      ...(seller ? { seller } : {}),
-      ...(meetingType ? { meetingType } : {}),
-    };
+    const input = demo
+      ? DEMO_INPUT
+      : {
+          company: company.trim(),
+          person: person.trim(),
+          context: context.trim(),
+          ...(seller ? { seller } : {}),
+          ...(meetingType ? { meetingType } : {}),
+        };
+    const pending: PendingBrief = { input, ...(demo ? { demo: true } : {}) };
     try {
-      sessionStorage.setItem(PENDING_BRIEF_KEY, JSON.stringify(input));
+      sessionStorage.setItem(PENDING_BRIEF_KEY, JSON.stringify(pending));
     } catch {
       // best-effort; if storage is blocked the focused page shows a prompt
     }
@@ -143,29 +158,37 @@ export function BriefStudio() {
     >
       {/* Form */}
       <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="md:sticky md:top-24">
+        {demo && <DemoBanner />}
         <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-cast/30 backdrop-blur-sm sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Company"
-              value={company}
+              value={demo ? DEMO_INPUT.company : company}
               onChange={setCompany}
               placeholder="e.g. Stripe"
+              readOnly={demo}
             />
             <Field
               label="Who you're meeting"
-              value={person}
+              value={demo ? DEMO_INPUT.person : person}
               onChange={setPerson}
               placeholder="e.g. Jane Doe"
+              readOnly={demo}
             />
           </div>
           <Field
             label="Meeting context"
-            value={context}
+            value={demo ? DEMO_INPUT.context : context}
             onChange={setContext}
             placeholder="e.g. renewal + expansion call"
             className="mt-3 block"
+            readOnly={demo}
           />
-          <MeetingTypePicker value={meetingType} onChange={setMeetingType} />
+          <MeetingTypePicker
+            value={demo ? (DEMO_INPUT.meetingType ?? "") : meetingType}
+            onChange={setMeetingType}
+            locked={demo}
+          />
           <button
             type="submit"
             disabled={!canSubmit}
@@ -175,21 +198,34 @@ export function BriefStudio() {
           </button>
         </div>
         <p className="mt-3 px-1.5 text-[12px] leading-relaxed text-faint">
-          Free, grounded in public sources. Every claim is cited.{" "}
-          <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
+          {demo ? (
+            <>
+              Scripted sources, real synthesis — the brief is written live by the
+              model.{" "}
+              <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
+            </>
+          ) : (
+            <>
+              Free, grounded in public sources. Every claim is cited.{" "}
+              <span className="hidden sm:inline">Press ⌘/Ctrl + Enter to run.</span>
+            </>
+          )}
         </p>
 
         <SellerPanel
-          open={sellerOpen}
+          open={demo || sellerOpen}
           onToggle={() => setSellerOpen((v) => !v)}
-          configured={!!savedSeller}
-          company={sellerCompany}
+          configured={demo || !!savedSeller}
+          locked={demo}
+          company={demo ? (demoSeller?.company ?? "") : sellerCompany}
           onCompany={setSellerCompany}
-          offering={offering}
+          offering={demo ? (demoSeller?.offering ?? "") : offering}
           onOffering={setOffering}
-          valueProp={valueProp}
+          valueProp={demo ? (demoSeller?.valueProp ?? "") : valueProp}
           onValueProp={setValueProp}
-          competitors={competitors}
+          competitors={
+            demo ? (demoSeller?.competitors.join(", ") ?? "") : competitors
+          }
           onCompetitors={setCompetitors}
           onClear={clearSeller}
         />
@@ -236,19 +272,23 @@ export function BriefStudio() {
   );
 }
 
-/** A single labelled text input (label is visually hidden, kept for a11y). */
+/** A single labelled text input (label is visually hidden, kept for a11y).
+ *  `readOnly` is how demo mode pins a field: still focusable and readable, but
+ *  the scripted value can't be edited out from under the presenter. */
 function Field({
   label,
   value,
   onChange,
   placeholder,
   className,
+  readOnly = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   className?: string;
+  readOnly?: boolean;
 }) {
   return (
     <label className={className}>
@@ -258,9 +298,44 @@ function Field({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         aria-label={label}
-        className="w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong"
+        readOnly={readOnly}
+        className={clsx(
+          "w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong",
+          readOnly && "cursor-default text-muted",
+        )}
       />
     </label>
+  );
+}
+
+/**
+ * The demo-mode banner above the form. It says plainly what is scripted and
+ * what isn't — the sources are fixed, the brief is still written live — so a
+ * demo never overstates what the audience is watching.
+ */
+function DemoBanner() {
+  return (
+    <div className="mb-3 rounded-2xl border border-accent/40 bg-accent/10 px-4 py-3">
+      <p className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em] text-accent">
+        <span className="size-1.5 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent)]" />
+        Demo mode
+      </p>
+      <p className="mt-1.5 text-[12.5px] leading-relaxed text-ivory/90">
+        A scripted account with a fixed set of {DEMO_TOOLS.length} live sources.
+        Generate runs the real model over that evidence — only the gathering step
+        is pre-recorded.
+      </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {DEMO_TOOLS.map((t) => (
+          <span
+            key={t}
+            className="rounded-full border border-line bg-ink-2 px-2 py-0.5 font-mono text-[10px] text-muted"
+          >
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -269,9 +344,12 @@ function Field({
 function MeetingTypePicker({
   value,
   onChange,
+  locked = false,
 }: {
   value: MeetingType | "";
   onChange: (v: MeetingType | "") => void;
+  /** Demo mode — the scripted meeting type is shown but can't be changed. */
+  locked?: boolean;
 }) {
   return (
     <div className="mt-3 flex flex-wrap gap-2">
@@ -282,12 +360,15 @@ function MeetingTypePicker({
             key={t}
             type="button"
             aria-pressed={active}
+            disabled={locked}
             onClick={() => onChange(active ? "" : t)}
             className={clsx(
               "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize transition-colors",
               active
                 ? "border-accent bg-accent/15 text-accent"
                 : "border-line bg-surface/40 text-faint hover:border-line-strong hover:text-ivory",
+              locked && !active && "opacity-40",
+              locked && "cursor-default",
             )}
           >
             {t}
@@ -308,6 +389,7 @@ function SellerPanel({
   open,
   onToggle,
   configured,
+  locked = false,
   company,
   onCompany,
   offering,
@@ -321,6 +403,8 @@ function SellerPanel({
   open: boolean;
   onToggle: () => void;
   configured: boolean;
+  /** Demo mode — the scripted seller is shown, read-only, and can't be cleared. */
+  locked?: boolean;
   company: string;
   onCompany: (v: string) => void;
   offering: string;
@@ -337,12 +421,17 @@ function SellerPanel({
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3 text-left transition-colors hover:border-line-strong"
+        disabled={locked}
+        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3 text-left transition-colors hover:border-line-strong disabled:cursor-default"
       >
         <span className="flex items-center gap-2 text-[13px] text-ivory">
           Your product
           <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
-            {configured ? "saved · tailors the brief" : "optional · tailors the brief"}
+            {locked
+              ? "demo · tailors the brief"
+              : configured
+                ? "saved · tailors the brief"
+                : "optional · tailors the brief"}
           </span>
         </span>
         <span className="text-faint">{open ? "−" : "+"}</span>
@@ -356,12 +445,14 @@ function SellerPanel({
               value={company}
               onChange={onCompany}
               placeholder="e.g. Acme Analytics"
+              readOnly={locked}
             />
             <Field
               label="Named competitors (comma-separated)"
               value={competitors}
               onChange={onCompetitors}
               placeholder="e.g. Looker, Mode"
+              readOnly={locked}
             />
           </div>
           <Field
@@ -369,19 +460,22 @@ function SellerPanel({
             value={offering}
             onChange={onOffering}
             placeholder="e.g. self-serve product analytics for B2B SaaS"
+            readOnly={locked}
           />
           <Field
             label="Value proposition"
             value={valueProp}
             onChange={onValueProp}
             placeholder="e.g. ship insights without a data team"
+            readOnly={locked}
           />
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] leading-relaxed text-faint">
-              Remembered on this device. Only “what you sell” is used to tailor;
-              never invented.
+              {locked
+                ? "Scripted for the demo — your own saved profile is untouched."
+                : "Remembered on this device. Only “what you sell” is used to tailor; never invented."}
             </p>
-            {configured && (
+            {configured && !locked && (
               <button
                 type="button"
                 onClick={onClear}
