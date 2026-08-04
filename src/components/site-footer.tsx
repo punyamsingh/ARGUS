@@ -1,10 +1,16 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArgusMark } from "@/components/argus-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
-/** `base` keeps the in-page anchor on the route you're already on — "/demo"
- *  while presenting, so the footer can't quietly drop you out of the demo. */
-export function SiteFooter({ base = "/" }: { base?: string }) {
+/** Rendered once by the root layout, alongside `SiteHeader`. The in-page anchor
+ *  stays on the route you're already on — "/demo" while presenting, so the
+ *  footer can't quietly drop you out of the demo. */
+export function SiteFooter() {
+  const base = isDemoPath(usePathname()) ? DEMO_PATH : "/";
   const LINKS = [
     { label: "How it works", href: `${base}#how-it-works` },
     { label: "About", href: "/about" },

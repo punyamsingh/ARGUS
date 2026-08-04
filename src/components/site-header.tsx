@@ -1,21 +1,30 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ArgusMark } from "@/components/argus-mark";
 import { MobileNav } from "@/components/mobile-nav";
+import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
 /**
- * `base` is the route the in-page anchors belong to — "/" normally, "/demo" on
- * the demo surface — so following "How it works" from a demo doesn't quietly
- * drop you back onto the live page. About and Contact are always absolute.
+ * Rendered once by the root layout, so no route can forget it or grow its own.
+ *
+ * The in-page anchors belong to whichever route you're already on — "/"
+ * normally, "/demo" on the demo surface — so following "How it works" from a
+ * demo doesn't quietly drop you back onto the live page. Read from the URL
+ * rather than passed in: the layout doesn't know which page it's wrapping, and
+ * a prop that every caller has to remember is what let the chrome drift in the
+ * first place. About and Contact are always absolute.
  */
-export function SiteHeader({ base = "/" }: { base?: string }) {
-  const anchor = base === "/" ? "/" : base;
+export function SiteHeader() {
+  const base = isDemoPath(usePathname()) ? DEMO_PATH : "/";
   const NAV = [
-    { label: "How it works", href: `${anchor}#how-it-works` },
+    { label: "How it works", href: `${base}#how-it-works` },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
   // Anchor-aware like NAV, so the demo surface's CTA stays on the demo.
-  const CTA = { label: "Generate a brief", href: `${anchor}#studio` };
+  const CTA = { label: "Generate a brief", href: `${base}#studio` };
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
