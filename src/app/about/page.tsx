@@ -66,7 +66,7 @@ export default function AboutPage() {
           {PIPELINE.map((p) => (
             <div
               key={p.step}
-              className="rounded-2xl border border-line bg-surface/40 p-5 transition-colors hover:border-line-strong"
+              className="rounded-2xl border border-line bg-surface/85 p-5 transition-colors hover:border-line-strong"
             >
               <span className="font-mono text-[12px] text-accent">{p.step}</span>
               <h3 className="mt-2 font-display text-lg font-semibold text-ivory">

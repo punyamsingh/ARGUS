@@ -24,7 +24,7 @@ export function BriefLoader({ stage }: { stage: BriefStage }) {
   const current = STAGES.findIndex((s) => s.key === stage);
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/50">
+    <div className="overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/95">
       {/* header */}
       <div className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
         <div className="w-full">
@@ -81,7 +81,7 @@ export function BriefError({
   onRetry: () => void;
 }) {
   return (
-    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-risk/40 bg-surface/50 p-8 text-center">
+    <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-risk/40 bg-surface/95 p-8 text-center">
       <span className="size-2.5 rounded-full bg-risk shadow-[0_0_10px_var(--color-risk)]" />
       <p className="mt-4 max-w-sm text-sm text-ivory">
         {message ?? "Something went wrong."}

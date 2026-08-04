@@ -58,7 +58,7 @@ export function ContactForm({ email }: { email: string }) {
 
   return (
     <form
-      className="rounded-[var(--radius-card)] border border-line bg-surface/40 p-6"
+      className="rounded-[var(--radius-card)] border border-line bg-surface/95 p-6"
       onSubmit={(e) => {
         e.preventDefault();
         window.location.href = mailto;
@@ -131,7 +131,7 @@ export function ContactForm({ email }: { email: string }) {
         <button
           type="button"
           onClick={copyEmail}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-surface/60 px-5 py-2 text-[14px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+          className="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-surface/85 px-5 py-2 text-[14px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
         >
           {copied ? "Address copied ✓" : "Copy email address"}
         </button>
@@ -150,7 +150,9 @@ export function ContactForm({ email }: { email: string }) {
 }
 
 const inputClass =
-  "w-full rounded-xl border border-line bg-ink-2/60 px-3.5 py-2.5 text-[14px] text-ivory placeholder:text-faint transition-colors hover:border-line-strong focus:border-line-strong focus:outline-none";
+  // Opaque, matching the studio's fields: a translucent input let the backdrop
+  // canvas sit directly under the placeholder, which is the faintest text here.
+  "w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-[14px] text-ivory placeholder:text-faint transition-colors hover:border-line-strong focus:border-line-strong focus:outline-none";
 
 function Field({
   label,

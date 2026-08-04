@@ -60,7 +60,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className="rounded-full border border-line bg-surface/60 px-3.5 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+      className="rounded-full border border-line bg-surface/85 px-3.5 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
     >
       {children}
     </button>

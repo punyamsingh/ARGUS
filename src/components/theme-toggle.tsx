@@ -56,7 +56,7 @@ export function ThemeToggle() {
     <div
       role="group"
       aria-label="Colour theme"
-      className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface/60 p-0.5"
+      className="inline-flex items-center gap-0.5 rounded-full border border-line bg-surface/85 p-0.5"
     >
       {OPTIONS.map(({ value, label, Icon }) => {
         const active = choice === value;

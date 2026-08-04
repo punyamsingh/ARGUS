@@ -79,7 +79,7 @@ export function DemoFab() {
         "fixed bottom-6 right-6 z-50 flex items-center rounded-full border shadow-xl shadow-cast/40 backdrop-blur-sm transition-colors print:hidden",
         inDemo
           ? "border-accent bg-accent/20"
-          : "border-line-strong bg-surface/85 hover:border-accent",
+          : "border-line-strong bg-surface/95 hover:border-accent",
       )}
     >
       <Link

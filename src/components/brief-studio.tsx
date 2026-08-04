@@ -164,7 +164,11 @@ export function BriefStudio() {
       {/* Form */}
       <form onSubmit={onSubmit} onKeyDown={onKeyDown} className="lg:sticky lg:top-24">
         {demo && <DemoBanner />}
-        <div className="rounded-2xl border border-line-strong bg-surface/70 p-4 shadow-xl shadow-cast/30 backdrop-blur-sm sm:p-5">
+        {/* Near-opaque on purpose: the node-and-circuit canvas is a fixed layer
+            behind the whole app, and at anything lighter its wires ran straight
+            through the labels and placeholders. The remaining 5% plus the blur
+            keep the card sitting *on* the backdrop rather than cut out of it. */}
+        <div className="rounded-2xl border border-line-strong bg-surface/95 p-4 shadow-xl shadow-cast/30 backdrop-blur-md sm:p-5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Company"
@@ -387,7 +391,7 @@ function MeetingTypePicker({
               "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize transition-colors",
               active
                 ? "border-accent bg-accent/15 text-accent"
-                : "border-line bg-surface/40 text-faint hover:border-line-strong hover:text-ivory",
+                : "border-line bg-surface/80 text-faint hover:border-line-strong hover:text-ivory",
               locked && !active && "opacity-40",
               locked && "cursor-default",
             )}
@@ -443,7 +447,7 @@ function SellerPanel({
         onClick={onToggle}
         aria-expanded={open}
         disabled={locked}
-        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/40 px-4 py-3 text-left transition-colors hover:border-line-strong disabled:cursor-default"
+        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/90 px-4 py-3 text-left transition-colors hover:border-line-strong disabled:cursor-default"
       >
         <span className="flex items-center gap-2 text-[13px] text-ivory">
           Your product
@@ -459,7 +463,7 @@ function SellerPanel({
       </button>
 
       {open && (
-        <div className="mt-2 grid gap-3 rounded-xl border border-line bg-surface/30 p-4">
+        <div className="mt-2 grid gap-3 rounded-xl border border-line bg-surface/90 p-4">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Your company"
@@ -531,7 +535,7 @@ function RecentBriefs({
             <button
               type="button"
               onClick={() => onOpen(e)}
-              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/40 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2"
+              className="flex w-full items-center justify-between gap-3 rounded-lg border border-line bg-surface/90 px-3 py-2 text-left transition-colors hover:border-line-strong hover:bg-surface-2"
             >
               <span className="min-w-0">
                 <span className="block truncate text-[13px] text-ivory">

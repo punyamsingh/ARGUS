@@ -60,7 +60,7 @@ export default function ContactPage() {
           {REASONS.map((reason) => (
             <div
               key={reason.title}
-              className="rounded-2xl border border-line bg-surface/40 p-5 transition-colors hover:border-line-strong"
+              className="rounded-2xl border border-line bg-surface/85 p-5 transition-colors hover:border-line-strong"
             >
               <h3 className="font-display text-lg font-semibold text-ivory">
                 {reason.title}

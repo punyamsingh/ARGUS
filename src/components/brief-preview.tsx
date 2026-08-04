@@ -39,7 +39,9 @@ export function BriefPreview({ onClose }: { onClose?: () => void }) {
       {/* soft glow behind the card */}
       <div className="pointer-events-none absolute -inset-6 rounded-[28px] bg-glow opacity-70 blur-2xl" />
 
-      <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm">
+      {/* The glow above is the depth cue; the card itself stays near-opaque so
+          the background canvas never crosses the brief's own body text. */}
+      <div className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/95 shadow-2xl shadow-cast/40 backdrop-blur-md">
         <BriefChrome
           status="ready · 38s"
           onClose={

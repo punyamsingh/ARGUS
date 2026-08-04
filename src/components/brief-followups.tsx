@@ -126,7 +126,7 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
   }
 
   return (
-    <section className="rounded-[var(--radius-card)] border border-line-strong bg-surface/60 print:hidden">
+    <section className="rounded-[var(--radius-card)] border border-line-strong bg-surface/95 print:hidden">
       <div className="border-b border-line px-5 py-3">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">
           Ask about this meeting
@@ -181,7 +181,7 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
               type="button"
               disabled={busy}
               onClick={() => void ask(s)}
-              className="rounded-full border border-line bg-surface/40 px-2.5 py-1 text-[11px] text-faint transition-colors hover:border-line-strong hover:text-ivory disabled:opacity-50"
+              className="rounded-full border border-line bg-surface/80 px-2.5 py-1 text-[11px] text-faint transition-colors hover:border-line-strong hover:text-ivory disabled:opacity-50"
             >
               {s}
             </button>

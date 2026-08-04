@@ -125,7 +125,7 @@ export function FocusedBrief({ id }: { id: string }) {
 
 function NotFound() {
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-line bg-surface/40 p-8 text-center">
+    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-line bg-surface/95 p-8 text-center">
       <p className="text-sm text-ivory">
         This brief isn’t available on this device.
       </p>
