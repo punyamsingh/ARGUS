@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArgusMark } from "@/components/argus-mark";
+import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
 import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
 
@@ -69,6 +70,8 @@ export function SiteHeader() {
             >
               {CTA.label}
             </Link>
+
+            <AuthMenu />
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer. */}
