@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { InteractiveBackground } from "@/components/interactive-background";
-import { DemoFab } from "@/components/demo-fab";
 import { ClaimLocalBriefs } from "@/components/claim-local-briefs";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
@@ -74,8 +73,6 @@ export default function RootLayout({
         <SiteHeader />
         {children}
         <SiteFooter />
-        {/* The way into (and out of) the demo surface, on every page. */}
-        <DemoFab />
         {/* Renders nothing — moves this browser's briefs into the account on
             first sign-in, wherever that sign-in happened. */}
         <ClaimLocalBriefs />
