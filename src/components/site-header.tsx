@@ -25,11 +25,15 @@ export function SiteHeader() {
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
-  // Anchor-aware like NAV, so the demo surface's CTA stays on the demo.
-  const CTA = { label: "Generate a brief", href: `${base}#studio` };
+  /**
+   * Anchor-aware like NAV: in a demo this is the demo's own landing page, not
+   * the live one. Leaving the demo is the exit's job, and a link labelled
+   * "Home" shouldn't quietly do it.
+   */
+  const HOME = { label: "Home", href: base };
   // The invitation, for the menu panel below `sm` where the chip yields space.
   // Only the invitation — the exit never hides in there (see `DemoChip`).
-  const DEMO = { label: "Try the demo", href: DEMO_PATH };
+  const DEMO = { label: "Try a demo", href: DEMO_PATH };
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
@@ -67,21 +71,20 @@ export function SiteHeader() {
 
             <DemoChip />
 
-            {/* Below `sm` the wordmark, this CTA and the menu button no longer
-                fit on one line — at 360px the CTA overlapped the wordmark. It
-                drops out here and leads the menu panel instead. */}
+            {/* Below `sm` the wordmark, this and the menu button no longer fit
+                on one line, so it drops out and leads the menu panel instead. */}
             <Link
-              href={CTA.href}
+              href={HOME.href}
               className="hidden whitespace-nowrap rounded-full border border-line bg-surface/85 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2 sm:inline-flex"
             >
-              {CTA.label}
+              {HOME.label}
             </Link>
 
             <AuthMenu />
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer. */}
-            <MobileNav items={NAV} cta={CTA} demo={DEMO} />
+            <MobileNav items={NAV} home={HOME} demo={DEMO} />
           </nav>
         </div>
       </div>
