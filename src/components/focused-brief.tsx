@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { BriefInput, BriefResult } from "@/types/brief";
-import { getBriefById } from "@/lib/brief-history";
+import { useSession } from "@/lib/auth/client";
+import { resolveBrief } from "@/lib/briefs/library";
 import {
   PENDING_BRIEF_KEY,
   parsePendingBrief,
@@ -24,6 +25,8 @@ import { BriefError, BriefLoader } from "@/components/brief-loader";
  */
 export function FocusedBrief({ id }: { id: string }) {
   const router = useRouter();
+  const { data: session, isPending: sessionPending } = useSession();
+  const signedIn = !!session?.user;
   const { status, stage, result, error, run } = useBriefStream();
   const [loaded, setLoaded] = useState<BriefResult | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -35,12 +38,19 @@ export function FocusedBrief({ id }: { id: string }) {
 
   useEffect(() => {
     if (startedRef.current) return;
+
+    // A saved brief is looked up in the account first, so wait for the session
+    // to settle before deciding where to look — starting early would treat a
+    // signed-in user as anonymous and skip the server. Generating doesn't
+    // depend on the session, so `/brief/new` never waits.
+    if (id !== "new" && sessionPending) return;
+
     startedRef.current = true;
 
     /* eslint-disable react-hooks/set-state-in-effect --
-       One-shot read of browser storage on mount (sessionStorage for a pending
-       generation, localStorage history for a saved brief); guarded by
-       startedRef so it runs once and can't loop. */
+       One-shot resolution on mount (sessionStorage for a pending generation,
+       account-then-localStorage for a saved brief); guarded by startedRef so it
+       runs once and can't loop. */
     if (id === "new") {
       const raw = sessionStorage.getItem(PENDING_BRIEF_KEY);
       sessionStorage.removeItem(PENDING_BRIEF_KEY);
@@ -58,24 +68,27 @@ export function FocusedBrief({ id }: { id: string }) {
       setDemoRun(demoRef.current);
       void run(
         pending.input,
-        (r) => {
-          // Swap the ephemeral /brief/new for the saved brief's own URL so a
-          // refresh or bookmark lands back on it.
-          router.replace(`/brief/${encodeURIComponent(r.meta.generatedAt)}`);
+        (r, savedId) => {
+          // Swap the ephemeral /brief/new for the brief's own URL so a refresh
+          // or bookmark lands back on it. Prefer the account id when there is
+          // one — that's the link that also opens on another device.
+          const url = savedId ?? r.meta.generatedAt;
+          router.replace(`/brief/${encodeURIComponent(url)}`);
         },
         { demo: demoRef.current },
       );
     } else {
-      const found = getBriefById(id);
-      // A saved demo brief is still a demo — reopening one from history, or
-      // reloading this page, puts the presenter back inside it.
-      if (found) {
-        setLoaded(found);
-        setDemoRun(found.meta.demo === true);
-      } else setNotFound(true);
+      void resolveBrief(id, signedIn).then((found) => {
+        // A saved demo brief is still a demo — reopening one from history, or
+        // reloading this page, puts the presenter back inside it.
+        if (found) {
+          setLoaded(found);
+          setDemoRun(found.meta.demo === true);
+        } else setNotFound(true);
+      });
     }
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [id, run, router]);
+  }, [id, run, router, signedIn, sessionPending]);
 
   /**
    * Publish demo mode for as long as this page shows a demo brief, and retract

@@ -9,6 +9,7 @@ import type {
 } from "@/types/brief";
 import { getSessionId } from "@/lib/session-id";
 import { saveToHistory } from "@/lib/brief-history";
+import { saveBriefToAccount } from "@/lib/briefs/library";
 
 export type GenStatus = "idle" | "loading" | "done" | "error";
 
@@ -47,7 +48,9 @@ export function useBriefStream() {
 
   async function run(
     input: BriefInput,
-    onResult?: (r: BriefResult) => void,
+    /** `savedId` is the brief's id in the signed-in user's account, or null when
+     *  it wasn't saved there (signed out, demo, or the write failed). */
+    onResult?: (r: BriefResult, savedId: string | null) => void,
     { demo = false }: { demo?: boolean } = {},
   ) {
     setStatus("loading");
@@ -101,7 +104,15 @@ export function useBriefStream() {
             saveToHistory(msg.result);
             setStatus("done");
             settled = true;
-            onResult?.(msg.result);
+
+            // Then persist to the account, if there is one. `saveBriefToAccount`
+            // never throws — signed out, demo mode, and a failed request all
+            // come back as null — so the rendered brief is never at risk. It's
+            // awaited only so `onResult` receives the server id: that's what
+            // /brief/<id> resolves from another device, and getting the URL
+            // right the first time beats swapping it twice.
+            const savedId = await saveBriefToAccount(msg.result);
+            onResult?.(msg.result, savedId);
           } else {
             throw new Error(msg.error);
           }
