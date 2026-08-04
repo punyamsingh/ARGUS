@@ -1,4 +1,5 @@
 import { clsx } from "@/lib/cn";
+import { BriefChrome } from "@/components/brief-chrome";
 import type {
   BriefItem,
   BriefResult,
@@ -152,7 +153,16 @@ function GuidanceSection({
   );
 }
 
-export function BriefResultView({ result }: { result: BriefResult }) {
+export function BriefResultView({
+  result,
+  onClose,
+  onExpand,
+}: {
+  result: BriefResult;
+  /** Wires the chrome's corner light; omitted leaves it an unlit dot. */
+  onClose?: () => void;
+  onExpand?: () => void;
+}) {
   const { brief, entity, evidence, meta, input } = result;
 
   const numbering = new Map<string, number>();
@@ -196,6 +206,14 @@ export function BriefResultView({ result }: { result: BriefResult }) {
         id="brief-print-root"
         className="relative overflow-hidden rounded-[var(--radius-card)] border border-line-strong bg-surface/80 shadow-2xl shadow-cast/40 backdrop-blur-sm"
       >
+        <BriefChrome
+          status={`ready · ${Math.max(1, Math.round(meta.elapsedMs / 1000))}s`}
+          onClose={onClose ? { label: "Close brief", onClick: onClose } : undefined}
+          onExpand={
+            onExpand ? { label: "Expand brief", onClick: onExpand } : undefined
+          }
+        />
+
         {/* header */}
         <header className="border-b border-line px-6 py-5">
           <div className="flex items-start justify-between gap-4">

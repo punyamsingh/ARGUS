@@ -203,27 +203,13 @@ export function BriefStudio() {
           on the focused page instead. */}
       <div>
         {opened ? (
-          <div className="space-y-4">
-            <div className="flex items-center justify-end gap-2 print:hidden">
-              <button
-                onClick={() =>
-                  router.push(
-                    `/brief/${encodeURIComponent(opened.meta.generatedAt)}`,
-                  )
-                }
-                className="rounded-full border border-line-strong bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:bg-surface-2"
-              >
-                Expand ↗
-              </button>
-              <button
-                onClick={() => setOpened(null)}
-                className="rounded-full border border-line bg-surface/60 px-4 py-1.5 text-[13px] font-medium text-faint transition-colors hover:border-line-strong hover:text-ivory"
-              >
-                Close
-              </button>
-            </div>
-            <BriefConversation result={opened} />
-          </div>
+          <BriefConversation
+            result={opened}
+            onClose={() => setOpened(null)}
+            onExpand={() =>
+              router.push(`/brief/${encodeURIComponent(opened.meta.generatedAt)}`)
+            }
+          />
         ) : exampleDismissed ? null : (
           <div
             className={clsx(
