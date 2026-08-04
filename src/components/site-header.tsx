@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { clsx } from "@/lib/cn";
 import { ArgusMark } from "@/components/argus-mark";
 import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
@@ -45,12 +46,28 @@ export function SiteHeader() {
           busy behind the wordmark and the nav, and worse over a brief. */}
       <div className="border-b border-line/80 bg-surface">
         <div className="shell flex h-16 items-center justify-between gap-3 sm:gap-4">
-          <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
+          <Link
+            href="/"
+            className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
+          >
             <ArgusMark size={30} />
             {/* Steps down a size on the narrowest screens, where the wordmark
                 shares the bar with the menu button and — in a demo — the exit
                 chip, which together overflowed one line at 390px. */}
-            <span className="font-display text-base font-semibold tracking-[0.12em] sm:text-lg sm:tracking-[0.14em]">
+            {/* Below `sm` *in a demo* the bar also carries the exit chip, the
+                sign-in pill and the menu button. There is no room left for the
+                wordmark, and letting flex shrink it produced "ARG…" — a clipped
+                brand reads as a bug. The mark alone stands in: it is the brand,
+                and it links home just the same.
+
+                `truncate` is a guard for every other width, so a future control
+                shortens the wordmark rather than running underneath it. */}
+            <span
+              className={clsx(
+                "truncate font-display text-base font-semibold tracking-[0.12em] sm:text-lg sm:tracking-[0.14em]",
+                inDemo && "hidden sm:inline",
+              )}
+            >
               <span className="text-ivory">ARGUS</span>
               <span className="text-nova font-extrabold italic">NOVA</span>
             </span>
@@ -75,7 +92,6 @@ export function SiteHeader() {
             <DemoChip />
 
             <AuthMenu />
-
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer.

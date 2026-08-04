@@ -32,7 +32,7 @@ import { useInDemo } from "@/lib/demo/mode";
  * collide with theirs rather than yield to it.
  */
 const CHIP =
-  "items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors";
+  "shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-[0.14em] transition-colors";
 // `/85` rather than `/60`, matching the site-wide raise in #110: at the lower
 // opacity the animated backdrop crossed the label.
 const INVITE =
@@ -94,7 +94,12 @@ export function DemoChip() {
       className={clsx("inline-flex", CHIP, EXIT)}
     >
       <DemoDot pulse />
-      Exit demo
+      {/* Shortened on the narrowest screens. The exit has to stay in the bar,
+          but at 390px it was sharing that bar with the wordmark, the sign-in
+          pill and the menu button, and the full label pushed the wordmark
+          underneath it. "Exit" beside a live pulse is still unambiguous. */}
+      <span className="sm:hidden">Exit</span>
+      <span className="hidden sm:inline">Exit demo</span>
     </Link>
   );
 }
