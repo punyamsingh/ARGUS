@@ -1,28 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { clsx } from "@/lib/cn";
 import { ArgusMark } from "@/components/argus-mark";
 import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
 import { DemoChip } from "@/components/demo-chip";
-import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
+import { DEMO_PATH } from "@/lib/demo/path";
 import { useInDemo } from "@/lib/demo/mode";
 
 /**
  * Rendered once by the root layout, so no route can forget it or grow its own.
  *
- * The in-page anchors belong to whichever route you're already on — "/"
- * normally, "/demo" on the demo surface — so following "How it works" from a
- * demo doesn't quietly drop you back onto the live page. Read from the URL
- * rather than passed in: the layout doesn't know which page it's wrapping, and
- * a prop that every caller has to remember is what let the chrome drift in the
- * first place. About and Contact are always absolute.
+ * The in-page anchors belong to whichever surface you're already on — "/"
+ * normally, "/demo" anywhere inside a demo — so following "How it works" from a
+ * demo doesn't quietly drop you back onto the live page. Derived here rather
+ * than passed in: the layout doesn't know which page it's wrapping, and a prop
+ * that every caller has to remember is what let the chrome drift in the first
+ * place. About and Contact are always absolute.
  */
 export function SiteHeader() {
-  const base = isDemoPath(usePathname()) ? DEMO_PATH : "/";
   const inDemo = useInDemo();
+  /**
+   * From `useInDemo()`, not the path. A demo doesn't end at `/demo`: generating
+   * a brief carries the presenter to `/brief/<id>`, and deriving this from the
+   * pathname there resolved it to "/" — so Home and "How it works" quietly
+   * dropped them out of the demo, which is the exit's job alone.
+   */
+  const base = inDemo ? DEMO_PATH : "/";
   const NAV = [
     /**
      * Home leads, and is an ordinary nav link rather than a pill: it's the top
