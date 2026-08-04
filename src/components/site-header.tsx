@@ -23,16 +23,20 @@ export function SiteHeader() {
   const base = isDemoPath(usePathname()) ? DEMO_PATH : "/";
   const inDemo = useInDemo();
   const NAV = [
+    /**
+     * Home leads, and is an ordinary nav link rather than a pill: it's the top
+     * of the site, not an action, and the slot it used to sit in belonged to a
+     * CTA that no longer exists.
+     *
+     * Anchor-aware like the rest: in a demo this is the demo's own landing page,
+     * not the live one. Leaving the demo is the exit's job, and a link labelled
+     * "Home" shouldn't quietly do it.
+     */
+    { label: "Home", href: base },
     { label: "How it works", href: `${base}#how-it-works` },
     { label: "About", href: "/about" },
     { label: "Contact", href: "/contact" },
   ];
-  /**
-   * Anchor-aware like NAV: in a demo this is the demo's own landing page, not
-   * the live one. Leaving the demo is the exit's job, and a link labelled
-   * "Home" shouldn't quietly do it.
-   */
-  const HOME = { label: "Home", href: base };
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
@@ -43,9 +47,9 @@ export function SiteHeader() {
         <div className="shell flex h-16 items-center justify-between gap-3 sm:gap-4">
           <Link href="/" className="group flex min-w-0 items-center gap-2.5 sm:gap-3">
             <ArgusMark size={30} />
-            {/* Steps down a size on the narrowest screens: at full size the
-                wordmark, the CTA and the menu button no longer fit on one line
-                at 390px and the CTA label broke across two. */}
+            {/* Steps down a size on the narrowest screens, where the wordmark
+                shares the bar with the menu button and — in a demo — the exit
+                chip, which together overflowed one line at 390px. */}
             <span className="font-display text-base font-semibold tracking-[0.12em] sm:text-lg sm:tracking-[0.14em]">
               <span className="text-ivory">ARGUS</span>
               <span className="text-nova font-extrabold italic">NOVA</span>
@@ -70,23 +74,15 @@ export function SiteHeader() {
 
             <DemoChip />
 
-            {/* Below `sm` the wordmark, this and the menu button no longer fit
-                on one line, so it drops out and leads the menu panel instead. */}
-            <Link
-              href={HOME.href}
-              className="hidden whitespace-nowrap rounded-full border border-line bg-surface/85 px-4 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2 sm:inline-flex"
-            >
-              {HOME.label}
-            </Link>
-
             <AuthMenu />
 
+
             {/* Below `md` the inline links above are hidden; this keeps them
-                reachable from the header rather than only from the footer. */}
-            {/* No invitation while already inside a demo — the bar is showing
+                reachable from the header rather than only from the footer.
+                No invitation while already inside a demo — the bar is showing
                 "Exit demo", and a panel offering "Try a demo" beside it reads
                 as though the demo hadn't started. */}
-            <MobileNav items={NAV} home={HOME} demo={!inDemo} />
+            <MobileNav items={NAV} demo={!inDemo} />
           </nav>
         </div>
       </div>
