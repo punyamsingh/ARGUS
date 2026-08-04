@@ -9,6 +9,7 @@ import { PENDING_BRIEF_KEY, useBriefStream } from "@/lib/use-brief-stream";
 import { ArgusMark } from "@/components/argus-mark";
 import { BriefConversation } from "@/components/brief-conversation";
 import { BriefError, BriefLoader } from "@/components/brief-loader";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * The focused, single-column brief page. Two modes:
@@ -65,53 +66,94 @@ export function FocusedBrief({ id }: { id: string }) {
   const brief = result ?? loaded;
 
   return (
-    <main className="relative flex min-h-full flex-1 flex-col">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
+    <>
+      <main className="relative flex min-h-full flex-1 flex-col">
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
 
-      {/* slim focused chrome */}
-      <header className="sticky top-0 z-10 border-b border-line bg-ink/70 backdrop-blur-md">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center gap-2 text-ivory" aria-label="ARGUS home">
-            <ArgusMark size={22} />
-            <span className="font-display text-sm font-semibold tracking-tight">ARGUS</span>
-          </Link>
-          <Link
-            href="/"
-            className="rounded-full border border-line bg-surface/60 px-3.5 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
-          >
-            New brief
-          </Link>
-        </div>
-      </header>
+        {/* slim focused chrome */}
+        <header className="sticky top-0 z-10 border-b border-line bg-ink/70 backdrop-blur-md">
+          <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
+            <Link
+              href="/"
+              className="flex items-center gap-2 text-ivory"
+              aria-label="ARGUS home"
+            >
+              <ArgusMark size={22} />
+              <span className="font-display text-sm font-semibold tracking-tight">
+                ARGUS
+              </span>
+            </Link>
+            <Link
+              href="/"
+              className="rounded-full border border-line bg-surface/60 px-3.5 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
+            >
+              New brief
+            </Link>
+          </div>
+        </header>
 
-      <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
-        {notFound && <NotFound />}
-        {!notFound && status === "loading" && <BriefLoader stage={stage} />}
-        {!notFound && status === "error" && (
-          <BriefError
-            message={error}
-            onRetry={() => {
-              if (inputRef.current) void run(inputRef.current);
-            }}
-          />
-        )}
-        {/* No expand light here — this is already the expanded view. Closing
+        <div className="mx-auto w-full max-w-3xl flex-1 px-6 py-8">
+          {notFound && <NotFound />}
+          {!notFound && status === "loading" && <BriefLoader stage={stage} />}
+          {!notFound && status === "error" && (
+            <BriefError
+              message={error}
+              onRetry={() => {
+                if (inputRef.current) void run(inputRef.current);
+              }}
+            />
+          )}
+          {/* No expand light here — this is already the expanded view. Closing
             the window returns to the studio. */}
-        {!notFound && brief && (
-          <BriefConversation result={brief} onClose={() => router.push("/")} />
-        )}
-      </div>
-    </main>
+          {!notFound && brief && (
+            <BriefConversation
+              result={brief}
+              onClose={() => router.push("/")}
+            />
+          )}
+        </div>
+      </main>
+      {/* The route deliberately skips the full site footer, but skipping it
+          outright also stranded the theme control — nothing on this page could
+          switch palettes. A slim strip carries it and the routes back. */}
+      <footer className="mt-auto border-t border-line print:hidden">
+        <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+          <nav
+            aria-label="Footer"
+            className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]"
+          >
+            {FOOTER_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className="text-muted transition-colors hover:text-ivory"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+          <ThemeToggle />
+        </div>
+      </footer>
+    </>
   );
 }
+
+const FOOTER_LINKS = [
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
 
 function NotFound() {
   return (
     <div className="flex min-h-[280px] flex-col items-center justify-center rounded-[var(--radius-card)] border border-line bg-surface/40 p-8 text-center">
-      <p className="text-sm text-ivory">This brief isn’t available on this device.</p>
+      <p className="text-sm text-ivory">
+        This brief isn’t available on this device.
+      </p>
       <p className="mt-1 max-w-sm text-[13px] text-muted">
-        Briefs are saved locally in your browser. Generate a fresh one to pick up
-        where you left off.
+        Briefs are saved locally in your browser. Generate a fresh one to pick
+        up where you left off.
       </p>
       <Link
         href="/"
