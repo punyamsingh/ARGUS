@@ -10,6 +10,7 @@ import {
   parsePendingBrief,
   useBriefStream,
 } from "@/lib/use-brief-stream";
+import { setDemoBrief } from "@/lib/demo/mode";
 import { BriefConversation } from "@/components/brief-conversation";
 import { BriefError, BriefLoader } from "@/components/brief-loader";
 
@@ -29,6 +30,8 @@ export function FocusedBrief({ id }: { id: string }) {
   const inputRef = useRef<BriefInput | null>(null);
   const demoRef = useRef(false);
   const startedRef = useRef(false);
+  /** Mirrors `demoRef` as state, so the demo control can react to it. */
+  const [demoRun, setDemoRun] = useState(false);
 
   useEffect(() => {
     if (startedRef.current) return;
@@ -52,6 +55,7 @@ export function FocusedBrief({ id }: { id: string }) {
       }
       inputRef.current = pending.input;
       demoRef.current = pending.demo === true;
+      setDemoRun(demoRef.current);
       void run(
         pending.input,
         (r) => {
@@ -63,11 +67,26 @@ export function FocusedBrief({ id }: { id: string }) {
       );
     } else {
       const found = getBriefById(id);
-      if (found) setLoaded(found);
-      else setNotFound(true);
+      // A saved demo brief is still a demo — reopening one from history, or
+      // reloading this page, puts the presenter back inside it.
+      if (found) {
+        setLoaded(found);
+        setDemoRun(found.meta.demo === true);
+      } else setNotFound(true);
     }
     /* eslint-enable react-hooks/set-state-in-effect */
   }, [id, run, router]);
+
+  /**
+   * Publish demo mode for as long as this page shows a demo brief, and retract
+   * it on the way out — the demo control lives in the root layout and has no
+   * other way to know that a brief being streamed here came from the demo.
+   */
+  useEffect(() => {
+    if (!demoRun) return;
+    setDemoBrief(true);
+    return () => setDemoBrief(false);
+  }, [demoRun]);
 
   const brief = result ?? loaded;
 

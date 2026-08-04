@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { clsx } from "@/lib/cn";
-import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
+import { DEMO_PATH } from "@/lib/demo/path";
+import { useInDemo } from "@/lib/demo/mode";
 
 /**
  * The floating demo control — pinned to the bottom-right edge on every page.
@@ -13,11 +13,16 @@ import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
  * presenter never hunts for a setting mid-pitch. The label is always visible:
  * this is an invitation, and an unlabelled disc doesn't invite anything.
  *
+ * "Inside the demo" is broader than "on /demo": generating a demo brief carries
+ * the presenter to `/brief/<id>`, and offering them "Try demo" there — while
+ * they are watching one being written — reads as though the demo never started.
+ * So the control follows `useInDemo()`, and shows the way out for the whole run
+ * rather than only on the route the run began on.
+ *
  * Dismissable, for anyone who'd rather just use the product — and dismissed
  * only for the session, matching the example brief in the studio: a fresh visit
  * gets the offer again, so the invitation can't be lost for good on one stray
- * click. On the demo route itself there's no dismiss, because that button is
- * the way out.
+ * click. Inside the demo there's no dismiss, because that button is the way out.
  */
 
 const DISMISSED_KEY = "argus.demo-fab-dismissed";
@@ -58,8 +63,7 @@ function dismiss() {
 }
 
 export function DemoFab() {
-  const pathname = usePathname();
-  const inDemo = isDemoPath(pathname);
+  const inDemo = useInDemo();
   const isDismissed = useSyncExternalStore(
     subscribe,
     () => dismissed,
