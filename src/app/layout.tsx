@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { InteractiveBackground } from "@/components/interactive-background";
+import { DemoFab } from "@/components/demo-fab";
 import { THEME_BOOTSTRAP } from "@/lib/theme-bootstrap";
 
 const geistSans = Geist({
@@ -65,6 +66,8 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <InteractiveBackground />
         {children}
+        {/* The way into (and out of) the demo surface, on every page. */}
+        <DemoFab />
       </body>
     </html>
   );

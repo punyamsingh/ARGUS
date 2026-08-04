@@ -96,12 +96,13 @@ pnpm eval       # grounding-invariant evals (vitest)
 
 ## Demo mode
 
-A presenter switch for showing ARGUS end to end without depending on live
-networks. Turn it on with the **Demo** toggle in the footer, or by opening any
-page with `?demo=1` (`?demo=0` turns it off). The choice is remembered per
-device.
+A presenter surface for showing ARGUS end to end without depending on live
+networks. It lives at **`/demo`** — the home page with a scripted account —
+reachable from the floating **Demo** control pinned to the bottom-right of every
+page, which becomes **Exit demo** while you're there. The URL *is* the demo, so
+it can be shared as-is with no setup.
 
-With it on:
+On that route:
 
 - the studio form is laced with a scripted account — company, contact, meeting
   context and seller profile — and locked, so a walkthrough always runs the same
@@ -116,7 +117,9 @@ With it on:
 - the brief is stamped **Demo data** in its header and `meta.demo` in its JSON —
   a scripted run can never be mistaken for a live one.
 
-Your own saved seller profile and brief history are left untouched.
+Generating leaves `/demo` for the focused brief page, as it does normally; the
+demo flag travels with the request, so the brief and its follow-ups stay
+scripted. Your own saved seller profile and brief history are left untouched.
 
 ## Getting the free keys
 
