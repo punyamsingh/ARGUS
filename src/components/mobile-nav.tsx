@@ -19,12 +19,9 @@ type NavLink = { label: string; href: string };
 
 export function MobileNav({
   items,
-  home,
   demo,
 }: {
   items: NavLink[];
-  /** The bar's "Home" link, which does not fit alongside the wordmark below `sm`. */
-  home: NavLink;
   /** Whether to offer the demo *invitation*, which yields space in the bar
    *  below `sm`. Never the exit — that stays in the bar at every width, so
    *  nobody has to open a menu to get out of a demo. */
@@ -123,19 +120,8 @@ export function MobileNav({
             dropped onto it rather than a continuation of the header. */}
         <div className="border-b border-line bg-ink px-6 py-3 shadow-lg shadow-cast/20">
           <ul className="flex flex-col items-center">
-            {/* Home leads, and reads like the rest of the list — it's the top of
-                the site, not an action. Only rendered below `sm`, where the bar
-                drops it. */}
-            <li className="sm:hidden">
-              <Link
-                href={home.href}
-                onClick={() => setOpen(false)}
-                className="block py-2.5 text-center text-[15px] text-muted transition-colors hover:text-ivory"
-              >
-                {home.label}
-              </Link>
-            </li>
-
+            {/* Home leads this list because it leads `NAV` — it's an ordinary
+                nav link now, not a special case the panel has to re-add. */}
             {items.map((item) => (
               <li key={item.label}>
                 <Link
