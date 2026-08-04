@@ -10,10 +10,10 @@ import {
   parsePendingBrief,
   useBriefStream,
 } from "@/lib/use-brief-stream";
-import { ArgusMark } from "@/components/argus-mark";
 import { BriefConversation } from "@/components/brief-conversation";
 import { BriefError, BriefLoader } from "@/components/brief-loader";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 
 /**
  * The focused, single-column brief page. Two modes:
@@ -75,30 +75,12 @@ export function FocusedBrief({ id }: { id: string }) {
 
   return (
     <>
+      {/* The same chrome every other route wears. The brief itself sits in a
+          narrower reading column below; only the column narrows, not the site. */}
+      <SiteHeader />
+
       <main className="relative flex min-h-full flex-1 flex-col">
         <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
-
-        {/* slim focused chrome */}
-        <header className="sticky top-0 z-10 border-b border-line bg-ink/70 backdrop-blur-md">
-          <div className="shell max-w-4xl flex items-center justify-between py-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-ivory"
-              aria-label="ARGUS home"
-            >
-              <ArgusMark size={22} />
-              <span className="font-display text-sm font-semibold tracking-tight">
-                ARGUS
-              </span>
-            </Link>
-            <Link
-              href="/"
-              className="rounded-full border border-line bg-surface/60 px-3.5 py-1.5 text-[13px] font-medium text-ivory transition-colors hover:border-line-strong hover:bg-surface-2"
-            >
-              New brief
-            </Link>
-          </div>
-        </header>
 
         {/* Still one centred reading column — a brief is a document and a
             full-window line length is unreadable — just a little wider. */}
@@ -127,37 +109,11 @@ export function FocusedBrief({ id }: { id: string }) {
           )}
         </div>
       </main>
-      {/* The route deliberately skips the full site footer, but skipping it
-          outright also stranded the theme control — nothing on this page could
-          switch palettes. A slim strip carries it and the routes back. */}
-      <footer className="mt-auto border-t border-line print:hidden">
-        <div className="shell max-w-4xl flex flex-wrap items-center justify-between gap-4 py-4">
-          <nav
-            aria-label="Footer"
-            className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px]"
-          >
-            {FOOTER_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                className="text-muted transition-colors hover:text-ivory"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-          <ThemeToggle />
-        </div>
-      </footer>
+
+      <SiteFooter />
     </>
   );
 }
-
-const FOOTER_LINKS = [
-  { label: "How it works", href: "/#how-it-works" },
-  { label: "About", href: "/about" },
-  { label: "Contact", href: "/contact" },
-];
 
 function NotFound() {
   return (
