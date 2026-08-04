@@ -7,6 +7,7 @@ import { AuthMenu } from "@/components/auth-menu";
 import { MobileNav } from "@/components/mobile-nav";
 import { DemoChip } from "@/components/demo-chip";
 import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
+import { useInDemo } from "@/lib/demo/mode";
 
 /**
  * Rendered once by the root layout, so no route can forget it or grow its own.
@@ -20,6 +21,7 @@ import { DEMO_PATH, isDemoPath } from "@/lib/demo/path";
  */
 export function SiteHeader() {
   const base = isDemoPath(usePathname()) ? DEMO_PATH : "/";
+  const inDemo = useInDemo();
   const NAV = [
     { label: "How it works", href: `${base}#how-it-works` },
     { label: "About", href: "/about" },
@@ -31,9 +33,6 @@ export function SiteHeader() {
    * "Home" shouldn't quietly do it.
    */
   const HOME = { label: "Home", href: base };
-  // The invitation, for the menu panel below `sm` where the chip yields space.
-  // Only the invitation — the exit never hides in there (see `DemoChip`).
-  const DEMO = { label: "Try a demo", href: DEMO_PATH };
 
   return (
     <header id="top" className="sticky top-0 z-50 scroll-mt-0">
@@ -84,7 +83,10 @@ export function SiteHeader() {
 
             {/* Below `md` the inline links above are hidden; this keeps them
                 reachable from the header rather than only from the footer. */}
-            <MobileNav items={NAV} home={HOME} demo={DEMO} />
+            {/* No invitation while already inside a demo — the bar is showing
+                "Exit demo", and a panel offering "Try a demo" beside it reads
+                as though the demo hadn't started. */}
+            <MobileNav items={NAV} home={HOME} demo={!inDemo} />
           </nav>
         </div>
       </div>
