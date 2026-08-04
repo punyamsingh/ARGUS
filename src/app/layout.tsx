@@ -3,6 +3,8 @@ import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { InteractiveBackground } from "@/components/interactive-background";
 import { DemoFab } from "@/components/demo-fab";
+import { SiteHeader } from "@/components/site-header";
+import { SiteFooter } from "@/components/site-footer";
 import { THEME_BOOTSTRAP } from "@/lib/theme-bootstrap";
 
 const geistSans = Geist({
@@ -65,7 +67,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <InteractiveBackground />
+        {/* The chrome lives here, not in the pages. A page that renders its own
+            is a page that can drift from the rest of the site — which is exactly
+            how the brief route ended up with a different wordmark and no nav. */}
+        <SiteHeader />
         {children}
+        <SiteFooter />
         {/* The way into (and out of) the demo surface, on every page. */}
         <DemoFab />
       </body>

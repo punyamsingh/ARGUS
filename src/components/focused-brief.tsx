@@ -12,8 +12,6 @@ import {
 } from "@/lib/use-brief-stream";
 import { BriefConversation } from "@/components/brief-conversation";
 import { BriefError, BriefLoader } from "@/components/brief-loader";
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
 
 /**
  * The focused, single-column brief page. Two modes:
@@ -73,45 +71,36 @@ export function FocusedBrief({ id }: { id: string }) {
 
   const brief = result ?? loaded;
 
+  // The site header and footer come from the root layout. The brief sits in a
+  // narrower reading column — only the column narrows, not the site.
   return (
-    <>
-      {/* The same chrome every other route wears. The brief itself sits in a
-          narrower reading column below; only the column narrows, not the site. */}
-      <SiteHeader />
+    <main className="relative flex min-h-full flex-1 flex-col">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
 
-      <main className="relative flex min-h-full flex-1 flex-col">
-        <div className="pointer-events-none absolute inset-0 -z-10 bg-glow opacity-60" />
-
-        {/* Still one centred reading column — a brief is a document and a
-            full-window line length is unreadable — just a little wider. */}
-        <div className="shell w-full max-w-4xl flex-1 py-8">
-          {notFound && <NotFound />}
-          {!notFound && status === "loading" && <BriefLoader stage={stage} />}
-          {!notFound && status === "error" && (
-            <BriefError
-              message={error}
-              onRetry={() => {
-                if (inputRef.current) {
-                  void run(inputRef.current, undefined, {
-                    demo: demoRef.current,
-                  });
-                }
-              }}
-            />
-          )}
-          {/* No expand light here — this is already the expanded view. Closing
-              the window returns to the studio. */}
-          {!notFound && brief && (
-            <BriefConversation
-              result={brief}
-              onClose={() => router.push("/")}
-            />
-          )}
-        </div>
-      </main>
-
-      <SiteFooter />
-    </>
+      {/* Still one centred reading column — a brief is a document and a
+          full-window line length is unreadable — just a little wider. */}
+      <div className="shell w-full max-w-4xl flex-1 py-8">
+        {notFound && <NotFound />}
+        {!notFound && status === "loading" && <BriefLoader stage={stage} />}
+        {!notFound && status === "error" && (
+          <BriefError
+            message={error}
+            onRetry={() => {
+              if (inputRef.current) {
+                void run(inputRef.current, undefined, {
+                  demo: demoRef.current,
+                });
+              }
+            }}
+          />
+        )}
+        {/* No expand light here — this is already the expanded view. Closing
+            the window returns to the studio. */}
+        {!notFound && brief && (
+          <BriefConversation result={brief} onClose={() => router.push("/")} />
+        )}
+      </div>
+    </main>
   );
 }
 
