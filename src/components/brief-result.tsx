@@ -218,9 +218,17 @@ export function BriefResultView({
         <header className="border-b border-line px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">
-                Meeting brief
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-faint">
+                  Meeting brief
+                </p>
+                {/* Never let a scripted run pass for a live one. */}
+                {meta.demo && (
+                  <span className="rounded-full border border-accent/50 bg-accent/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-accent">
+                    Demo data
+                  </span>
+                )}
+              </div>
               <h3 className="mt-1 font-display text-2xl font-semibold text-ivory">
                 {entity.company.name}
               </h3>
@@ -344,7 +352,7 @@ export function BriefResultView({
             {meta.model} · {(meta.elapsedMs / 1000).toFixed(1)}s
           </p>
           <p className="font-mono text-[11px] text-faint">
-            every signal cited
+            {meta.demo ? "scripted sources · live synthesis" : "every signal cited"}
           </p>
         </footer>
       </article>

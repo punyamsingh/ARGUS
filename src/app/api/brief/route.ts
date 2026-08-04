@@ -37,6 +37,11 @@ export async function POST(req: Request) {
 
   // Optional client session id, used only to group briefs in Langfuse. Capped
   // and sanitised — it's untrusted input that ends up as a span attribute.
+  // Demo mode (#demo) — a sibling flag on the body, not part of the brief input.
+  // When set, the pipeline runs against the scripted evidence store instead of
+  // resolving and gathering live; synthesis is still a real model call.
+  const demo = (body as { demo?: unknown }).demo === true;
+
   const sessionId = req.headers
     .get("x-argus-session-id")
     ?.replace(/[^a-zA-Z0-9._-]/g, "")
@@ -51,6 +56,7 @@ export async function POST(req: Request) {
         const result = await generateBrief(parsed.data, {
           onProgress: (stage) => send({ type: "stage", stage }),
           sessionId,
+          demo,
         });
         send({ type: "result", result });
       } catch (err) {

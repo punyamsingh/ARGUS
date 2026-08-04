@@ -71,10 +71,12 @@ async function run(
 
   // Gather-on-demand: if the brief's evidence can't answer it, fetch fresh
   // signals for the same entity and try once more (only if that adds anything).
+  // Demo mode skips this — the scripted evidence store is the whole world, so an
+  // unanswerable question degrades to the honest "no public signal" reply.
   const grounded = (p: typeof pass) =>
     p.answerable && groundCitations(p.citations, evidence).length > 0;
 
-  if (!grounded(pass)) {
+  if (!params.demo && !grounded(pass)) {
     onProgress?.("gathering");
     const { evidence: fresh } = await gather(entity);
     const expanded = mergeEvidence(evidence, fresh);
@@ -101,6 +103,7 @@ async function run(
       provider: llmProvider,
       model: llmModelId,
       elapsedMs: Date.now() - start,
+      ...(params.demo ? { demo: true } : {}),
     },
   };
 }

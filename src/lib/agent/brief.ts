@@ -6,8 +6,15 @@ import type {
   BriefStage,
   Evidence,
   GuidanceItem,
+  ResolvedEntity,
 } from "@/types/brief";
 import { withObservation } from "@/lib/telemetry";
+import {
+  DEMO_ENTITY,
+  DEMO_EVIDENCE,
+  DEMO_INPUT,
+  DEMO_STAGE_MS,
+} from "@/lib/demo/scenario";
 import { resolveEntity } from "./resolve";
 import { gather } from "./gather";
 import { synthesizeBrief } from "./synthesize";
@@ -17,6 +24,9 @@ export interface GenerateBriefOptions {
   onProgress?: (stage: BriefStage) => void;
   /** Groups a user's briefs into one Langfuse session (#15). */
   sessionId?: string;
+  /** Demo mode: use the scripted entity + evidence instead of resolve/gather.
+   *  Synthesis still runs for real, so the brief is genuinely generated. */
+  demo?: boolean;
 }
 
 /**
@@ -26,7 +36,7 @@ export interface GenerateBriefOptions {
  */
 export async function generateBrief(
   input: BriefInput,
-  { onProgress, sessionId }: GenerateBriefOptions = {},
+  { onProgress, sessionId, demo = false }: GenerateBriefOptions = {},
 ): Promise<BriefResult> {
   // Wrap the whole pipeline in one observation so resolve, each gather tool, and
   // synthesis nest under a single per-brief trace in Langfuse (#15). Input is set
@@ -34,34 +44,52 @@ export async function generateBrief(
   // session id groups a user's briefs in the Langfuse Sessions view.
   return withObservation(
     "brief",
-    { company: input.company, person: input.person, context: input.context },
-    () => runPipeline(input, onProgress),
+    { company: input.company, person: input.person, context: input.context, demo },
+    () => runPipeline(input, onProgress, demo),
     (result) => ({
       entity: result.entity.company.name,
       sources: result.evidence.length,
       elapsedMs: result.meta.elapsedMs,
     }),
-    { sessionId, traceName: "brief" },
+    { sessionId, traceName: demo ? "brief-demo" : "brief" },
   );
 }
 
 async function runPipeline(
   input: BriefInput,
   onProgress?: (stage: BriefStage) => void,
+  demo = false,
 ): Promise<BriefResult> {
   const start = Date.now();
 
+  // Demo mode short-circuits the two network stages with the scripted account.
+  // The stages are still announced (and briefly held) so the pipeline reads on
+  // screen exactly as it does for a live run.
+  const briefInput = demo ? DEMO_INPUT : input;
+
   onProgress?.("resolving");
-  const entity = await resolveEntity(input);
+  let entity: ResolvedEntity;
+  if (demo) {
+    await pause(DEMO_STAGE_MS.resolving);
+    entity = DEMO_ENTITY;
+  } else {
+    entity = await resolveEntity(input);
+  }
 
   onProgress?.("gathering");
-  const { evidence } = await gather(entity);
+  let evidence: Evidence[];
+  if (demo) {
+    await pause(DEMO_STAGE_MS.gathering);
+    evidence = DEMO_EVIDENCE;
+  } else {
+    evidence = (await gather(entity)).evidence;
+  }
 
   onProgress?.("synthesizing");
-  const brief = await synthesizeBrief(input, entity, evidence);
+  const brief = await synthesizeBrief(briefInput, entity, evidence);
 
   return {
-    input,
+    input: briefInput,
     entity,
     // Show only evidence the brief actually cites. Tools can return tangential
     // hits (e.g. a broad news match); the synthesizer correctly ignores them,
@@ -73,8 +101,14 @@ async function runPipeline(
       provider: llmProvider,
       model: llmModelId,
       elapsedMs: Date.now() - start,
+      ...(demo ? { demo: true } : {}),
     },
   };
+}
+
+/** Hold a demo stage briefly so the pipeline is legible on screen. */
+function pause(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function citedEvidence(brief: Brief, evidence: Evidence[]): Evidence[] {

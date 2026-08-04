@@ -31,6 +31,7 @@ asks, risk alerts, and buying signals. **Every claim links to its source.**
 - [How it works](#how-it-works)
 - [Stack](#stack)
 - [Quickstart](#quickstart)
+- [Demo mode](#demo-mode)
 - [Getting the free keys](#getting-the-free-keys)
 - [Contributing](#contributing)
 - [Versioning & releases](#versioning--releases)
@@ -92,6 +93,30 @@ pnpm lint       # eslint
 pnpm typecheck  # tsc --noEmit
 pnpm eval       # grounding-invariant evals (vitest)
 ```
+
+## Demo mode
+
+A presenter switch for showing ARGUS end to end without depending on live
+networks. Turn it on with the **Demo** toggle in the footer, or by opening any
+page with `?demo=1` (`?demo=0` turns it off). The choice is remembered per
+device.
+
+With it on:
+
+- the studio form is laced with a scripted account — company, contact, meeting
+  context and seller profile — and locked, so a walkthrough always runs the same
+  known-good meeting;
+- **Resolve** and **Gather** are replaced by a fixed evidence store of nine real,
+  clickable public sources ([`src/lib/demo/scenario.ts`](./src/lib/demo/scenario.ts));
+- **Synthesis is still a real model call** — the brief an audience watches appear
+  is genuinely written by the LLM, grounded in that evidence, in a few seconds
+  and with no third-party rate limits;
+- follow-up questions answer over the same scripted store (no live gather), so
+  the whole demo is self-contained;
+- the brief is stamped **Demo data** in its header and `meta.demo` in its JSON —
+  a scripted run can never be mistaken for a live one.
+
+Your own saved seller profile and brief history are left untouched.
 
 ## Getting the free keys
 
@@ -179,6 +204,7 @@ src/
       brief.ts      # resolve → gather → synthesize
       ask.ts        # grounded follow-up engine
       tools/        # the gather tool belt (one file per tool)
+    demo/         # demo mode — the scripted account + the presenter switch
   types/          # zod schemas = the single source of truth
 ```
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArgusMark } from "@/components/argus-mark";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { DemoToggle } from "@/components/demo-toggle";
 
 const LINKS = [
   { label: "How it works", href: "/#how-it-works" },
@@ -51,6 +52,7 @@ export function SiteFooter() {
 
           <div className="flex flex-wrap items-center gap-4">
             <ThemeToggle />
+            <DemoToggle />
             <span className="text-[12px] text-faint">
               © {new Date().getFullYear()} Team Argus
             </span>

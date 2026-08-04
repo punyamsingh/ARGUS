@@ -69,6 +69,9 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
           input: result.input,
           entity: result.entity,
           evidence: result.evidence,
+          // A demo brief keeps its follow-ups on the scripted evidence store —
+          // no live gather, so the whole walkthrough stays self-contained.
+          ...(result.meta.demo ? { demo: true } : {}),
         }),
       });
 
