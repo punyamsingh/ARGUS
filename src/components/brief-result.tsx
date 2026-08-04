@@ -56,7 +56,10 @@ function Cite({
   evidence: Map<string, Evidence>;
 }) {
   return (
-    <sup className="ml-0.5 whitespace-nowrap align-super">
+    // No `align-super`: the UA already lifts a <sup> with `top: -0.5em`, and
+    // stacking `vertical-align: super` on top raises the markers clear of their
+    // own line, so they read as belonging to the line above.
+    <sup className="ml-0.5 whitespace-nowrap">
       {ids.map((id) => {
         const n = numbering.get(id);
         const ev = evidence.get(id);
@@ -85,16 +88,18 @@ function Section({
   items,
   numbering,
   evidence,
+  className,
 }: {
   title: string;
   tone: Tone;
   items: BriefItem[];
   numbering: Map<string, number>;
   evidence: Map<string, Evidence>;
+  className?: string;
 }) {
   if (items.length === 0) {
     return (
-      <section>
+      <section className={className}>
         <SectionLabel tone={tone}>{title}</SectionLabel>
         <p className="rounded-lg border border-dashed border-line px-3 py-2 text-[12.5px] text-faint">
           No public signal yet.
@@ -103,7 +108,7 @@ function Section({
     );
   }
   return (
-    <section>
+    <section className={className}>
       <SectionLabel tone={tone}>{title}</SectionLabel>
       <ul className="space-y-2.5 text-[13.5px] leading-relaxed text-ivory/90">
         {items.map((item, i) => (
@@ -270,12 +275,16 @@ export function BriefResultView({
         {/* body — sourced claims about the buyer */}
         {totalItems > 0 && (
           <div className="grid gap-6 px-6 py-6 sm:grid-cols-2">
+            {/* Three sections in a two-column grid leave a hole in the second
+                row; the lead section takes the full width so the two shorter
+                ones pair off underneath it. */}
             <Section
               title="Talking points"
               tone="default"
               items={brief.talkingPoints}
               numbering={numbering}
               evidence={evidenceById}
+              className="sm:col-span-2"
             />
             <Section
               title="Risk alerts"

@@ -8,9 +8,10 @@ import { BriefChrome } from "@/components/brief-chrome";
 
 function Cite({ n }: { n: number }) {
   return (
-    <sup className="ml-0.5 align-super text-[10px] font-medium text-accent">
-      [{n}]
-    </sup>
+    // No `align-super`: the UA already lifts a <sup> with `top: -0.5em`, and
+    // stacking `vertical-align: super` on top of that raises the marker clear of
+    // its own line so it reads as belonging to the line above.
+    <sup className="ml-0.5 text-[10px] font-medium text-accent">[{n}]</sup>
   );
 }
 

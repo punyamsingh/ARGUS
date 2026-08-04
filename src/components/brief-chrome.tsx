@@ -69,9 +69,13 @@ function ChromeLight({
   );
 }
 
-/** Revealed when the chrome is hovered or focused, as the real control does. */
+/**
+ * Revealed when the chrome is hovered or focused, as the real control does —
+ * except on a coarse pointer, where hover has no meaning and a hover-only glyph
+ * leaves a touch user with three unlabelled dots. There it is simply always on.
+ */
 const GLYPH =
-  "size-[7px] opacity-0 transition-opacity group-hover/chrome:opacity-100 group-focus-within/chrome:opacity-100";
+  "size-[7px] opacity-0 transition-opacity group-hover/chrome:opacity-100 group-focus-within/chrome:opacity-100 [@media(pointer:coarse)]:opacity-100";
 
 function CloseGlyph() {
   return (
