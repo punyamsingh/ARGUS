@@ -614,7 +614,7 @@ function AttachmentPicker({
           full ? "cursor-default opacity-40" : "hover:border-line-strong hover:text-ivory",
         )}
       >
-        + Attach a document
+        📎 Attach a document
       </button>
 
       {attachments.length > 0 && (
