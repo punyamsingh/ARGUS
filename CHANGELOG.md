@@ -1,3 +1,9 @@
+## [3.19.1](https://github.com/punyamsingh/ARGUS/compare/v3.19.0...v3.19.1) (2026-08-05)
+
+### Bug Fixes
+
+* **ui:** rebuild the attachment control from the card's own vocabulary ([#117](https://github.com/punyamsingh/ARGUS/issues/117)) ([1b090ba](https://github.com/punyamsingh/ARGUS/commit/1b090bad0b683348b335cdf8b97ea1a50ef788e2))
+
 ## [3.19.0](https://github.com/punyamsingh/ARGUS/compare/v3.18.2...v3.19.0) (2026-08-05)
 
 ### Features
