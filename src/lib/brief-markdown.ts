@@ -81,10 +81,11 @@ export function briefToMarkdown(result: BriefResult): string {
 /**
  * Render the evidence as a numbered Markdown list, escaping titles and URLs.
  *
- * Public sources are links. An attachment (#99) has no destination, so it is
- * written as plain text with a note — a copied brief travels further than the
- * app does, and an `attachment://` link would arrive in someone's inbox looking
- * like a source they could open.
+ * Public sources are links. An attachment (#99) is written as plain text with a
+ * note instead: its locator resolves only for the signed-in owner of the brief,
+ * and a copied brief travels further than the app does — an `attachment://`
+ * link, or a signed one, would arrive in someone else's inbox looking like a
+ * source they could open.
  */
 function sourcesList(evidence: Evidence[]): string {
   return evidence
@@ -92,7 +93,7 @@ function sourcesList(evidence: Evidence[]): string {
       const title = escapeMdText(e.sourceTitle);
       const tool = escapeMdText(e.tool);
       if (!isLinkedEvidence(e.sourceUrl)) {
-        return `${i + 1}. ${title} (attached document, not stored) — ${tool}`;
+        return `${i + 1}. ${title} (attached document) — ${tool}`;
       }
       return `${i + 1}. [${title}](${escapeMdUrl(e.sourceUrl)}) — ${tool}`;
     })

@@ -7,17 +7,20 @@ import {
 } from "@/types/brief";
 
 /**
- * The attachment retention guarantee (#99), pinned as a test.
+ * The attachment/brief separation (#99), pinned as a test.
  *
- * "Attachments are never stored" is not enforced by a delete step — it is
- * enforced by the shape of the contract. `BriefResult.input` is what gets
- * written to the `brief` row and re-sent with every follow-up, and it is a
- * `BriefInput`. So as long as an attachment cannot survive a trip through
- * `briefInputSchema`, there is no code path that can persist one.
+ * Files are retained in object storage now, but they are still kept *out* of
+ * the brief row, and that separation is enforced by the shape of the contract
+ * rather than by discipline. `BriefResult.input` is what gets written to the
+ * `brief` row and re-sent with every follow-up, and it is a `BriefInput` — so
+ * as long as an attachment cannot survive a trip through `briefInputSchema`,
+ * no code path can inline a file payload into a brief.
  *
- * That makes this a load-bearing test rather than a pedantic one: someone
- * adding `attachments` to `briefInputSchema` for convenience would quietly
- * turn a privacy property into a bug, and this is what stops them.
+ * Still load-bearing, for a slightly different reason than when it was written:
+ * someone adding `attachments` to `briefInputSchema` for convenience would
+ * duplicate every uploaded document into the database, into every follow-up
+ * request, and into local browser history — none of which have a deletion path.
+ * This is what stops them.
  */
 
 const input = {

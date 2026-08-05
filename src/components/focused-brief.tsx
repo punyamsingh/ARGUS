@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { Attachment, BriefInput, BriefResult } from "@/types/brief";
 import { useSession } from "@/lib/auth/client";
-import { resolveBrief } from "@/lib/briefs/library";
+import { isAccountBriefId, resolveBrief } from "@/lib/briefs/library";
 import { takePendingAttachments } from "@/lib/attachments-client";
 import {
   PENDING_BRIEF_KEY,
@@ -138,7 +138,14 @@ export function FocusedBrief({ id }: { id: string }) {
         {/* No expand light here — this is already the expanded view. Closing
             the window returns to the studio. */}
         {!notFound && brief && (
-          <BriefConversation result={brief} onClose={() => router.push("/")} />
+          <BriefConversation
+            result={brief}
+            onClose={() => router.push("/")}
+            // Only a brief the account holds has documents behind it. While the
+            // URL is still /brief/new there is no row yet; it becomes the
+            // server id the moment the save lands (#99).
+            briefId={signedIn && isAccountBriefId(id) ? id : null}
+          />
         )}
       </div>
     </main>

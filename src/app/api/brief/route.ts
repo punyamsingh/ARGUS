@@ -48,9 +48,12 @@ export async function POST(req: Request) {
   const demo = (body as { demo?: unknown }).demo === true;
 
   // Attachments (#99) — likewise a sibling, and for a stronger reason than
-  // tidiness: keeping them out of `BriefInput` is what guarantees they can't be
-  // written to the saved brief or replayed on a follow-up. They are read during
-  // this request and never stored.
+  // tidiness: keeping them out of `BriefInput` is what guarantees a file payload
+  // can't be inlined into the saved brief or replayed on every follow-up.
+  //
+  // Generation itself retains nothing. The copy that outlives the request is
+  // written by the save path (`POST /api/briefs`), where there's an account row
+  // to own it — so an anonymous or unsaved brief leaves no file behind.
   const attachments = parseAttachments((body as { attachments?: unknown }).attachments);
   if ("error" in attachments) {
     return Response.json({ ok: false, error: attachments.error }, { status: 400 });

@@ -1,6 +1,12 @@
 import { getSessionUser } from "@/lib/auth/server";
 import { listBriefs, saveBrief } from "@/lib/briefs/repo";
-import { briefResultSchema } from "@/types/brief";
+import { attachmentRef } from "@/lib/storage/attachment-ref";
+import {
+  objectPath,
+  putAttachment,
+  storageConfigured,
+} from "@/lib/storage/attachments-store";
+import { attachmentSchema, briefResultSchema, type Attachment } from "@/types/brief";
 
 /**
  * The brief library — `GET` lists the signed-in user's briefs, `POST` saves one.
@@ -65,7 +71,16 @@ export async function POST(req: Request) {
   }
 
   try {
-    return Response.json({ ok: true, id: await saveBrief(user.id, parsed.data) });
+    const id = await saveBrief(user.id, parsed.data);
+
+    // Attachments ride alongside the result, the same way `demo` rides
+    // alongside a brief input — `briefResultSchema` strips them, so the stored
+    // row still holds only the brief. They are uploaded *after* the row exists
+    // so every object has an owner from the moment it's written: no row, no
+    // file, and nothing to orphan if the save fails.
+    await storeAttachments(user.id, id, (body as { attachments?: unknown }).attachments);
+
+    return Response.json({ ok: true, id });
   } catch (err) {
     logFailure("save", err);
     return Response.json(
@@ -73,4 +88,38 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+/**
+ * Retain the documents this brief was built from.
+ *
+ * Best-effort throughout: a brief whose attachments failed to upload is still
+ * a saved brief, it just has sources that don't open. Losing the research
+ * because a bucket call failed would be the worse trade.
+ */
+async function storeAttachments(
+  userId: string,
+  briefId: string,
+  raw: unknown,
+): Promise<void> {
+  if (!storageConfigured || !Array.isArray(raw) || raw.length === 0) return;
+
+  const attachments: Attachment[] = [];
+  for (const item of raw) {
+    const parsed = attachmentSchema.safeParse(item);
+    if (parsed.success) attachments.push(parsed.data);
+  }
+
+  await Promise.all(
+    attachments.map((a) =>
+      putAttachment(
+        // The ref is recomputed rather than trusted from the client: it's what
+        // the evidence locator already points at, so a caller can't redirect a
+        // source at a file of their choosing by sending a different one.
+        objectPath(userId, briefId, attachmentRef(a)),
+        Buffer.from(a.data, "base64"),
+        a.mediaType,
+      ),
+    ),
+  );
 }

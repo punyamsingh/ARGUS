@@ -176,11 +176,14 @@ export function BriefResultView({
   result,
   onClose,
   onExpand,
+  briefId,
 }: {
   result: BriefResult;
   /** Wires the chrome's corner light; omitted leaves it an unlit dot. */
   onClose?: () => void;
   onExpand?: () => void;
+  /** Account id, when this brief has one — lets attachment sources resolve. */
+  briefId?: string | null;
 }) {
   const { brief, entity, evidence, meta, input } = result;
 
@@ -354,7 +357,7 @@ export function BriefResultView({
               {evidence.map((e, i) => (
                 <li key={e.id} className="flex gap-2 text-[12px] leading-relaxed">
                   <span className="font-mono text-faint">[{i + 1}]</span>
-                  <SourceLabel evidence={e} />
+                  <SourceLabel evidence={e} briefId={briefId} />
                   <span className="font-mono text-faint">· {e.tool}</span>
                 </li>
               ))}

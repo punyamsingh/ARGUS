@@ -69,9 +69,13 @@ You can also **attach a document** — an RFP, a deck the buyer shared, notes fr
 the last call. It's read into the same evidence store as everything else, so its
 claims are cited and answerable exactly like a filing. This is the one source
 the public belt can't reach, and it's what keeps a brief useful for a private
-company with no filings and no public job board. **Attachments are read for that
-one request and never stored** — what persists is the extracted claim, not the
-file.
+company with no filings and no public job board.
+
+When attachment storage is configured, a document you attach is **kept with the
+brief you saved it to**, so its sources stay openable — each click mints a
+short-lived link after checking you own that brief. Delete the brief and the
+documents go with it. Without storage configured, or signed out, attachments are
+read to build the brief and not retained.
 
 Once a brief exists you can **ask grounded follow-ups** beneath it — the same
 evidence base answers your questions, still cited, no invented extras.
