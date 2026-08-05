@@ -2,8 +2,18 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import type { BriefResult, MeetingType, SellerProfile } from "@/types/brief";
-import { MEETING_TYPES } from "@/types/brief";
+import type {
+  Attachment,
+  BriefResult,
+  MeetingType,
+  SellerProfile,
+} from "@/types/brief";
+import { ATTACHMENT_LIMITS, MEETING_TYPES } from "@/types/brief";
+import {
+  ATTACHMENT_ACCEPT,
+  readAttachments,
+  setPendingAttachments,
+} from "@/lib/attachments-client";
 import { clsx } from "@/lib/cn";
 import { DISABLED_PRIMARY } from "@/lib/button";
 import { BriefPreview } from "@/components/brief-preview";
@@ -68,6 +78,12 @@ export function BriefStudio() {
   const demoSeller = DEMO_INPUT.seller;
   const wideViewport = useWideViewport();
 
+  // Attachments (#99) — documents the rep already holds, read once for this
+  // brief and never stored. Held here as component state, handed to the focused
+  // page in memory, and gone as soon as the generation finishes.
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [attachmentNote, setAttachmentNote] = useState<string | null>(null);
+
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
   // 3-field path stays the default). A local draft mirrors the persisted profile
   // so partial/invalid edits never clobber storage; we persist on submit.
@@ -114,6 +130,23 @@ export function BriefStudio() {
     saveSellerProfile(null);
   }
 
+  /** Read picked files, keeping what's usable and saying why the rest wasn't. */
+  async function addAttachments(files: File[]) {
+    if (files.length === 0) return;
+    const { accepted, rejected } = await readAttachments(files, attachments);
+    if (accepted.length > 0) setAttachments((prev) => [...prev, ...accepted]);
+    setAttachmentNote(
+      rejected.length > 0
+        ? rejected.map((r) => `${r.name} — ${r.reason}`).join(" · ")
+        : null,
+    );
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+    setAttachmentNote(null);
+  }
+
   const canSubmit =
     demo ||
     (company.trim() !== "" && person.trim() !== "" && context.trim() !== "");
@@ -142,6 +175,10 @@ export function BriefStudio() {
     } catch {
       // best-effort; if storage is blocked the focused page shows a prompt
     }
+    // Attachments hand over in memory, not through storage — see
+    // `lib/attachments-client.ts`. The demo runs on its scripted evidence, so
+    // it never carries them.
+    setPendingAttachments(demo ? [] : attachments);
     router.push("/brief/new");
   }
 
@@ -261,6 +298,20 @@ export function BriefStudio() {
               locked={demo}
               className="mt-4"
             />
+            {/* Grouped with the meeting fields rather than beside "Your
+                product": both are optional, but an attachment is per-meeting
+                like the fields above it, where the seller profile is set once
+                and remembered. In the wide layout that keeps everything about
+                *this* meeting in one column. */}
+            {!demo && (
+              <AttachmentPicker
+                attachments={attachments}
+                note={attachmentNote}
+                onAdd={addAttachments}
+                onRemove={removeAttachment}
+                className="mt-4"
+              />
+            )}
           </div>
 
           {/* Optional refinement comes *before* the submit — a Generate button
@@ -506,6 +557,94 @@ function MeetingTypePicker({
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * The attach-documents control (#99).
+ *
+ * Every other source in the belt is public, so a brief is only as good as the
+ * account's public footprint. This is the one input that isn't: an RFP, a deck
+ * the buyer sent, notes from the last call. It sits inline with the meeting
+ * fields rather than behind a panel because it's per-meeting, unlike the seller
+ * profile, which is set once.
+ *
+ * The "not stored" line is deliberately in the UI and not just in the code. A
+ * rep deciding whether to hand a client's RFP to a web app is entitled to know
+ * the answer before they do it, not after.
+ */
+function AttachmentPicker({
+  attachments,
+  note,
+  onAdd,
+  onRemove,
+  className,
+}: {
+  attachments: Attachment[];
+  /** Why any picked file was turned away — null when they all took. */
+  note: string | null;
+  onAdd: (files: File[]) => void;
+  onRemove: (index: number) => void;
+  className?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const full = attachments.length >= ATTACHMENT_LIMITS.maxCount;
+
+  return (
+    <div className={className}>
+      <input
+        ref={inputRef}
+        type="file"
+        multiple
+        accept={ATTACHMENT_ACCEPT}
+        className="sr-only"
+        onChange={(e) => {
+          onAdd(Array.from(e.target.files ?? []));
+          // Reset so picking the same file again still fires a change event.
+          e.target.value = "";
+        }}
+      />
+      <button
+        type="button"
+        disabled={full}
+        onClick={() => inputRef.current?.click()}
+        className={clsx(
+          "rounded-full border border-line bg-surface/80 px-2.5 py-1 text-[11px] font-medium text-faint transition-colors",
+          full ? "cursor-default opacity-40" : "hover:border-line-strong hover:text-ivory",
+        )}
+      >
+        📎 Attach a document
+      </button>
+
+      {attachments.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {attachments.map((a, i) => (
+            <li
+              key={`${a.name}-${i}`}
+              className="flex items-center gap-2 text-[11.5px] text-muted"
+            >
+              <span className="truncate">{a.name}</span>
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                aria-label={`Remove ${a.name}`}
+                className="text-faint transition-colors hover:text-ivory"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {note && <p className="mt-2 text-[11.5px] text-muted">{note}</p>}
+
+      {attachments.length > 0 && (
+        <p className="mt-2 text-[11px] leading-relaxed text-faint">
+          Read once to build this brief, then discarded — never stored.
+        </p>
+      )}
     </div>
   );
 }

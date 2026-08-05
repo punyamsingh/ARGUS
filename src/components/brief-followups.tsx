@@ -10,6 +10,7 @@ import type {
 import { clsx } from "@/lib/cn";
 import { DISABLED_PRIMARY } from "@/lib/button";
 import { getSessionId } from "@/lib/session-id";
+import { SourceLabel } from "@/components/source-label";
 
 /**
  * The conversational layer (#75). The brief stays the pinned hero artifact above;
@@ -226,14 +227,7 @@ function Answer({ result }: { result: AskResult }) {
           {result.evidence.map((e, i) => (
             <li key={e.id} className="flex gap-2 text-[11.5px] leading-relaxed">
               <span className="font-mono text-faint">[{i + 1}]</span>
-              <a
-                href={e.sourceUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="text-muted underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
-              >
-                {e.sourceTitle}
-              </a>
+              <SourceLabel evidence={e} />
               <span className="font-mono text-faint">· {e.tool}</span>
             </li>
           ))}

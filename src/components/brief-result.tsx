@@ -1,5 +1,7 @@
 import { clsx } from "@/lib/cn";
 import { BriefChrome } from "@/components/brief-chrome";
+import { SourceLabel } from "@/components/source-label";
+import { isLinkedEvidence } from "@/lib/evidence-source";
 import type {
   BriefItem,
   BriefResult,
@@ -8,7 +10,8 @@ import type {
 } from "@/types/brief";
 
 /**
- * Renders a real generated brief (#9). Every claim links to its source;
+ * Renders a real generated brief (#9). Every claim is attributed to its source —
+ * a link for public evidence, a label for a document the rep attached (#99);
  * empty sections and thin-evidence briefs degrade gracefully.
  */
 
@@ -64,6 +67,18 @@ function Cite({
         const n = numbering.get(id);
         const ev = evidence.get(id);
         if (!n || !ev) return null;
+        // Roomy hit area for touch (≥24px) without changing the visual size.
+        const marker =
+          "ml-0.5 inline-flex min-w-[18px] justify-center px-1 py-0.5 text-[10px] font-medium text-accent";
+        // An attachment's marker still numbers into the Sources list; it just
+        // has no destination, so it isn't an anchor (#99).
+        if (!isLinkedEvidence(ev.sourceUrl)) {
+          return (
+            <span key={id} title={ev.sourceTitle} className={marker}>
+              [{n}]
+            </span>
+          );
+        }
         return (
           <a
             key={id}
@@ -71,8 +86,7 @@ function Cite({
             target="_blank"
             rel="noreferrer"
             title={ev.sourceTitle}
-            // Roomy hit area for touch (≥24px) without changing the visual size.
-            className="ml-0.5 inline-flex min-w-[18px] justify-center px-1 py-0.5 text-[10px] font-medium text-accent transition-colors hover:text-accent-strong"
+            className={clsx(marker, "transition-colors hover:text-accent-strong")}
           >
             [{n}]
           </a>
@@ -340,14 +354,7 @@ export function BriefResultView({
               {evidence.map((e, i) => (
                 <li key={e.id} className="flex gap-2 text-[12px] leading-relaxed">
                   <span className="font-mono text-faint">[{i + 1}]</span>
-                  <a
-                    href={e.sourceUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-muted underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
-                  >
-                    {e.sourceTitle}
-                  </a>
+                  <SourceLabel evidence={e} />
                   <span className="font-mono text-faint">· {e.tool}</span>
                 </li>
               ))}

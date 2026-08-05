@@ -1,5 +1,6 @@
 import { llmModelId, llmProvider } from "@/lib/llm";
 import type {
+  Attachment,
   Brief,
   BriefInput,
   BriefResult,
@@ -17,6 +18,8 @@ import {
 } from "@/lib/demo/scenario";
 import { resolveEntity } from "./resolve";
 import { gather } from "./gather";
+import { extractAttachmentEvidence } from "./attachments";
+import { mergeEvidence } from "./grounding";
 import { synthesizeBrief } from "./synthesize";
 
 export interface GenerateBriefOptions {
@@ -27,6 +30,10 @@ export interface GenerateBriefOptions {
   /** Demo mode: use the scripted entity + evidence instead of resolve/gather.
    *  Synthesis still runs for real, so the brief is genuinely generated. */
   demo?: boolean;
+  /** Documents the rep supplied for this brief (#99). Read during the gather
+   *  stage, then dropped — they are never part of `BriefInput`, so they cannot
+   *  reach the returned `BriefResult` or anything that persists it. */
+  attachments?: Attachment[];
 }
 
 /**
@@ -36,7 +43,7 @@ export interface GenerateBriefOptions {
  */
 export async function generateBrief(
   input: BriefInput,
-  { onProgress, sessionId, demo = false }: GenerateBriefOptions = {},
+  { onProgress, sessionId, demo = false, attachments = [] }: GenerateBriefOptions = {},
 ): Promise<BriefResult> {
   // Wrap the whole pipeline in one observation so resolve, each gather tool, and
   // synthesis nest under a single per-brief trace in Langfuse (#15). Input is set
@@ -44,8 +51,16 @@ export async function generateBrief(
   // session id groups a user's briefs in the Langfuse Sessions view.
   return withObservation(
     "brief",
-    { company: input.company, person: input.person, context: input.context, demo },
-    () => runPipeline(input, onProgress, demo),
+    {
+      company: input.company,
+      person: input.person,
+      context: input.context,
+      demo,
+      // Count only — an attachment's contents are the rep's, and a trace is one
+      // more place they'd outlive the request.
+      attachments: attachments.length,
+    },
+    () => runPipeline(input, onProgress, demo, attachments),
     (result) => ({
       entity: result.entity.company.name,
       sources: result.evidence.length,
@@ -59,6 +74,7 @@ async function runPipeline(
   input: BriefInput,
   onProgress?: (stage: BriefStage) => void,
   demo = false,
+  attachments: Attachment[] = [],
 ): Promise<BriefResult> {
   const start = Date.now();
 
@@ -82,7 +98,17 @@ async function runPipeline(
     await pause(DEMO_STAGE_MS.gathering);
     evidence = DEMO_EVIDENCE;
   } else {
-    evidence = (await gather(entity)).evidence;
+    // Public sources and rep-supplied documents are independent, so they run
+    // together and the stage costs whichever is slower rather than the sum.
+    // Reading attachments is part of gathering as far as the UI is concerned —
+    // no new stage, no change to the streaming protocol.
+    const [gathered, fromAttachments] = await Promise.all([
+      gather(entity),
+      extractAttachmentEvidence(attachments, entity),
+    ]);
+    // Public evidence keeps the low citation ids; `mergeEvidence` appends the
+    // attachment claims with contiguous ids and drops anything already covered.
+    evidence = mergeEvidence(gathered.evidence, fromAttachments);
   }
 
   onProgress?.("synthesizing");

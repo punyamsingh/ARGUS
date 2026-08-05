@@ -47,6 +47,53 @@ export const briefInputSchema = z.object({
 });
 export type BriefInput = z.infer<typeof briefInputSchema>;
 
+// ── Attachments (#99) ────────────────────────────────────────
+
+/**
+ * A document the rep supplies for one brief — an RFP, a deck the buyer shared,
+ * notes from a prior call. The one evidence source the public tool belt can
+ * never reach.
+ *
+ * Deliberately **not** part of `briefInputSchema`. Attachments ride alongside
+ * the input on the request body (the same way `demo` does), which is what makes
+ * "never stored" structural rather than a promise: `BriefResult.input` is the
+ * shape that gets written to the `brief` row and re-sent with every follow-up,
+ * and an attachment cannot reach it. A file lives for the duration of the one
+ * request that reads it. What persists is the extracted `Evidence`, on the same
+ * footing as any other source.
+ */
+export const ATTACHMENT_MEDIA_TYPES = [
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "text/plain",
+  "text/markdown",
+  "text/csv",
+] as const;
+export const attachmentMediaTypeSchema = z.enum(ATTACHMENT_MEDIA_TYPES);
+export type AttachmentMediaType = z.infer<typeof attachmentMediaTypeSchema>;
+
+export const attachmentSchema = z.object({
+  /** Original filename — shown as the source title, never used as a path. */
+  name: z.string().trim().min(1).max(200),
+  mediaType: attachmentMediaTypeSchema,
+  /** Base64 payload, without a `data:` prefix. */
+  data: z.string().min(1),
+});
+export type Attachment = z.infer<typeof attachmentSchema>;
+
+/**
+ * Caps, chosen against two hard ceilings: Vercel's ~4.5MB request body (base64
+ * inflates by a third, so 3MB of files is ~4MB on the wire) and the sub-minute
+ * brief budget, which allows a handful of extractions in parallel and no more.
+ */
+export const ATTACHMENT_LIMITS = {
+  maxCount: 3,
+  maxBytes: 1_500_000,
+  maxTotalBytes: 3_000_000,
+} as const;
+
 // ── Entity resolution output (#4) ────────────────────────────
 // Carries the identifiers each gather tool needs to fire.
 

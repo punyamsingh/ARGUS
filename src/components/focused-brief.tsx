@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import type { BriefInput, BriefResult } from "@/types/brief";
+import type { Attachment, BriefInput, BriefResult } from "@/types/brief";
 import { useSession } from "@/lib/auth/client";
 import { resolveBrief } from "@/lib/briefs/library";
+import { takePendingAttachments } from "@/lib/attachments-client";
 import {
   PENDING_BRIEF_KEY,
   parsePendingBrief,
@@ -33,6 +34,9 @@ export function FocusedBrief({ id }: { id: string }) {
   const inputRef = useRef<BriefInput | null>(null);
   const demoRef = useRef(false);
   const startedRef = useRef(false);
+  /** Held for this page's lifetime only, so Retry re-sends the same documents.
+   *  Never written anywhere — when the page goes, so do they (#99). */
+  const attachmentsRef = useRef<Attachment[]>([]);
   /** Mirrors `demoRef` as state, so the demo control can react to it. */
   const [demoRun, setDemoRun] = useState(false);
 
@@ -65,6 +69,10 @@ export function FocusedBrief({ id }: { id: string }) {
       }
       inputRef.current = pending.input;
       demoRef.current = pending.demo === true;
+      // Handed over in memory rather than through sessionStorage. A hard reload
+      // of this URL therefore has none, and the brief runs on public sources
+      // alone — the right way for this to fail.
+      attachmentsRef.current = takePendingAttachments();
       setDemoRun(demoRef.current);
       void run(
         pending.input,
@@ -75,7 +83,7 @@ export function FocusedBrief({ id }: { id: string }) {
           const url = savedId ?? r.meta.generatedAt;
           router.replace(`/brief/${encodeURIComponent(url)}`);
         },
-        { demo: demoRef.current },
+        { demo: demoRef.current, attachments: attachmentsRef.current },
       );
     } else {
       void resolveBrief(id, signedIn).then((found) => {
@@ -121,6 +129,7 @@ export function FocusedBrief({ id }: { id: string }) {
               if (inputRef.current) {
                 void run(inputRef.current, undefined, {
                   demo: demoRef.current,
+                  attachments: attachmentsRef.current,
                 });
               }
             }}

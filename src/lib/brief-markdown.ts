@@ -4,6 +4,7 @@ import type {
   Evidence,
   GuidanceItem,
 } from "@/types/brief";
+import { isLinkedEvidence } from "@/lib/evidence-source";
 
 /**
  * Serialise a generated brief to clean, portable Markdown — for the copy and
@@ -77,13 +78,24 @@ export function briefToMarkdown(result: BriefResult): string {
   return out.join("\n").trim() + "\n";
 }
 
-/** Render the evidence as a numbered Markdown link list, escaping titles and URLs. */
+/**
+ * Render the evidence as a numbered Markdown list, escaping titles and URLs.
+ *
+ * Public sources are links. An attachment (#99) has no destination, so it is
+ * written as plain text with a note — a copied brief travels further than the
+ * app does, and an `attachment://` link would arrive in someone's inbox looking
+ * like a source they could open.
+ */
 function sourcesList(evidence: Evidence[]): string {
   return evidence
-    .map(
-      (e, i) =>
-        `${i + 1}. [${escapeMdText(e.sourceTitle)}](${escapeMdUrl(e.sourceUrl)}) — ${escapeMdText(e.tool)}`,
-    )
+    .map((e, i) => {
+      const title = escapeMdText(e.sourceTitle);
+      const tool = escapeMdText(e.tool);
+      if (!isLinkedEvidence(e.sourceUrl)) {
+        return `${i + 1}. ${title} (attached document, not stored) — ${tool}`;
+      }
+      return `${i + 1}. [${title}](${escapeMdUrl(e.sourceUrl)}) — ${tool}`;
+    })
     .join("\n");
 }
 
