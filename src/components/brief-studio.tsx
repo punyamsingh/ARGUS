@@ -639,10 +639,23 @@ function AttachmentPicker({
               // Same well as a text field — border, radius and ground all
               // match, so an attached file sits at the same depth as the
               // values typed above it.
-              className="flex items-center gap-2 rounded-xl border border-line bg-ink-2 py-1.5 pl-3.5 pr-1.5"
+              //
+              // `min-w-0` is load-bearing, not decoration: a grid item defaults
+              // to `min-width: auto`, which lets the row size to its content,
+              // so a long filename pushed the whole card past its column and no
+              // amount of `truncate` on the child could pull it back.
+              className="flex min-w-0 items-center gap-2 rounded-xl border border-line bg-ink-2 py-1.5 pl-3.5 pr-1.5"
             >
-              <span className="min-w-0 flex-1 truncate text-[13px] text-ivory">
-                {a.name}
+              {/* Split so the extension survives truncation. End-ellipsis eats
+                  exactly the ".pdf" / ".txt" that tells two attachments apart,
+                  which is the one part of a long filename worth keeping. Full
+                  name on hover. */}
+              <span
+                title={a.name}
+                className="flex min-w-0 flex-1 text-[13px] text-ivory"
+              >
+                <span className="truncate">{splitFileName(a.name)[0]}</span>
+                <span className="shrink-0">{splitFileName(a.name)[1]}</span>
               </span>
               <span className="shrink-0 font-mono text-[10px] text-faint">
                 {formatBytes(attachmentBytes(a))}
@@ -701,10 +714,26 @@ function AttachmentPicker({
       </button>
 
       {note && (
-        <p className="mt-1.5 text-[11px] leading-relaxed text-muted">{note}</p>
+        // `break-words`: the note quotes filenames, and a long one carries no
+        // spaces to wrap at, so without this it runs past the card too.
+        <p className="mt-1.5 break-words text-[11px] leading-relaxed text-muted">
+          {note}
+        </p>
       )}
     </div>
   );
+}
+
+/**
+ * Split a filename into stem and extension for display.
+ *
+ * Returns the whole name as the stem when there's nothing useful to split on —
+ * no dot, or a leading-dot name like `.env`, where the "extension" is the name.
+ */
+function splitFileName(name: string): [stem: string, extension: string] {
+  const dot = name.lastIndexOf(".");
+  if (dot <= 0) return [name, ""];
+  return [name.slice(0, dot), name.slice(dot)];
 }
 
 /**
