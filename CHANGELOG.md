@@ -1,3 +1,9 @@
+## [3.19.0](https://github.com/punyamsingh/ARGUS/compare/v3.18.2...v3.19.0) (2026-08-05)
+
+### Features
+
+* **agent:** read rep-supplied attachments as brief evidence ([#116](https://github.com/punyamsingh/ARGUS/issues/116)) ([80b68b9](https://github.com/punyamsingh/ARGUS/commit/80b68b9e97d919addbf7f0423f2335b45d2942b7))
+
 ## [3.18.2](https://github.com/punyamsingh/ARGUS/compare/v3.18.1...v3.18.2) (2026-08-05)
 
 ### Bug Fixes
