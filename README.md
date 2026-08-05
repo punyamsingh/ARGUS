@@ -65,6 +65,14 @@ The tool belt today: **Wikipedia/Wikidata**, **company website**, **job boards**
 (Greenhouse/Lever), **GDELT** news & sentiment, **SEC EDGAR** filings. All free,
 most keyless.
 
+You can also **attach a document** — an RFP, a deck the buyer shared, notes from
+the last call. It's read into the same evidence store as everything else, so its
+claims are cited and answerable exactly like a filing. This is the one source
+the public belt can't reach, and it's what keeps a brief useful for a private
+company with no filings and no public job board. **Attachments are read for that
+one request and never stored** — what persists is the extracted claim, not the
+file.
+
 Once a brief exists you can **ask grounded follow-ups** beneath it — the same
 evidence base answers your questions, still cited, no invented extras.
 

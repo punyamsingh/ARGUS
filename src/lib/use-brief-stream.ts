@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type {
+  Attachment,
   BriefInput,
   BriefResult,
   BriefStage,
@@ -18,7 +19,9 @@ export type GenStatus = "idle" | "loading" | "done" | "error";
 export const PENDING_BRIEF_KEY = "argus.pending-brief";
 
 /** What the studio stashes under that key: the input plus the demo flag that
- *  was in effect when Generate was pressed. */
+ *  was in effect when Generate was pressed. Attachments (#99) are deliberately
+ *  absent — they hand over in memory instead (see `lib/attachments-client.ts`),
+ *  so nothing the rep uploads is written to browser storage either. */
 export type PendingBrief = { input: BriefInput; demo?: boolean };
 
 /** Read a stashed pending brief, tolerating the older bare-`BriefInput` shape. */
@@ -51,7 +54,10 @@ export function useBriefStream() {
     /** `savedId` is the brief's id in the signed-in user's account, or null when
      *  it wasn't saved there (signed out, demo, or the write failed). */
     onResult?: (r: BriefResult, savedId: string | null) => void,
-    { demo = false }: { demo?: boolean } = {},
+    {
+      demo = false,
+      attachments = [],
+    }: { demo?: boolean; attachments?: Attachment[] } = {},
   ) {
     setStatus("loading");
     setStage("resolving");
@@ -69,9 +75,15 @@ export function useBriefStream() {
           // Groups this browser's briefs into one Langfuse session.
           "x-argus-session-id": getSessionId(),
         },
-        // `demo` rides alongside the input — the route reads it separately, so
-        // the BriefInput contract is untouched.
-        body: JSON.stringify({ ...input, ...(demo ? { demo: true } : {}) }),
+        // `demo` and `attachments` ride alongside the input — the route reads
+        // them separately, so the BriefInput contract is untouched. For
+        // attachments that separation is load-bearing: it's what keeps them out
+        // of the saved brief and out of follow-up requests (#99).
+        body: JSON.stringify({
+          ...input,
+          ...(demo ? { demo: true } : {}),
+          ...(attachments.length ? { attachments } : {}),
+        }),
       });
 
       // Validation failures come back as a plain JSON error (4xx).
