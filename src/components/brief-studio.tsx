@@ -615,22 +615,23 @@ function SellerPanel({
             readOnly={locked}
             lines={2}
           />
-          <div className="flex items-center justify-between gap-3">
+          {/* Demo mode keeps its note — a presenter needs to know the scripted
+              profile isn't overwriting their own. The two never appear
+              together: Clear is hidden while locked. */}
+          {locked && (
             <p className="text-[11px] leading-relaxed text-faint">
-              {locked
-                ? "Scripted for the demo — your own saved profile is untouched."
-                : "Remembered on this device. Only “what you sell” is used to tailor; never invented."}
+              Scripted for the demo — your own saved profile is untouched.
             </p>
-            {configured && !locked && (
-              <button
-                type="button"
-                onClick={onClear}
-                className="shrink-0 text-[11px] text-faint underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
-              >
-                Clear
-              </button>
-            )}
-          </div>
+          )}
+          {configured && !locked && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="justify-self-end text-[11px] text-faint underline decoration-line-strong underline-offset-2 transition-colors hover:text-ivory"
+            >
+              Clear
+            </button>
+          )}
         </div>
       )}
     </div>
