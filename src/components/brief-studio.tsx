@@ -219,6 +219,29 @@ export function BriefStudio() {
             onChange={setMeetingType}
             locked={demo}
           />
+
+          {/* Optional refinement sits *above* the submit, not below it: a
+              Generate button followed by more inputs reads as the end of the
+              form, so "Your product" was easy to miss entirely. Collapsed by
+              default, so the 3-field path is still the shortest one. */}
+          <SellerPanel
+            open={demo || sellerOpen}
+            onToggle={() => setSellerOpen((v) => !v)}
+            configured={demo || !!savedSeller}
+            locked={demo}
+            company={demo ? (demoSeller?.company ?? "") : sellerCompany}
+            onCompany={setSellerCompany}
+            offering={demo ? (demoSeller?.offering ?? "") : offering}
+            onOffering={setOffering}
+            valueProp={demo ? (demoSeller?.valueProp ?? "") : valueProp}
+            onValueProp={setValueProp}
+            competitors={
+              demo ? (demoSeller?.competitors.join(", ") ?? "") : competitors
+            }
+            onCompetitors={setCompetitors}
+            onClear={clearSeller}
+          />
+
           <button
             type="submit"
             disabled={!canSubmit}
@@ -249,24 +272,6 @@ export function BriefStudio() {
             "Fill in the company, who you're meeting and the meeting context to run."
           )}
         </p>
-
-        <SellerPanel
-          open={demo || sellerOpen}
-          onToggle={() => setSellerOpen((v) => !v)}
-          configured={demo || !!savedSeller}
-          locked={demo}
-          company={demo ? (demoSeller?.company ?? "") : sellerCompany}
-          onCompany={setSellerCompany}
-          offering={demo ? (demoSeller?.offering ?? "") : offering}
-          onOffering={setOffering}
-          valueProp={demo ? (demoSeller?.valueProp ?? "") : valueProp}
-          onValueProp={setValueProp}
-          competitors={
-            demo ? (demoSeller?.competitors.join(", ") ?? "") : competitors
-          }
-          onCompetitors={setCompetitors}
-          onClear={clearSeller}
-        />
 
         {history.length > 0 && (
           <RecentBriefs
@@ -439,6 +444,11 @@ function MeetingTypePicker({
  * (progressive disclosure); set once and remembered so every brief is tailored
  * to what the rep sells. Company + what-you-sell are the only fields that matter;
  * the rest sharpen fit. Clearing removes the saved profile.
+ *
+ * It lives inside the form card, one step above Generate, so it's styled as an
+ * inset section rather than a card of its own: `ink-2` is the same ground the
+ * inputs sit on, which puts it at the level of "another field" instead of
+ * competing with the card that holds it.
  */
 function SellerPanel({
   open,
@@ -471,15 +481,18 @@ function SellerPanel({
   onClear: () => void;
 }) {
   return (
-    <div className="mt-4">
+    <div className="mt-3 overflow-hidden rounded-xl border border-line">
+      {/* The header carries the input ground so the collapsed row reads like
+          one more field; the body drops back to the card's ground so the
+          inputs inside it are wells, exactly as they are further up. */}
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         disabled={locked}
-        className="flex w-full items-center justify-between rounded-xl border border-line bg-surface/90 px-4 py-3 text-left transition-colors hover:border-line-strong disabled:cursor-default"
+        className="flex w-full items-center justify-between bg-ink-2 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-ink-2"
       >
-        <span className="flex items-center gap-2 text-[13px] text-ivory">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-ivory">
           Your product
           <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
             {locked
@@ -493,7 +506,7 @@ function SellerPanel({
       </button>
 
       {open && (
-        <div className="mt-2 grid gap-3 rounded-xl border border-line bg-surface/90 p-4">
+        <div className="grid gap-3 border-t border-line p-3.5">
           <div className="grid gap-3 sm:grid-cols-2">
             <Field
               label="Your company"
