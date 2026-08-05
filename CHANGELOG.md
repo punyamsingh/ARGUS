@@ -1,3 +1,9 @@
+## [3.18.1](https://github.com/punyamsingh/ARGUS/compare/v3.18.0...v3.18.1) (2026-08-05)
+
+### Bug Fixes
+
+* **ui:** re-cast the example brief card on redBus ([#114](https://github.com/punyamsingh/ARGUS/issues/114)) ([0b368a7](https://github.com/punyamsingh/ARGUS/commit/0b368a72a51f6d879aba35707ab2c3151f3f5fd8))
+
 ## [3.18.0](https://github.com/punyamsingh/ARGUS/compare/v3.17.1...v3.18.0) (2026-08-05)
 
 ### Features
