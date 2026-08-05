@@ -14,8 +14,9 @@ import { jsonHeaders as HEADERS, stripLegalSuffix } from "./shared";
  *  - GDELT rate-limits aggressively (HTTP 429), especially from shared serverless
  *    IPs — so requests are sequential, retried with backoff, and the second pass
  *    is skipped when the first comes back empty.
- *  - Exact-phrase queries on a legal name ("Stripe, Inc.") match almost nothing,
- *    so we search the cleaned company name and only quote multi-word terms.
+ *  - Exact-phrase queries on a legal name ("Titan Company Limited") match almost
+ *    nothing, so we search the cleaned company name and only quote multi-word
+ *    terms.
  *
  * Quiet companies (or a persistently throttled IP) return little, gracefully.
  */
@@ -138,10 +139,10 @@ async function query(
  * Build a GDELT search term from the company name: drop a trailing legal suffix
  * (Inc., LLC, Ltd, …) so coverage actually matches, always quote the name for a
  * phrase match, and — crucially — AND in an industry context clause when known.
- * Company names are often common words ("Stripe", "Apple"); requiring the name
+ * Company names are often common words ("Titan", "Bharat"); requiring the name
  * AND an industry term keeps results on-topic instead of matching the dictionary
- * word. GDELT ANDs space-separated terms, so `"Stripe" (financial OR saas)`
- * means: mentions Stripe and at least one industry term. NB: GDELT only allows
+ * word. GDELT ANDs space-separated terms, so `"Titan" (jewellery OR watches)`
+ * means: mentions Titan and at least one industry term. NB: GDELT only allows
  * parentheses around an OR group — a single term must be appended bare, or it
  * rejects the query ("Parentheses may only be used around OR'd statements").
  */

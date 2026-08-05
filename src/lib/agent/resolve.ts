@@ -10,7 +10,7 @@ import {
 /**
  * Entity resolution (#4) — the keystone that unblocks the tool belt.
  *
- * "Meeting Jane Smith at Acme" → which Jane, which Acme. Produces a
+ * "Meeting Ananya Deshmukh at Nykaa" → which Ananya, which Nykaa. Produces a
  * `ResolvedEntity` carrying the identifiers later tools need (domain, ticker,
  * isPublic, role) plus a confidence score and ambiguity candidates.
  *
@@ -25,7 +25,7 @@ Given a company, a person, and meeting context, identify the most likely real-wo
 
 Resolve only what you are reasonably confident about — never invent facts:
 - company.name: the canonical company name
-- company.domain: official website domain (e.g. "stripe.com") — omit if unsure
+- company.domain: official website domain (e.g. "nykaa.com") — omit if unsure
 - company.industry: a short industry label
 - company.isPublic: true only for companies you are confident are publicly listed
 - company.ticker: stock ticker ONLY when isPublic and you are confident — otherwise omit

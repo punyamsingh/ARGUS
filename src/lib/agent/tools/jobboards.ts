@@ -181,7 +181,7 @@ function candidateSlugs(entity: ResolvedEntity): string[] {
   push(entity.company.jobBoardSlug);
   push(secondLevelDomain(entity.company.domain));
   push(entity.company.name);
-  // A no-spaces fallback for multi-word names ("Acme Corp" → "acmecorp").
+  // A no-spaces fallback for multi-word names ("Tattva Analytics" → "tattvaanalytics").
   push(entity.company.name?.replace(/\s+/g, ""));
 
   return out;

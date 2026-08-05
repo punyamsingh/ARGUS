@@ -11,7 +11,7 @@ const PIPELINE = [
   {
     step: "01",
     title: "Resolve",
-    body: "Turn “meeting Jane at Acme” into concrete entities — domain, ticker, filing id, job-board slug — that tools can act on.",
+    body: "Turn “meeting Ananya at Nykaa” into concrete entities — domain, ticker, filing id, job-board slug — that tools can act on.",
   },
   {
     step: "02",

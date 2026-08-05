@@ -15,21 +15,21 @@ import { fromRow, toRow, toSummary } from "./map";
 function makeResult(overrides: Partial<BriefResult["meta"]> = {}): BriefResult {
   return {
     input: {
-      company: "Acme",
-      person: "Jane Smith",
+      company: "Vayu Analytics",
+      person: "Priya Sharma",
       context: "renewal call",
       meetingType: "renewal",
     },
     entity: {
-      company: { name: "Acme Corp", isPublic: false },
-      person: { name: "Jane Smith", role: "VP Engineering" },
+      company: { name: "Vayu Analytics Ltd", isPublic: false },
+      person: { name: "Priya Sharma", role: "VP Engineering" },
       confidence: 0.9,
       candidates: [],
     },
     evidence: [
       {
         id: "e1",
-        claim: "Acme raised a Series B.",
+        claim: "Vayu Analytics raised a Series B.",
         sourceUrl: "https://example.com/news",
         sourceTitle: "Example News",
         tool: "wikipedia",
@@ -37,7 +37,7 @@ function makeResult(overrides: Partial<BriefResult["meta"]> = {}): BriefResult {
       },
     ],
     brief: {
-      snapshot: "Acme Corp, a private company.",
+      snapshot: "Vayu Analytics Ltd, a private company.",
       objective: "Renew the contract.",
       talkingPoints: [{ text: "They raised a Series B.", citations: ["e1"] }],
       riskAlerts: [],
@@ -63,9 +63,9 @@ describe("toRow", () => {
     const row = toRow("id-1", "user-1", makeResult());
 
     // Company and person come from the *resolved* entity, not the raw input —
-    // "Acme" in, "Acme Corp" on the row.
-    expect(row.company).toBe("Acme Corp");
-    expect(row.person).toBe("Jane Smith");
+    // "Vayu Analytics" in, "Vayu Analytics Ltd" on the row.
+    expect(row.company).toBe("Vayu Analytics Ltd");
+    expect(row.person).toBe("Priya Sharma");
     expect(row.context).toBe("renewal call");
     expect(row.meeting_type).toBe("renewal");
     expect(row.generated_at).toBe("2026-08-04T10:00:00.000Z");
@@ -115,8 +115,8 @@ describe("toSummary", () => {
     expect(
       toSummary({
         id: "id-1",
-        company: "Acme Corp",
-        person: "Jane Smith",
+        company: "Vayu Analytics Ltd",
+        person: "Priya Sharma",
         context: "renewal call",
         generated_at: "2026-08-04T10:00:00.000Z",
         demo: false,
@@ -124,8 +124,8 @@ describe("toSummary", () => {
       }),
     ).toEqual({
       id: "id-1",
-      company: "Acme Corp",
-      person: "Jane Smith",
+      company: "Vayu Analytics Ltd",
+      person: "Priya Sharma",
       context: "renewal call",
       generatedAt: "2026-08-04T10:00:00.000Z",
       demo: false,

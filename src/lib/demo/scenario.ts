@@ -14,38 +14,50 @@ import type { BriefInput, Evidence, ResolvedEntity } from "@/types/brief";
  * resolves — click-through survives a live demo). Figures are point-in-time as
  * of `RETRIEVED_AT` and are not refreshed; treat this file as demo data, never
  * as a source of truth about the company.
+ *
+ * Note on the tool belt: Nykaa files with the NSE and BSE, not the SEC, so the
+ * `edgar` tool has nothing to say about it and no evidence here claims to come
+ * from one. That gap is real — an Indian-listings tool is not built yet — and
+ * the demo shows the belt honestly short rather than inventing a source.
  */
 
 /** When this snapshot was taken — surfaced as each source's retrieval time. */
-const RETRIEVED_AT = "2026-07-28T09:12:00.000Z";
+const RETRIEVED_AT = "2026-07-30T09:12:00.000Z";
 
-/** The buyer contact is fictional; the company and its sources are real. */
+/**
+ * The buyer contact and the selling company are fictional; the company being
+ * researched and every source below are real. `person` is deliberately not any
+ * of Nykaa's actual named executives.
+ */
 export const DEMO_INPUT: BriefInput = {
-  company: "Snowflake",
-  person: "Dana Whitfield",
-  context: "Renewal + platform expansion review ahead of their Q3 planning",
+  company: "Nykaa",
+  person: "Ananya Deshmukh",
+  context:
+    "Renewal + expansion review ahead of their festive quarter and FY27 fulfilment plan",
   meetingType: "renewal",
   seller: {
-    company: "Cobalt Systems",
+    company: "Lekha Systems",
     offering:
-      "warehouse cost observability — per-query spend attribution and idle-warehouse detection for Snowflake and Databricks",
+      "fulfilment cost observability for omnichannel retail — per-order margin attribution and return-reason detection across warehouses, stores and rapid-delivery hubs",
     valueProp:
-      "cut warehouse spend 20–30% without slowing analytics teams down",
-    competitors: ["Monte Carlo", "Select Star"],
+      "recover 3–5 points of contribution margin per order without slowing delivery promises",
+    competitors: ["Increff", "Unicommerce"],
   },
 };
 
 export const DEMO_ENTITY: ResolvedEntity = {
   company: {
-    name: "Snowflake Inc.",
-    domain: "snowflake.com",
-    industry: "Cloud data platform",
+    name: "FSN E-Commerce Ventures Ltd. (Nykaa)",
+    domain: "nykaa.com",
+    industry: "Beauty, fashion & lifestyle e-commerce",
     isPublic: true,
-    ticker: "SNOW",
-    cik: "0001640147",
-    jobBoardSlug: "snowflake",
+    ticker: "NYKAA",
+    jobBoardSlug: "nykaa",
   },
-  person: { name: "Dana Whitfield", role: "VP, Data Platform Engineering" },
+  person: {
+    name: "Ananya Deshmukh",
+    role: "VP, Fulfilment & Retail Technology",
+  },
   confidence: 0.96,
   candidates: [],
 };
@@ -54,84 +66,76 @@ export const DEMO_EVIDENCE: Evidence[] = [
   {
     id: "e1",
     claim:
-      "Fiscal-year product revenue of $3.46B, up 29% year over year (FY ended January 31, 2025).",
-    sourceUrl:
-      "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001640147&type=10-K",
-    sourceTitle: "Snowflake Inc. — annual report (10-K), SEC EDGAR",
-    tool: "edgar",
+      "FY26 revenue from operations of ₹10,022 crore, up 26% year over year — the first year past the $1 billion mark (FY ended March 31, 2026).",
+    sourceUrl: "https://www.nykaa.com/investor-relations",
+    sourceTitle: "FSN E-Commerce Ventures (Nykaa) — investor relations",
+    tool: "financials",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e2",
     claim:
-      "Remaining performance obligations of $6.9B, up 33% year over year — a large contracted backlog ahead of renewals.",
+      "FY26 GMV of ₹19,963 crore, up 28%, with EBITDA margin expanding to 7.5% from 6.0% a year earlier — growth and margin moving together.",
     sourceUrl:
-      "https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=0001640147&type=10-Q",
-    sourceTitle: "Snowflake Inc. — quarterly report (10-Q), SEC EDGAR",
-    tool: "edgar",
+      "https://www.nykaa.com/media/wysiwyg/uiTools/2026-5/Investor-Presentation-Q4-2026.pdf",
+    sourceTitle: "Nykaa — investor presentation, Q4 & FY26",
+    tool: "financials",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e3",
     claim:
-      "Management guidance flagged elevated GPU and AI-infrastructure spend compressing product gross margin.",
-    sourceUrl: "https://investors.snowflake.com/quarterly-results/",
-    sourceTitle: "Snowflake investor relations — quarterly results",
+      "Publicly listed on the NSE and BSE under the ticker NYKAA; GMV, net revenue and segment margin are reported quarterly for Beauty and Fashion separately.",
+    sourceUrl: "https://finance.yahoo.com/quote/NYKAA.NS/",
+    sourceTitle: "NYKAA.NS — market data",
     tool: "financials",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e4",
     claim:
-      "Publicly traded on the NYSE under the ticker SNOW; consumption-based revenue model reported quarterly.",
-    sourceUrl: "https://finance.yahoo.com/quote/SNOW/",
-    sourceTitle: "SNOW — market data",
-    tool: "financials",
+      "Founded in 2012 by Falguni Nayar and headquartered in Mumbai; began in beauty and expanded into fashion, men's and an eB2B distribution arm.",
+    sourceUrl: "https://en.wikipedia.org/wiki/Nykaa",
+    sourceTitle: "Nykaa — Wikipedia",
+    tool: "wikipedia",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e5",
     claim:
-      "Founded in 2012; a cloud data platform that separates storage from compute across AWS, Azure and Google Cloud.",
-    sourceUrl: "https://en.wikipedia.org/wiki/Snowflake_Inc.",
-    sourceTitle: "Snowflake Inc. — Wikipedia",
-    tool: "wikipedia",
+      "Runs several platforms off one operation — Nykaa Fashion, Nykaa Man and the Superstore eB2B business — alongside a house of owned brands.",
+    sourceUrl: "https://www.nykaa.com/who_are_we",
+    sourceTitle: "Nykaa — who we are",
+    tool: "website",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e6",
     claim:
-      "17 open roles in data-platform and FinOps engineering, including a “Staff Engineer, Warehouse Efficiency”.",
-    sourceUrl: "https://careers.snowflake.com/us/en/search-results",
-    sourceTitle: "Snowflake careers — open roles",
-    tool: "jobboards",
+      "FY26 coverage led with the $1 billion revenue milestone and a profit surge, with net profit up 183% year over year to ₹204 crore.",
+    sourceUrl:
+      "https://www.indianretailer.com/news/retail-india-news-nykaa-crosses-1-bn-revenue-mark-fy26-profit-surges",
+    sourceTitle: "Nykaa crosses $1bn revenue mark in FY26 — Indian Retailer",
+    tool: "gdelt",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e7",
     claim:
-      "Product pages now lead with cost governance — budgets, resource monitors and per-warehouse spend controls.",
-    sourceUrl: "https://www.snowflake.com/en/product/",
-    sourceTitle: "Snowflake — product overview",
-    tool: "website",
+      "Omnichannel footprint now spans 313 stores across 99 cities and 44 warehouses across 15 cities, plus a two-hour rapid-delivery network (Nykaa Now).",
+    sourceUrl:
+      "https://thestrategystory.com/blog/nykaa-business-strategy-in-2026-growth-strategy-ai-omnichannel-expansion/",
+    sourceTitle: "Nykaa business strategy 2026 — omnichannel expansion",
+    tool: "gdelt",
     retrievedAt: RETRIEVED_AT,
   },
   {
     id: "e8",
     claim:
-      "Newsroom coverage of their annual summit paired AI workload launches with customer pressure on compute cost.",
-    sourceUrl: "https://investors.snowflake.com/news/",
-    sourceTitle: "Snowflake newsroom",
-    tool: "gdelt",
-    retrievedAt: RETRIEVED_AT,
-  },
-  {
-    id: "e9",
-    claim:
-      "The snowflakedb GitHub org maintains the official connectors and Snowpark tooling, with heavy recent CLI activity.",
-    sourceUrl: "https://github.com/snowflakedb",
-    sourceTitle: "snowflakedb on GitHub",
-    tool: "github",
+      "Careers site is hiring across technology, supply chain and retail operations, including warehouse and last-mile roles.",
+    sourceUrl: "https://careers.nykaa.com/",
+    sourceTitle: "Nykaa careers — open roles",
+    tool: "jobboards",
     retrievedAt: RETRIEVED_AT,
   },
 ];
