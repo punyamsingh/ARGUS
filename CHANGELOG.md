@@ -1,3 +1,11 @@
+## [3.18.2](https://github.com/punyamsingh/ARGUS/compare/v3.18.1...v3.18.2) (2026-08-05)
+
+### Bug Fixes
+
+* **ui:** drop the storage note under the seller fields ([c4685ed](https://github.com/punyamsingh/ARGUS/commit/c4685ed02c6045d022f40bc9203114fc16cba89a))
+* **ui:** let the studio form breathe, and use the width it takes ([519949d](https://github.com/punyamsingh/ARGUS/commit/519949dc92c7ecdb9cc40edae47f43d8c818f203))
+* **ui:** put "Your product" above Generate, not after it ([1eb1d5b](https://github.com/punyamsingh/ARGUS/commit/1eb1d5b9e0edee5714212dda2ee42ee99cfda6d5))
+
 ## [3.18.1](https://github.com/punyamsingh/ARGUS/compare/v3.18.0...v3.18.1) (2026-08-05)
 
 ### Bug Fixes
