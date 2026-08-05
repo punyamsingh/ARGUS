@@ -195,14 +195,14 @@ export function BriefStudio() {
               label="Company"
               value={demo ? DEMO_INPUT.company : company}
               onChange={setCompany}
-              placeholder="e.g. Stripe"
+              placeholder="e.g. Swiggy"
               readOnly={demo}
             />
             <Field
               label="Who you're meeting"
               value={demo ? DEMO_INPUT.person : person}
               onChange={setPerson}
-              placeholder="e.g. Jane Doe"
+              placeholder="e.g. Priya Sharma"
               readOnly={demo}
             />
           </div>
@@ -499,14 +499,14 @@ function SellerPanel({
               label="Your company"
               value={company}
               onChange={onCompany}
-              placeholder="e.g. Acme Analytics"
+              placeholder="e.g. Tattva Analytics"
               readOnly={locked}
             />
             <Field
               label="Named competitors (comma-separated)"
               value={competitors}
               onChange={onCompetitors}
-              placeholder="e.g. Looker, Mode"
+              placeholder="e.g. Increff, Unicommerce"
               readOnly={locked}
             />
           </div>
@@ -514,7 +514,7 @@ function SellerPanel({
             label="What you sell"
             value={offering}
             onChange={onOffering}
-            placeholder="e.g. self-serve product analytics for B2B SaaS"
+            placeholder="e.g. self-serve retail analytics for D2C brands"
             readOnly={locked}
           />
           <Field

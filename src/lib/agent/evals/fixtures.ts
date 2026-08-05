@@ -21,12 +21,12 @@ const AT = "2026-06-28T00:00:00.000Z";
 const publicCo: BriefFixture = {
   name: "public-company-with-seller-fit",
   evidence: [
-    { id: "e1", claim: "Reported 28% YoY revenue growth in latest 10-Q.", sourceUrl: "https://www.sec.gov/edgar/acme-10q", sourceTitle: "Acme 10-Q", tool: "edgar", retrievedAt: AT },
-    { id: "e2", claim: "Opened 14 backend/data-platform roles this quarter.", sourceUrl: "https://boards.greenhouse.io/acme", sourceTitle: "Acme careers", tool: "jobboards", retrievedAt: AT },
-    { id: "e3", claim: "Recent press notes a push into self-serve analytics.", sourceUrl: "https://news.example.com/acme-analytics", sourceTitle: "Acme analytics push", tool: "gdelt", retrievedAt: AT },
+    { id: "e1", claim: "Reported 28% YoY revenue growth in its latest quarterly results.", sourceUrl: "https://example.com/vayu/q4-results", sourceTitle: "Vayu Analytics — quarterly results", tool: "financials", retrievedAt: AT },
+    { id: "e2", claim: "Opened 14 backend/data-platform roles this quarter.", sourceUrl: "https://boards.greenhouse.io/vayuanalytics", sourceTitle: "Vayu Analytics careers", tool: "jobboards", retrievedAt: AT },
+    { id: "e3", claim: "Recent press notes a push into self-serve analytics.", sourceUrl: "https://news.example.com/vayu-analytics", sourceTitle: "Vayu Analytics self-serve push", tool: "gdelt", retrievedAt: AT },
   ],
   brief: {
-    snapshot: "Acme Corp — enterprise analytics platform.",
+    snapshot: "Vayu Analytics — enterprise analytics platform.",
     objective: "Expansion conversation around their analytics roadmap.",
     talkingPoints: [
       { text: "Their 28% YoY growth signals budget for new tooling.", citations: ["e1"] },
@@ -51,10 +51,10 @@ const publicCo: BriefFixture = {
 const privateCo: BriefFixture = {
   name: "private-company-jobboard-signal",
   evidence: [
-    { id: "e1", claim: "Posted 6 senior SRE roles in the last 30 days.", sourceUrl: "https://jobs.lever.co/initech", sourceTitle: "Initech jobs", tool: "jobboards", retrievedAt: AT },
+    { id: "e1", claim: "Posted 6 senior SRE roles in the last 30 days.", sourceUrl: "https://jobs.lever.co/nirvaanlabs", sourceTitle: "Nirvaan Labs jobs", tool: "jobboards", retrievedAt: AT },
   ],
   brief: {
-    snapshot: "Initech — private infrastructure startup.",
+    snapshot: "Nirvaan Labs — private infrastructure startup.",
     objective: "Discovery call on their reliability tooling needs.",
     talkingPoints: [{ text: "Six new SRE openings suggest reliability is a current priority.", citations: ["e1"] }],
     riskAlerts: [],
@@ -72,7 +72,7 @@ const thin: BriefFixture = {
   name: "thin-evidence-degrades",
   evidence: [],
   brief: {
-    snapshot: "Globex — industrials.",
+    snapshot: "Bharat Industries — industrials.",
     objective: "Intro meeting.",
     talkingPoints: [],
     riskAlerts: [],
@@ -89,7 +89,7 @@ export const briefFixtures: BriefFixture[] = [publicCo, privateCo, thin];
 
 export const supportedAnswer: AskResult = {
   question: "What changed since their last earnings?",
-  answer: "They reported 28% YoY revenue growth in the latest 10-Q, with new analytics investment.",
+  answer: "They reported 28% YoY revenue growth in their latest quarterly results, with new analytics investment.",
   citations: ["e1"],
   supported: true,
   evidence: [publicCo.evidence[0]],

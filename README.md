@@ -52,7 +52,7 @@ input (company · person · context)
    identifiers      SEC EDGAR  (more landing)          piece of evidence
 ```
 
-1. **Resolve** — turn "meeting Jane at Acme" into concrete entities (domain,
+1. **Resolve** — turn "meeting Ananya at Nykaa" into concrete entities (domain,
    ticker, CIK, job-board slug, …) the tools can act on.
 2. **Gather** — every applicable tool fans out in parallel for real, cited
    evidence. Each tool self-routes (`appliesTo`), times out independently, and
@@ -159,8 +159,10 @@ On that route:
 - the studio form is laced with a scripted account — company, contact, meeting
   context and seller profile — and locked, so a walkthrough always runs the same
   known-good meeting;
-- **Resolve** and **Gather** are replaced by a fixed evidence store of nine real,
-  clickable public sources ([`src/lib/demo/scenario.ts`](./src/lib/demo/scenario.ts));
+- **Resolve** and **Gather** are replaced by a fixed evidence store of eight
+  real, clickable public sources
+  ([`src/lib/demo/scenario.ts`](./src/lib/demo/scenario.ts)) — a renewal review
+  with an Indian D2C account;
 - **Synthesis is still a real model call** — the brief an audience watches appear
   is genuinely written by the LLM, grounded in that evidence, in a few seconds
   and with no third-party rate limits;

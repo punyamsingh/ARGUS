@@ -69,7 +69,7 @@ export function ContactForm({ email }: { email: string }) {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Jane Okafor"
+            placeholder="Priya Sharma"
             autoComplete="name"
             className={inputClass}
           />
@@ -80,7 +80,7 @@ export function ContactForm({ email }: { email: string }) {
             type="email"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            placeholder="jane@company.com"
+            placeholder="priya@company.com"
             autoComplete="email"
             className={inputClass}
           />

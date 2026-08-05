@@ -18,7 +18,7 @@ the commodity part now. The value-determining, genuinely hard parts are:
    moat and the cost center, not the writing.
 2. **Not hallucinating.** The promise of <2% hallucination is only real if every claim
    is grounded in a retrieved source with a citation — never free-associated.
-3. **Entity resolution.** "Meeting Jane Smith at Acme" — *which* Jane, *which* Acme.
+3. **Entity resolution.** "Meeting Ananya Deshmukh at Nykaa" — *which* Ananya, *which* Nykaa.
    Get this wrong and the whole brief is confidently useless.
 
 Calendar sync, CRM integration, and team workspaces are real but are *plumbing* bolted

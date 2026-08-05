@@ -188,7 +188,7 @@ function secondLevelDomain(domain?: string): string | null {
   return parts.length >= 2 ? parts[parts.length - 2] : null;
 }
 
-/** Last two labels of a host, e.g. "blog.stripe.com" → "stripe.com". */
+/** Last two labels of a host, e.g. "blog.nykaa.com" → "nykaa.com". */
 function registrable(host: string): string {
   const parts = host.split(".").filter(Boolean);
   return parts.slice(-2).join(".");

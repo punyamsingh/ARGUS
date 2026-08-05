@@ -39,7 +39,7 @@ export const wikipediaTool: GatherTool = {
 
   async run(entity: ResolvedEntity, signal: AbortSignal): Promise<RawEvidence[]> {
     // Search returns several candidates; the bare company name often ranks a
-    // disambiguation page first (e.g. "Stripe"). Walk the results and take the
+    // disambiguation page first (e.g. "Nykaa"). Walk the results and take the
     // first real article with an extract.
     const titles = await searchTitles(entity.company.name, signal);
     let summary: WikiSummary | null = null;
