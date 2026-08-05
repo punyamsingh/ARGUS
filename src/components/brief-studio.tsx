@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import type { BriefResult, MeetingType, SellerProfile } from "@/types/brief";
 import { MEETING_TYPES } from "@/types/brief";
@@ -17,6 +17,21 @@ import { saveSellerProfile, useSellerProfile } from "@/lib/seller-profile";
 import { PENDING_BRIEF_KEY, type PendingBrief } from "@/lib/use-brief-stream";
 import { useDemoMode } from "@/lib/demo/mode";
 import { DEMO_INPUT, DEMO_TOOLS } from "@/lib/demo/scenario";
+
+/** Tailwind's `lg` breakpoint, as a value React can branch on. Only for
+ *  defaults that need to know whether the second column exists — layout itself
+ *  stays in CSS, so the server render is never wrong about it. */
+function useWideViewport() {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(min-width: 1024px)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => false,
+  );
+}
 
 /**
  * The brief "studio": the input form plus a preview panel. Submitting hands the
@@ -51,12 +66,14 @@ export function BriefStudio() {
   // which is why nothing here is overwritten when the switch flips back off.
   const demo = useDemoMode();
   const demoSeller = DEMO_INPUT.seller;
+  const wideViewport = useWideViewport();
 
   // Seller profile — a set-once, remembered layer (progressive disclosure: the
   // 3-field path stays the default). A local draft mirrors the persisted profile
   // so partial/invalid edits never clobber storage; we persist on submit.
   const savedSeller = useSellerProfile();
-  const [sellerOpen, setSellerOpen] = useState(false);
+  // null → follow the layout's own default; a click pins it either way.
+  const [sellerOpen, setSellerOpen] = useState<boolean | null>(null);
   const [sellerCompany, setSellerCompany] = useState("");
   const [offering, setOffering] = useState("");
   const [valueProp, setValueProp] = useState("");
@@ -70,7 +87,6 @@ export function BriefStudio() {
     setOffering(savedSeller.offering);
     setValueProp(savedSeller.valueProp ?? "");
     setCompetitors(savedSeller.competitors.join(", "));
-    setSellerOpen(true);
   }, [savedSeller]);
 
   /** Build a valid SellerProfile from the draft, or undefined if incomplete. */
@@ -165,9 +181,19 @@ export function BriefStudio() {
     }
   }
 
-  // Nothing left in the right column → the form settles into a centred single
-  // column. Opening a recent brief later fills it again and this reverses.
+  // Nothing left in the right column → the form settles into a centred, wider
+  // card that lays its own contents out in two columns rather than staying a
+  // narrow rail with half the window empty beside it. Opening a recent brief
+  // later fills the right column again and this reverses.
   const soloForm = exampleDismissed && !opened;
+  // The two-column card only exists from `lg` up, and some defaults below
+  // depend on actually having that second column — not just on being solo.
+  const wideCard = soloForm && wideViewport;
+
+  // "Your product" opens itself where there's a column to hold it (or where a
+  // saved profile means it's already in use); elsewhere it stays collapsed and
+  // the 3-field path is the short one. An explicit click always wins.
+  const sellerShown = demo || (sellerOpen ?? (wideCard || !!savedSeller));
 
   return (
     <div
@@ -176,10 +202,12 @@ export function BriefStudio() {
         // Splits at `lg`, not `md`: at 768px each column is ~350px and the brief
         // card degrades to three or four words a line.
         soloForm
-          ? "max-w-xl gap-x-0 lg:grid-cols-[1fr_0fr]"
+          ? // Only widen where the card can actually use it — below `lg` it
+            // stays a comfortable single column rather than one stretched row.
+            "max-w-xl gap-x-0 lg:max-w-4xl lg:grid-cols-[1fr_0fr]"
           : // A fixed-ish form rail with the panel taking whatever the window
             // gives it — the desktop proportion stays put as the screen grows.
-            "gap-x-10 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:gap-x-16 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]",
+            "gap-x-10 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-x-16 xl:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]",
       )}
     >
       {/* Form */}
@@ -189,46 +217,63 @@ export function BriefStudio() {
             behind the whole app, and at anything lighter its wires ran straight
             through the labels and placeholders. The remaining 5% plus the blur
             keep the card sitting *on* the backdrop rather than cut out of it. */}
-        <div className="rounded-2xl border border-line-strong bg-surface/95 p-4 shadow-xl shadow-cast/30 backdrop-blur-md sm:p-5">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div
+          className={clsx(
+            "rounded-2xl border border-line-strong bg-surface/95 p-5 shadow-xl shadow-cast/30 backdrop-blur-md sm:p-6",
+            // Solo: the card is wide enough to sit the two input groups beside
+            // each other, so the extra width carries content instead of air.
+            // The submit spans the pair underneath — still the last thing in
+            // the form, now the full width of it. Both columns start at the
+            // top so the first label of each lands on the same line, however
+            // tall the other one grows.
+            soloForm && "lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-10 lg:p-7",
+          )}
+        >
+          <div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Company"
+                value={demo ? DEMO_INPUT.company : company}
+                onChange={setCompany}
+                placeholder="e.g. Swiggy"
+                readOnly={demo}
+              />
+              <Field
+                label="Who you're meeting"
+                value={demo ? DEMO_INPUT.person : person}
+                onChange={setPerson}
+                placeholder="e.g. Priya Sharma"
+                readOnly={demo}
+              />
+            </div>
             <Field
-              label="Company"
-              value={demo ? DEMO_INPUT.company : company}
-              onChange={setCompany}
-              placeholder="e.g. Swiggy"
+              label="Meeting context"
+              value={demo ? DEMO_INPUT.context : context}
+              onChange={setContext}
+              placeholder="e.g. renewal + expansion call, 6 weeks from contract end"
+              className="mt-4"
               readOnly={demo}
+              lines={2}
             />
-            <Field
-              label="Who you're meeting"
-              value={demo ? DEMO_INPUT.person : person}
-              onChange={setPerson}
-              placeholder="e.g. Priya Sharma"
-              readOnly={demo}
+            <MeetingTypePicker
+              value={demo ? (DEMO_INPUT.meetingType ?? "") : meetingType}
+              onChange={setMeetingType}
+              locked={demo}
+              className="mt-4"
             />
           </div>
-          <Field
-            label="Meeting context"
-            value={demo ? DEMO_INPUT.context : context}
-            onChange={setContext}
-            placeholder="e.g. renewal + expansion call"
-            className="mt-3"
-            readOnly={demo}
-          />
-          <MeetingTypePicker
-            value={demo ? (DEMO_INPUT.meetingType ?? "") : meetingType}
-            onChange={setMeetingType}
-            locked={demo}
-          />
 
-          {/* Optional refinement sits *above* the submit, not below it: a
-              Generate button followed by more inputs reads as the end of the
-              form, so "Your product" was easy to miss entirely. Collapsed by
-              default, so the 3-field path is still the shortest one. */}
+          {/* Optional refinement comes *before* the submit — a Generate button
+              followed by more inputs reads as the end of the form, so "Your
+              product" was easy to miss entirely. Stacked under the fields in
+              the rail and collapsed there; beside them and already open once
+              the card is wide, where showing it costs no scroll. */}
           <SellerPanel
-            open={demo || sellerOpen}
-            onToggle={() => setSellerOpen((v) => !v)}
+            open={sellerShown}
+            onToggle={() => setSellerOpen(!sellerShown)}
             configured={demo || !!savedSeller}
             locked={demo}
+            className={clsx("mt-5", soloForm && "lg:mt-0")}
             company={demo ? (demoSeller?.company ?? "") : sellerCompany}
             onCompany={setSellerCompany}
             offering={demo ? (demoSeller?.offering ?? "") : offering}
@@ -246,7 +291,8 @@ export function BriefStudio() {
             type="submit"
             disabled={!canSubmit}
             className={clsx(
-              "mt-5 flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-accent px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong",
+              "mt-6 flex w-full items-center justify-center gap-2 rounded-xl border border-transparent bg-accent px-4 py-3 text-sm font-semibold text-ink transition-colors hover:bg-accent-strong",
+              soloForm && "lg:col-span-2",
               DISABLED_PRIMARY,
             )}
           >
@@ -333,6 +379,11 @@ export function BriefStudio() {
  *
  * `readOnly` is how demo mode pins a field: still focusable and readable, but
  * the scripted value can't be edited out from under the presenter.
+ *
+ * `lines` turns it into a textarea. The two fields that take prose — the
+ * meeting context and the value proposition — are the ones people write a
+ * sentence into, and a one-line box scrolls that sentence out of sight as they
+ * type. Everything else here is a name or a short list and stays an input.
  */
 function Field({
   label,
@@ -341,6 +392,7 @@ function Field({
   placeholder,
   className,
   readOnly = false,
+  lines,
 }: {
   label: string;
   value: string;
@@ -348,22 +400,39 @@ function Field({
   placeholder?: string;
   className?: string;
   readOnly?: boolean;
+  lines?: number;
 }) {
+  const control =
+    "w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong";
   return (
     <label className={clsx("block", className)}>
       <span className="mb-1.5 block font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
         {label}
       </span>
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        readOnly={readOnly}
-        className={clsx(
-          "w-full rounded-xl border border-line bg-ink-2 px-3.5 py-2.5 text-sm text-ivory placeholder:text-faint focus:border-line-strong",
-          readOnly && "cursor-default text-muted",
-        )}
-      />
+      {lines ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          rows={lines}
+          // Grows by hand, never sideways — a wider-than-column textarea would
+          // break the two-column card.
+          className={clsx(
+            control,
+            "resize-y leading-relaxed",
+            readOnly && "cursor-default resize-none text-muted",
+          )}
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          readOnly={readOnly}
+          className={clsx(control, readOnly && "cursor-default text-muted")}
+        />
+      )}
     </label>
   );
 }
@@ -405,14 +474,16 @@ function MeetingTypePicker({
   value,
   onChange,
   locked = false,
+  className,
 }: {
   value: MeetingType | "";
   onChange: (v: MeetingType | "") => void;
   /** Demo mode — the scripted meeting type is shown but can't be changed. */
   locked?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className={clsx("flex flex-wrap gap-2", className)}>
       {MEETING_TYPES.map((t) => {
         const active = value === t;
         return (
@@ -440,21 +511,22 @@ function MeetingTypePicker({
 }
 
 /**
- * The "Your product" panel — the persistent seller profile. Collapsed by default
- * (progressive disclosure); set once and remembered so every brief is tailored
- * to what the rep sells. Company + what-you-sell are the only fields that matter;
- * the rest sharpen fit. Clearing removes the saved profile.
+ * The "Your product" section — the persistent seller profile. Set once and
+ * remembered so every brief is tailored to what the rep sells. Company +
+ * what-you-sell are the only fields that matter; the rest sharpen fit.
+ * Clearing removes the saved profile.
  *
- * It lives inside the form card, one step above Generate, so it's styled as an
- * inset section rather than a card of its own: `ink-2` is the same ground the
- * inputs sit on, which puts it at the level of "another field" instead of
- * competing with the card that holds it.
+ * Deliberately unboxed: it's a labelled section of the form card, not a card
+ * inside a card, so its inputs sit on the same ground as the ones above and
+ * the eye isn't asked to cross two more borders to reach them. The disclosure
+ * row is the only chrome, and it reads as a heading with a control on it.
  */
 function SellerPanel({
   open,
   onToggle,
   configured,
   locked = false,
+  className,
   company,
   onCompany,
   offering,
@@ -470,6 +542,7 @@ function SellerPanel({
   configured: boolean;
   /** Demo mode — the scripted seller is shown, read-only, and can't be cleared. */
   locked?: boolean;
+  className?: string;
   company: string;
   onCompany: (v: string) => void;
   offering: string;
@@ -481,16 +554,13 @@ function SellerPanel({
   onClear: () => void;
 }) {
   return (
-    <div className="mt-3 overflow-hidden rounded-xl border border-line">
-      {/* The header carries the input ground so the collapsed row reads like
-          one more field; the body drops back to the card's ground so the
-          inputs inside it are wells, exactly as they are further up. */}
+    <div className={clsx(className)}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
         disabled={locked}
-        className="flex w-full items-center justify-between bg-ink-2 px-3.5 py-2.5 text-left transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-ink-2"
+        className="group flex w-full items-center justify-between gap-3 text-left disabled:cursor-default"
       >
         <span className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-ivory">
           Your product
@@ -502,12 +572,17 @@ function SellerPanel({
                 : "optional · tailors the brief"}
           </span>
         </span>
-        <span className="text-faint">{open ? "−" : "+"}</span>
+        {/* The only chrome on the row: a hit-target-sized glyph that says the
+            section folds. Ringed on hover so it reads as pressable without a
+            border sitting there permanently. */}
+        <span className="flex size-6 shrink-0 items-center justify-center rounded-md text-faint transition-colors group-hover:bg-ink-2 group-hover:text-ivory group-disabled:bg-transparent group-disabled:text-faint">
+          {open ? "−" : "+"}
+        </span>
       </button>
 
       {open && (
-        <div className="grid gap-3 border-t border-line p-3.5">
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field
               label="Your company"
               value={company}
@@ -515,8 +590,10 @@ function SellerPanel({
               placeholder="e.g. Tattva Analytics"
               readOnly={locked}
             />
+            {/* The list is comma-split; the placeholder shows that rather than
+                spending a label on the syntax. */}
             <Field
-              label="Named competitors (comma-separated)"
+              label="Named competitors"
               value={competitors}
               onChange={onCompetitors}
               placeholder="e.g. Increff, Unicommerce"
@@ -536,6 +613,7 @@ function SellerPanel({
             onChange={onValueProp}
             placeholder="e.g. ship insights without a data team"
             readOnly={locked}
+            lines={2}
           />
           <div className="flex items-center justify-between gap-3">
             <p className="text-[11px] leading-relaxed text-faint">
