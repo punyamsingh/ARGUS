@@ -1,3 +1,9 @@
+## [3.18.0](https://github.com/punyamsingh/ARGUS/compare/v3.17.1...v3.18.0) (2026-08-05)
+
+### Features
+
+* **demo:** re-cast the demo and example data on an Indian D2C account ([#113](https://github.com/punyamsingh/ARGUS/issues/113)) ([4970766](https://github.com/punyamsingh/ARGUS/commit/49707663c16e0d754a02924fee4f5a56fc69fae4))
+
 ## [3.17.1](https://github.com/punyamsingh/ARGUS/compare/v3.17.0...v3.17.1) (2026-08-04)
 
 ### Bug Fixes
