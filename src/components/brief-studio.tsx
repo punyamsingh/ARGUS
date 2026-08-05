@@ -11,6 +11,8 @@ import type {
 import { ATTACHMENT_LIMITS, MEETING_TYPES } from "@/types/brief";
 import {
   ATTACHMENT_ACCEPT,
+  attachmentBytes,
+  formatBytes,
   readAttachments,
   setPendingAttachments,
 } from "@/lib/attachments-client";
@@ -570,9 +572,15 @@ function MeetingTypePicker({
  * fields rather than behind a panel because it's per-meeting, unlike the seller
  * profile, which is set once.
  *
- * The "not stored" line is deliberately in the UI and not just in the code. A
- * rep deciding whether to hand a client's RFP to a web app is entitled to know
- * the answer before they do it, not after.
+ * Built from the card's own vocabulary rather than its own: the label matches
+ * a Field's, attached files sit in the same well as a text input, and the
+ * remove control reuses the disclosure glyph's hit target. The one place it
+ * deliberately breaks from a neighbour is the attach target — a chip would
+ * have made an action look like a fifth meeting-type toggle.
+ *
+ * The "not stored" promise lives in the header, not in a note below, so it is
+ * on screen before the rep decides to hand over a client's RFP rather than
+ * after.
  */
 function AttachmentPicker({
   attachments,
@@ -589,10 +597,27 @@ function AttachmentPicker({
   className?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [dragging, setDragging] = useState(false);
   const full = attachments.length >= ATTACHMENT_LIMITS.maxCount;
 
   return (
     <div className={className}>
+      {/* Labelled like every other input on the card, so it reads as a field
+          rather than a stray control. The status suffix borrows the "Your
+          product" idiom, and carries the retention promise permanently: the
+          rep decides whether to hand over a client's RFP *before* attaching
+          it, so a note that only appears afterwards is too late to be of use. */}
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
+          Documents
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
+          {attachments.length > 0
+            ? `${attachments.length}/${ATTACHMENT_LIMITS.maxCount} · never stored`
+            : "optional · never stored"}
+        </span>
+      </div>
+
       <input
         ref={inputRef}
         type="file"
@@ -605,31 +630,30 @@ function AttachmentPicker({
           e.target.value = "";
         }}
       />
-      <button
-        type="button"
-        disabled={full}
-        onClick={() => inputRef.current?.click()}
-        className={clsx(
-          "rounded-full border border-line bg-surface/80 px-2.5 py-1 text-[11px] font-medium text-faint transition-colors",
-          full ? "cursor-default opacity-40" : "hover:border-line-strong hover:text-ivory",
-        )}
-      >
-        📎 Attach a document
-      </button>
 
       {attachments.length > 0 && (
-        <ul className="mt-2 space-y-1">
+        <ul className="mb-1.5 grid gap-1.5">
           {attachments.map((a, i) => (
             <li
               key={`${a.name}-${i}`}
-              className="flex items-center gap-2 text-[11.5px] text-muted"
+              // Same well as a text field — border, radius and ground all
+              // match, so an attached file sits at the same depth as the
+              // values typed above it.
+              className="flex items-center gap-2 rounded-xl border border-line bg-ink-2 py-1.5 pl-3.5 pr-1.5"
             >
-              <span className="truncate">{a.name}</span>
+              <span className="min-w-0 flex-1 truncate text-[13px] text-ivory">
+                {a.name}
+              </span>
+              <span className="shrink-0 font-mono text-[10px] text-faint">
+                {formatBytes(attachmentBytes(a))}
+              </span>
               <button
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label={`Remove ${a.name}`}
-                className="text-faint transition-colors hover:text-ivory"
+                // The disclosure glyph's hit target, reused: 24px square, no
+                // permanent border, ground on hover.
+                className="flex size-6 shrink-0 items-center justify-center rounded-md text-faint transition-colors hover:bg-surface hover:text-ivory"
               >
                 ×
               </button>
@@ -638,12 +662,46 @@ function AttachmentPicker({
         </ul>
       )}
 
-      {note && <p className="mt-2 text-[11.5px] text-muted">{note}</p>}
+      {/* An action, not a toggle — so it takes the field's full width and
+          radius rather than the meeting-type chip shape, which sits directly
+          above and would otherwise make this look like a fifth toggle. Dashed
+          because it's an empty slot waiting to be filled, and because that is
+          the shape people already expect to be able to drop a file onto. */}
+      <button
+        type="button"
+        disabled={full}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => {
+          if (full) return;
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          if (full) return;
+          onAdd(Array.from(e.dataTransfer.files ?? []));
+        }}
+        className={clsx(
+          "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed px-3.5 py-2.5 text-[13px] transition-colors",
+          full
+            ? "cursor-default border-line text-faint opacity-60"
+            : dragging
+              ? "border-accent bg-accent/10 text-accent"
+              : "border-line bg-ink-2/40 text-faint hover:border-line-strong hover:text-ivory",
+        )}
+      >
+        <span aria-hidden>📎</span>
+        {full
+          ? `${ATTACHMENT_LIMITS.maxCount} is the limit`
+          : attachments.length > 0
+            ? "Attach another"
+            : "Attach an RFP, deck or call notes"}
+      </button>
 
-      {attachments.length > 0 && (
-        <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          Read once to build this brief, then discarded — never stored.
-        </p>
+      {note && (
+        <p className="mt-1.5 text-[11px] leading-relaxed text-muted">{note}</p>
       )}
     </div>
   );
