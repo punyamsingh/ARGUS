@@ -101,6 +101,22 @@ function approxBytes(data: string): number {
   return Math.floor((data.length / 4) * 3);
 }
 
+/** Decoded size of an attachment, for display. */
+export function attachmentBytes(attachment: Attachment): number {
+  return approxBytes(attachment.data);
+}
+
+/**
+ * A compact size label. Deliberately coarse — the rep is checking "did the
+ * right file attach", not auditing bytes, and a long figure would crowd the
+ * filename it sits beside.
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1_000) return `${bytes} B`;
+  if (bytes < 1_000_000) return `${Math.round(bytes / 1_000)} KB`;
+  return `${(bytes / 1_000_000).toFixed(1)} MB`;
+}
+
 async function toBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer();
   const bytes = new Uint8Array(buffer);
