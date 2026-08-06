@@ -1,3 +1,9 @@
+## [3.20.1](https://github.com/punyamsingh/ARGUS/compare/v3.20.0...v3.20.1) (2026-08-06)
+
+### Bug Fixes
+
+* **tools:** verify the Wikipedia article is about the resolved company ([#119](https://github.com/punyamsingh/ARGUS/issues/119)) ([85f5e2b](https://github.com/punyamsingh/ARGUS/commit/85f5e2bf99932e5acdedf4e007ef8ffd24f20165))
+
 ## [3.20.0](https://github.com/punyamsingh/ARGUS/compare/v3.19.1...v3.20.0) (2026-08-06)
 
 ### Features
