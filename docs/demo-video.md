@@ -136,10 +136,16 @@ Use **OBS Studio** (free, all platforms). Settings that matter:
 
 - Size the window to exactly 1920×1080 if capturing display, or just use window
   capture and let OBS scale.
-- **Zoom to 110–125%.** ARGUS uses a lot of 10–13px mono type (source labels,
+- **Zoom to 125–150%.** ARGUS uses a lot of 10–13px mono type (source labels,
   section labels, the meta footer). At 100% those are unreadable in a video
-  compressed by YouTube. 110% is the sweet spot — big enough to read, still
-  shows the two-column brief grid.
+  compressed by YouTube. 150% is the sweet spot for a demo that will be watched
+  on a phone or in a scaled-down README embed; 125% if you want more of the
+  brief in frame at once.
+
+  The ceiling is set by the layout, not by taste: the studio's two-column split
+  and the brief's paired sections need ≥1024 CSS pixels, which on a 1920-wide
+  capture means **stay at or below 175%**. Past that both collapse to a single
+  narrow column and the brief stops looking like one screen.
 - **Do not** use fullscreen (F11) for the whole video. Keeping the browser
   chrome visible for the first shot proves it's a real web app at
   `localhost:3000`; you can go fullscreen after.
@@ -374,7 +380,7 @@ fumble costs you everything. Each take below is independently re-shootable.
 | F | Hover a citation, open a source, come back | `/brief/<id>` | ~25s raw | The peak — shoot it twice |
 | G | Two follow-up questions | `/brief/<id>` | ~40s raw | One answerable, one not |
 | H | Langfuse trace tree | cloud.langfuse.com | ~15s raw | Zoom to legible |
-| I | `pnpm eval` green | Terminal | ~15s raw | Big font — 16pt+ |
+| I | `pnpm eval` green | Terminal | ~15s raw | Big font — **22pt+**, and narrow the window so lines don't wrap |
 | J | Closing card | `/` bottom | ~10s raw | Fade out |
 
 Takes D through G must come from **one continuous session** (same brief, same
@@ -455,11 +461,56 @@ ffmpeg -i argus-demo.mp4 -i music.mp3 \
   -map 0:v -map "[a]" -c:v copy -c:a aac -b:a 192k argus-demo-music.mp4
 ```
 
-**Burn in caption cards.** Write the `»` lines as `captions.srt`, then:
+**Burn in caption cards.** Write the `»` lines as `captions.srt`.
+
+⚠️ **`FontSize` is not in pixels.** ffmpeg converts an SRT to ASS using a
+reference canvas of **384×288**, then libass scales that to the frame — so on a
+1080p export every size is multiplied by `1080 ÷ 288 = 3.75`. `FontSize=22` is
+not small type; it renders at ~82px. Pick a number without knowing this and
+you'll either get subtitles that fill half the screen or a re-encode you have to
+throw away.
+
+Convert once and set the canvas yourself, so the size you write is the size you
+get:
 
 ```bash
-ffmpeg -i argus-demo.mp4 -vf "subtitles=captions.srt:force_style='FontName=Inter,FontSize=22,PrimaryColour=&H00FFFFFF,BackColour=&H80000000,BorderStyle=4,MarginV=60'" \
+ffmpeg -i captions.srt captions.ass
+```
+
+Then in `captions.ass`, set the header to the real frame size and the style to a
+real pixel size:
+
+```ini
+[Script Info]
+PlayResX: 1920
+PlayResY: 1080
+
+[V4+ Styles]
+; Name, Fontname, Fontsize, PrimaryColour, ..., BorderStyle, ..., MarginV
+Style: Default,Inter,88,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,4,0,0,2,60,60,72,1
+```
+
+Then burn it in:
+
+```bash
+ffmpeg -i argus-demo.mp4 -vf "subtitles=captions.ass" \
   -c:v libx264 -crf 18 -preset slow -c:a copy argus-demo-captioned.mp4
+```
+
+**Sizing, in real pixels on a 1080p frame:**
+
+| Size | Reads as | Use when |
+|---|---|---|
+| `64` | Standard subtitle, slightly large | The video is mostly watched full-screen |
+| `88` | A caption **card** — the default here | Phone viewing, README embed, LinkedIn/X autoplay |
+| `104` | Title card | The 60-second cut, where each card is on screen ~2s |
+
+These lines are short punchy cards (*"No source, no sentence."*), not dialogue
+subtitles, so erring large is correct — but check one card at `88` against a
+`960px`-wide embed before committing to a full re-encode:
+
+```bash
+ffmpeg -i argus-demo.mp4 -ss 95 -t 4 -vf "subtitles=captions.ass,scale=960:-1" -c:v libx264 -crf 18 caption-check.mp4
 ```
 
 Burn captions if the video will autoplay muted (README embed, LinkedIn, X). Keep
@@ -507,7 +558,9 @@ compressible; that isn't.
 |---|---|---|
 | Brief errors mid-generation | Gemini free-tier rate limit (requests/min or /day) | Space takes 60s apart. If you hit the daily cap, you're done for the day — hence the warm-up run the day before |
 | Capture stutters during scroll | The three.js background competes with the encoder | Switch OBS to a hardware encoder; drop to 30fps; close every other app |
-| Text unreadable after upload | Browser at 100% zoom | Re-shoot at 110–125%. Compression eats 10px mono type |
+| Text unreadable after upload | Browser at 100% zoom | Re-shoot at 125–150%. Compression eats 10px mono type |
+| Studio / brief collapse to one narrow column | Browser zoomed past ~175% on a 1920 capture | Back off to 150% — the two-column layouts need ≥1024 CSS px |
+| Captions render enormous (or tiny) | `FontSize` in an SRT is on a 384×288 canvas, scaled 3.75× at 1080p | Use the `.ass` route with `PlayResX/Y` set to 1920×1080, where the number is real pixels |
 | Brief content differs between shots | Takes D–G were recorded in separate sessions | They must be one continuous session on one brief |
 | Loader flashes past before the VO gets there | The scripted resolve/gather stages total ~2.2s | Slow that segment to 65% in the edit (recipe above) |
 | Dev overlay / route-compile stall on screen | Recorded against `pnpm dev` | `pnpm build && pnpm start` |
