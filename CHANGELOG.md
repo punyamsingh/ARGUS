@@ -1,3 +1,9 @@
+## [3.20.0](https://github.com/punyamsingh/ARGUS/compare/v3.19.1...v3.20.0) (2026-08-06)
+
+### Features
+
+* **storage:** retain attachments with the brief that cites them ([#118](https://github.com/punyamsingh/ARGUS/issues/118)) ([0968635](https://github.com/punyamsingh/ARGUS/commit/096863584045269fd4b4246b5d21b3487c9258c2))
+
 ## [3.19.1](https://github.com/punyamsingh/ARGUS/compare/v3.19.0...v3.19.1) (2026-08-05)
 
 ### Bug Fixes
