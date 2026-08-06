@@ -162,8 +162,8 @@ browser's saved briefs are moved into your account, once.
 
 A presenter surface for showing ARGUS end to end without depending on live
 networks. It lives at **`/demo`** — the home page with a scripted account —
-reachable from the floating **Demo** control pinned to the bottom-right of every
-page, which becomes **Exit demo** while you're there. The URL *is* the demo, so
+reachable from the **Try a demo** chip in the header, which becomes **Exit demo**
+while you're there and follows you onto the brief page. The URL *is* the demo, so
 it can be shared as-is with no setup.
 
 On that route:
@@ -186,6 +186,9 @@ On that route:
 Generating leaves `/demo` for the focused brief page, as it does normally; the
 demo flag travels with the request, so the brief and its follow-ups stay
 scripted. Your own saved seller profile and brief history are left untouched.
+
+Recording a walkthrough of it? [`docs/demo-video.md`](./docs/demo-video.md) is
+the production kit — script, shot list, capture settings and edit commands.
 
 ## Getting the free keys
 
