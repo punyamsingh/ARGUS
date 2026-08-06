@@ -16,16 +16,30 @@ export function BriefConversation({
   result,
   onClose,
   onExpand,
+  briefId,
 }: {
   result: BriefResult;
   onClose?: () => void;
   onExpand?: () => void;
+  /** Account id of this brief, when it has one. Only a brief the account holds
+   *  can resolve its attachment sources (#99); everything else renders them as
+   *  plain labels. */
+  briefId?: string | null;
 }) {
   return (
     <div className="space-y-4">
-      <BriefResultView result={result} onClose={onClose} onExpand={onExpand} />
+      <BriefResultView
+        result={result}
+        onClose={onClose}
+        onExpand={onExpand}
+        briefId={briefId}
+      />
       <BriefActions result={result} />
-      <BriefFollowUps key={result.meta.generatedAt} result={result} />
+      <BriefFollowUps
+        key={result.meta.generatedAt}
+        result={result}
+        briefId={briefId}
+      />
     </div>
   );
 }

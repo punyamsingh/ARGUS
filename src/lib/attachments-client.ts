@@ -10,15 +10,14 @@ import {
  * Client-side handling for rep-supplied attachments (#99).
  *
  * The studio hands a pending brief to the focused page (`/brief/new`) through
- * sessionStorage, but attachments deliberately do **not** travel that way. Two
- * reasons, and the second is the one that matters: a few megabytes of base64
- * would blow the ~5MB storage quota, and — more to the point — "never stored"
- * should mean the browser too, not just the server. So they ride in a module
- * variable across the client-side navigation and are taken exactly once.
+ * sessionStorage, but attachments deliberately do **not** travel that way: a few
+ * megabytes of base64 would blow the ~5MB quota, and browser storage has no
+ * deletion path tied to the account that owns the document. So they ride in a
+ * module variable across the client-side navigation and are taken exactly once.
  *
  * The cost is that a hard reload of `/brief/new` loses them and the brief runs
  * on public sources alone. That is the right way for this to fail: the brief
- * still generates, and nothing lingers.
+ * still generates, and nothing is left behind in the browser.
  */
 
 let pending: Attachment[] = [];

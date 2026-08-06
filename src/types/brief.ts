@@ -55,12 +55,16 @@ export type BriefInput = z.infer<typeof briefInputSchema>;
  * never reach.
  *
  * Deliberately **not** part of `briefInputSchema`. Attachments ride alongside
- * the input on the request body (the same way `demo` does), which is what makes
- * "never stored" structural rather than a promise: `BriefResult.input` is the
- * shape that gets written to the `brief` row and re-sent with every follow-up,
- * and an attachment cannot reach it. A file lives for the duration of the one
- * request that reads it. What persists is the extracted `Evidence`, on the same
- * footing as any other source.
+ * the input on the request body (the same way `demo` does), so a file payload
+ * can never reach `BriefResult.input` — the shape written to the `brief` row and
+ * re-sent with every follow-up. What lands in the row is the extracted
+ * `Evidence`, on the same footing as any other source.
+ *
+ * The file itself is retained separately, in object storage keyed by the brief
+ * that cites it (`lib/storage/attachments-store.ts`), so a saved brief's sources
+ * can be opened again. Keeping the bytes out of the brief JSON is what makes
+ * those two lifetimes independent: deleting a document doesn't rewrite history,
+ * and a brief row stays a brief row rather than a file container.
  */
 export const ATTACHMENT_MEDIA_TYPES = [
   "application/pdf",

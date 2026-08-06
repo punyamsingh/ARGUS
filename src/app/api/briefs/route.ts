@@ -1,5 +1,13 @@
 import { getSessionUser } from "@/lib/auth/server";
 import { listBriefs, saveBrief } from "@/lib/briefs/repo";
+import { parseAttachments } from "@/lib/attachments-payload";
+import { attachmentRefOf } from "@/lib/evidence-source";
+import { attachmentRef } from "@/lib/storage/attachment-ref";
+import {
+  objectPath,
+  putAttachment,
+  storageConfigured,
+} from "@/lib/storage/attachments-store";
 import { briefResultSchema } from "@/types/brief";
 
 /**
@@ -65,7 +73,21 @@ export async function POST(req: Request) {
   }
 
   try {
-    return Response.json({ ok: true, id: await saveBrief(user.id, parsed.data) });
+    const id = await saveBrief(user.id, parsed.data);
+
+    // Attachments ride alongside the result, the same way `demo` rides
+    // alongside a brief input — `briefResultSchema` strips them, so the stored
+    // row still holds only the brief. They are uploaded *after* the row exists
+    // so every object has an owner from the moment it's written: no row, no
+    // file, and nothing to orphan if the save fails.
+    await storeAttachments(
+      user.id,
+      id,
+      (body as { attachments?: unknown }).attachments,
+      parsed.data.evidence,
+    );
+
+    return Response.json({ ok: true, id });
   } catch (err) {
     logFailure("save", err);
     return Response.json(
@@ -73,4 +95,70 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
+}
+
+/** Uploads in flight at once. Storage is an external service and a brief can
+ *  carry several files; a small window keeps one save from opening a connection
+ *  per attachment. */
+const UPLOAD_CONCURRENCY = 2;
+
+/**
+ * Retain the documents this brief was built from.
+ *
+ * Two things are enforced here rather than assumed:
+ *
+ *  - **The same limits the generate route applies.** This is its own HTTP
+ *    boundary, reachable directly, so the client's caps mean nothing. Sharing
+ *    `parseAttachments` is what stops a direct POST decoding an unbounded array
+ *    of unvalidated base64.
+ *  - **Only what the brief actually cites.** Extraction is what decides a
+ *    document became evidence, so the evidence is the list of documents worth
+ *    keeping. Without this a caller could park arbitrary files under their
+ *    prefix — unreachable, since the resolver serves cited refs only, but
+ *    retained all the same. Storing exactly the set that can be served keeps
+ *    upload and retrieval from disagreeing about what exists.
+ *
+ * Best-effort once past validation: a brief whose attachments failed to upload
+ * is still a saved brief, it just has sources that don't open. Losing the
+ * research because a bucket call failed would be the worse trade.
+ */
+async function storeAttachments(
+  userId: string,
+  briefId: string,
+  raw: unknown,
+  evidence: { sourceUrl: string }[],
+): Promise<void> {
+  if (!storageConfigured || raw === undefined || raw === null) return;
+
+  const parsed = parseAttachments(raw);
+  if ("error" in parsed || parsed.value.length === 0) return;
+
+  const cited = new Set(
+    evidence
+      .map((e) => attachmentRefOf(e.sourceUrl))
+      .filter((ref): ref is string => ref !== null),
+  );
+  if (cited.size === 0) return;
+
+  // The ref is recomputed rather than trusted from the client: it's what the
+  // evidence locator already points at, so a caller can't redirect a source at
+  // a file of their choosing by sending a different one.
+  const queue = parsed.value
+    .map((a) => ({ a, ref: attachmentRef(a) }))
+    .filter(({ ref }) => cited.has(ref));
+
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    for (let i = next++; i < queue.length; i = next++) {
+      const { a, ref } = queue[i];
+      await putAttachment(
+        objectPath(userId, briefId, ref),
+        Buffer.from(a.data, "base64"),
+        a.mediaType,
+      );
+    }
+  };
+  await Promise.all(
+    Array.from({ length: Math.min(UPLOAD_CONCURRENCY, queue.length) }, worker),
+  );
 }

@@ -22,6 +22,7 @@ import { BriefPreview } from "@/components/brief-preview";
 import { BriefConversation } from "@/components/brief-conversation";
 import {
   deleteBriefFromAccount,
+  isAccountBriefId,
   useBriefLibrary,
   type LibraryEntry,
 } from "@/lib/briefs/library";
@@ -80,9 +81,9 @@ export function BriefStudio() {
   const demoSeller = DEMO_INPUT.seller;
   const wideViewport = useWideViewport();
 
-  // Attachments (#99) — documents the rep already holds, read once for this
-  // brief and never stored. Held here as component state, handed to the focused
-  // page in memory, and gone as soon as the generation finishes.
+  // Attachments (#99) — documents the rep already holds. Held here as component
+  // state and handed to the focused page in memory; the copy that outlives the
+  // request is written to object storage when the brief is saved to an account.
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [attachmentNote, setAttachmentNote] = useState<string | null>(null);
 
@@ -387,6 +388,7 @@ export function BriefStudio() {
         {opened ? (
           <BriefConversation
             result={opened}
+            briefId={signedIn && isAccountBriefId(openedId) ? openedId : null}
             onClose={() => {
               setOpened(null);
               setOpenedId(null);
@@ -578,9 +580,8 @@ function MeetingTypePicker({
  * deliberately breaks from a neighbour is the attach target — a chip would
  * have made an action look like a fifth meeting-type toggle.
  *
- * The "not stored" promise lives in the header, not in a note below, so it is
- * on screen before the rep decides to hand over a client's RFP rather than
- * after.
+ * The header status stays deliberately silent on retention — see the comment
+ * on it below.
  */
 function AttachmentPicker({
   attachments,
@@ -604,17 +605,24 @@ function AttachmentPicker({
     <div className={className}>
       {/* Labelled like every other input on the card, so it reads as a field
           rather than a stray control. The status suffix borrows the "Your
-          product" idiom, and carries the retention promise permanently: the
-          rep decides whether to hand over a client's RFP *before* attaching
-          it, so a note that only appears afterwards is too late to be of use. */}
+          product" idiom.
+
+          It deliberately makes no retention claim. Attachments are kept with a
+          brief the account saves (#99), but only when the deployment has a
+          bucket configured and only for a signed-in rep — conditions this
+          component can't see. A status line that said either "stored" or "never
+          stored" would be wrong for some readers, and on this of all controls a
+          confident wrong answer is worse than none. What is true is verifiable
+          where it matters: a stored source opens from the brief, and one that
+          wasn't stored stays a plain label. */}
       <div className="mb-1.5 flex items-baseline justify-between gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-faint">
           Documents
         </span>
         <span className="font-mono text-[10px] uppercase tracking-wider text-faint">
           {attachments.length > 0
-            ? `${attachments.length}/${ATTACHMENT_LIMITS.maxCount} · never stored`
-            : "optional · never stored"}
+            ? `${attachments.length}/${ATTACHMENT_LIMITS.maxCount}`
+            : "optional"}
         </span>
       </div>
 

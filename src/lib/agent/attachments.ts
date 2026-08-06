@@ -1,9 +1,9 @@
-import { createHash } from "node:crypto";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { getModel, llmDefaults, llmModelId } from "@/lib/llm";
 import { withGeneration, withObservation } from "@/lib/telemetry";
 import { ATTACHMENT_SCHEME } from "@/lib/evidence-source";
+import { attachmentRef } from "@/lib/storage/attachment-ref";
 import type { Attachment, Evidence, ResolvedEntity } from "@/types/brief";
 
 /**
@@ -187,22 +187,6 @@ function documentPart(
     mediaType: attachment.mediaType,
     filename: attachment.name,
   };
-}
-
-/**
- * A short content hash identifying the document within this brief.
- *
- * Content-derived rather than positional so that attaching the same file twice
- * collapses through the existing `sourceUrl + claim` dedupe instead of
- * producing a duplicated Sources list. It is a fingerprint, not a handle —
- * nothing can be fetched with it, which is the point.
- */
-function attachmentRef(attachment: Attachment): string {
-  return createHash("sha256")
-    .update(attachment.name)
-    .update(attachment.data)
-    .digest("hex")
-    .slice(0, 12);
 }
 
 /**

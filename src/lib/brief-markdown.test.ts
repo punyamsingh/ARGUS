@@ -6,7 +6,7 @@ import type { BriefResult, Evidence } from "@/types/brief";
 /**
  * An exported brief travels further than the app does — into an email, a doc,
  * a CRM note. A public source has to stay a working link there; an attachment,
- * which has no destination at all, must not arrive looking like one (#99).
+ * which only its owner can open, must not arrive looking like one (#99).
  */
 
 const publicSource: Evidence = {
@@ -74,8 +74,8 @@ describe("markdown export distinguishes attachments from public sources", () => 
     expect(md).not.toContain(ATTACHMENT_SCHEME);
   });
 
-  it("names the attachment and says it wasn't stored", () => {
-    expect(md).toContain("acme-rfp.pdf — p. 4 (attached document, not stored)");
+  it("names the attachment and marks it as one", () => {
+    expect(md).toContain("acme-rfp.pdf — p. 4 (attached document)");
   });
 
   it("still numbers both sources so every citation resolves", () => {

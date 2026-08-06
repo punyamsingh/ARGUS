@@ -123,7 +123,9 @@ export function useBriefStream() {
             // awaited only so `onResult` receives the server id: that's what
             // /brief/<id> resolves from another device, and getting the URL
             // right the first time beats swapping it twice.
-            const savedId = await saveBriefToAccount(msg.result);
+            // The same documents that fed the brief are retained beside it —
+            // only here, once there's an account row to own them (#99).
+            const savedId = await saveBriefToAccount(msg.result, attachments);
             onResult?.(msg.result, savedId);
           } else {
             throw new Error(msg.error);

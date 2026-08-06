@@ -41,7 +41,16 @@ const SUGGESTIONS = [
   "Who else should be in the room?",
 ];
 
-export function BriefFollowUps({ result }: { result: BriefResult }) {
+export function BriefFollowUps({
+  result,
+  briefId,
+}: {
+  result: BriefResult;
+  /** Account id, when this brief has one — lets attachment sources resolve.
+   *  A follow-up answers over the same evidence store, so its citations point
+   *  at the same documents the brief above does. */
+  briefId?: string | null;
+}) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
@@ -146,7 +155,9 @@ export function BriefFollowUps({ result }: { result: BriefResult }) {
                 {t.status === "error" && (
                   <p className="text-[13px] text-risk">{t.error}</p>
                 )}
-                {t.status === "done" && t.result && <Answer result={t.result} />}
+                {t.status === "done" && t.result && (
+                  <Answer result={t.result} briefId={briefId} />
+                )}
               </div>
             </li>
           ))}
@@ -211,7 +222,13 @@ function Thinking({ stage }: { stage: AskStage }) {
  * cites. When unsupported it carries no chips and reads as an honest gap, so a
  * follow-up can never smuggle in an uncited claim.
  */
-function Answer({ result }: { result: AskResult }) {
+function Answer({
+  result,
+  briefId,
+}: {
+  result: AskResult;
+  briefId?: string | null;
+}) {
   return (
     <div>
       <p
@@ -227,7 +244,7 @@ function Answer({ result }: { result: AskResult }) {
           {result.evidence.map((e, i) => (
             <li key={e.id} className="flex gap-2 text-[11.5px] leading-relaxed">
               <span className="font-mono text-faint">[{i + 1}]</span>
-              <SourceLabel evidence={e} />
+              <SourceLabel evidence={e} briefId={briefId} />
               <span className="font-mono text-faint">· {e.tool}</span>
             </li>
           ))}

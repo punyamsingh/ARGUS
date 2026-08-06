@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
-import type { BriefResult } from "@/types/brief";
+import type { Attachment, BriefResult } from "@/types/brief";
 import { useSession } from "@/lib/auth/client";
 import { getBriefById, useBriefHistory } from "@/lib/brief-history";
 import type { BriefSummary } from "./map";
@@ -97,6 +97,10 @@ export function refreshLibrary(): void {
  */
 export async function saveBriefToAccount(
   result: BriefResult,
+  /** The documents the brief was built from, retained alongside it (#99). Sent
+   *  only here — the account is what owns a stored file, so a signed-out or
+   *  unsaved brief never puts one in the bucket. */
+  attachments: Attachment[] = [],
 ): Promise<string | null> {
   // Demo briefs are refused server-side too; skipping here just avoids the trip.
   if (result.meta.demo) return null;
@@ -104,7 +108,12 @@ export async function saveBriefToAccount(
     const res = await fetch("/api/briefs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(result),
+      // Sibling of the result, not part of it: `briefResultSchema` strips it,
+      // which is what keeps the stored row free of file payloads.
+      body: JSON.stringify({
+        ...result,
+        ...(attachments.length ? { attachments } : {}),
+      }),
     });
     if (!res.ok) return null;
     const data = (await res.json()) as { ok: boolean; id?: string | null };
@@ -114,6 +123,22 @@ export async function saveBriefToAccount(
     // offline or mid-deploy — the brief is rendered and in local history anyway
     return null;
   }
+}
+
+/**
+ * Does this id name a brief the account holds?
+ *
+ * `saveBrief` mints server ids with `randomUUID()`, while a local-only brief is
+ * keyed by its `generatedAt` timestamp — so the shape tells them apart. Used to
+ * decide whether a brief's attachment sources can resolve (#99): only an
+ * account brief has files behind it, and offering the link for a local one
+ * would be offering a link to nothing.
+ */
+export function isAccountBriefId(id: string | null | undefined): boolean {
+  return (
+    !!id &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  );
 }
 
 /** Remove a brief from the account. Returns whether it went. */

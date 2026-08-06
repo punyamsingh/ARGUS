@@ -1,5 +1,6 @@
 import { getSessionUser } from "@/lib/auth/server";
 import { deleteBrief, getBrief } from "@/lib/briefs/repo";
+import { removeAttachmentPrefix } from "@/lib/storage/attachments-store";
 
 /**
  * A single saved brief — read it or delete it.
@@ -58,9 +59,16 @@ export async function DELETE(
 
   const { id } = await params;
   try {
-    return (await deleteBrief(user.id, id))
-      ? Response.json({ ok: true })
-      : NOT_FOUND();
+    if (!(await deleteBrief(user.id, id))) return NOT_FOUND();
+
+    // Deleting the brief has to delete the documents it was built from —
+    // otherwise "remove this brief" leaves a client's RFP in the bucket with
+    // nothing left pointing at it. Objects go after the row so a failed sweep
+    // can never leave a brief the user thinks they deleted; the cost of that
+    // ordering is a possible orphan, which `removeAttachmentPrefix` logs.
+    await removeAttachmentPrefix(`${user.id}/${id}`);
+
+    return Response.json({ ok: true });
   } catch (err) {
     logFailure("delete", err);
     return Response.json(
