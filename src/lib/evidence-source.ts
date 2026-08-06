@@ -37,6 +37,20 @@ export function isAttachmentEvidence(evidence: Evidence): boolean {
 }
 
 /**
+ * What a valid document reference looks like: a lowercase hex slice of a
+ * digest.
+ *
+ * Exported so the parser here and the retrieval route enforce one rule rather
+ * than two that can drift. Deliberately **case-sensitive**, matching what
+ * `attachmentRef()` emits. Accepting `ABC123` and lowercasing it would quietly
+ * treat two distinct locators as the same document and could serve the wrong
+ * file under a cited source — in a brief that claims every source is checkable,
+ * the wrong document is worse than none. So an uppercase ref is not normalised,
+ * it's rejected, and the source stays an unlinked label.
+ */
+export const ATTACHMENT_REF_PATTERN = /^[a-f0-9]{6,64}$/;
+
+/**
  * The document reference inside an attachment locator, or null for any other
  * source. `attachment://a1b2c3#p.%204` → `a1b2c3`.
  *
@@ -49,5 +63,5 @@ export function attachmentRefOf(sourceUrl: string): string | null {
   if (!sourceUrl.toLowerCase().startsWith(`${ATTACHMENT_SCHEME}//`)) return null;
   const rest = sourceUrl.slice(ATTACHMENT_SCHEME.length + 2);
   const ref = rest.split("#")[0];
-  return /^[a-f0-9]{6,64}$/i.test(ref) ? ref : null;
+  return ATTACHMENT_REF_PATTERN.test(ref) ? ref : null;
 }

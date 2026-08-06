@@ -19,7 +19,14 @@ import type { Attachment } from "@/types/brief";
  * it without either pulling in the other's dependencies.
  */
 export function attachmentRef(attachment: Attachment): string {
+  // Length-framed, not concatenated. Hashing `name + data` directly leaves the
+  // boundary ambiguous — ("a", "QUJDREVG") and ("aQUJD", "REVG") feed the hash
+  // identical bytes — so two different documents would land on one object path
+  // and silently overwrite each other. Prefixing the name's length makes the
+  // split unambiguous, and does it without building a second multi-megabyte
+  // string the way JSON-encoding the pair would.
   return createHash("sha256")
+    .update(`${attachment.name.length}:`)
     .update(attachment.name)
     .update(attachment.data)
     .digest("hex")

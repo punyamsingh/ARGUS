@@ -1,6 +1,6 @@
 import { getSessionUser } from "@/lib/auth/server";
 import { getBrief } from "@/lib/briefs/repo";
-import { ATTACHMENT_SCHEME } from "@/lib/evidence-source";
+import { ATTACHMENT_REF_PATTERN, ATTACHMENT_SCHEME } from "@/lib/evidence-source";
 import {
   objectPath,
   signedAttachmentUrl,
@@ -48,8 +48,10 @@ export async function GET(
 
   const { briefId, ref } = await params;
   // A ref is a hex slice of a digest. Rejecting anything else here keeps
-  // traversal sequences out of the object path before it's ever built.
-  if (!/^[a-f0-9]{6,64}$/.test(ref)) return NOT_FOUND();
+  // traversal sequences out of the object path before it's ever built. Shares
+  // its rule with the locator parser, so a ref the UI links can't be one this
+  // route refuses.
+  if (!ATTACHMENT_REF_PATTERN.test(ref)) return NOT_FOUND();
 
   try {
     const brief = await getBrief(user.id, briefId);

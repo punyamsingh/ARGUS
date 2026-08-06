@@ -32,6 +32,23 @@ export const storageConfigured = Boolean(url && key);
  *  handed out per click, so it never needs to outlive the page it opened on. */
 const SIGNED_URL_TTL_SECONDS = 60;
 
+/**
+ * How long any one Storage call may take.
+ *
+ * `fetch` has no default timeout, so a stalled connection would otherwise hold
+ * a save, a resolve or a delete open until the platform's own limit killed it —
+ * turning a slow bucket into a slow app. Every call below aborts on this signal
+ * and falls through to its normal "couldn't do it" return, so a timeout costs
+ * the link, not the request. Generous enough for a multi-megabyte upload on a
+ * poor connection, short enough to fail well inside a 60s function.
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
+
+/** An abort signal for one Storage call. */
+function deadline(): AbortSignal {
+  return AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+}
+
 function headers(extra: Record<string, string> = {}): Record<string, string> {
   return {
     Authorization: `Bearer ${key}`,
@@ -71,6 +88,7 @@ export async function putAttachment(
           "x-upsert": "true",
         }),
         body: body as BodyInit,
+        signal: deadline(),
       },
     );
     if (!res.ok) {
@@ -98,6 +116,7 @@ export async function signedAttachmentUrl(path: string): Promise<string | null> 
         method: "POST",
         headers: headers({ "Content-Type": "application/json" }),
         body: JSON.stringify({ expiresIn: SIGNED_URL_TTL_SECONDS }),
+        signal: deadline(),
       },
     );
     if (!res.ok) return null;
@@ -128,6 +147,7 @@ export async function removeAttachmentPrefix(prefix: string): Promise<number> {
       method: "DELETE",
       headers: headers({ "Content-Type": "application/json" }),
       body: JSON.stringify({ prefixes: paths }),
+      signal: deadline(),
     });
     if (!res.ok) {
       console.warn(`attachment delete failed — ${res.status}`);
@@ -185,6 +205,7 @@ async function listOnce(
     method: "POST",
     headers: headers({ "Content-Type": "application/json" }),
     body: JSON.stringify({ prefix, limit: 1000 }),
+    signal: deadline(),
   });
   if (!res.ok) return [];
   return (await res.json()) as { name: string; id: string | null }[];

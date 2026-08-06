@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ATTACHMENT_SCHEME, attachmentRefOf } from "@/lib/evidence-source";
+import {
+  ATTACHMENT_REF_PATTERN,
+  ATTACHMENT_SCHEME,
+  attachmentRefOf,
+} from "@/lib/evidence-source";
 import { attachmentRef } from "@/lib/storage/attachment-ref";
 import { objectPath } from "@/lib/storage/attachments-store";
 import type { Attachment } from "@/types/brief";
@@ -54,6 +58,23 @@ describe("the ref survives the round trip through a locator", () => {
   });
 });
 
+describe("field boundaries can't be shifted to forge a collision", () => {
+  it("distinguishes a name/data split that concatenates identically", () => {
+    // Unframed, `name + data` makes these two indistinguishable to the hash —
+    // and two different documents landing on one object path means one silently
+    // overwrites the other, then serves the wrong file under a cited source.
+    expect(attachmentRef(file("a", "QUJDREVG"))).not.toBe(
+      attachmentRef(file("aQUJD", "REVG")),
+    );
+  });
+
+  it("distinguishes an empty name from a shifted one", () => {
+    expect(attachmentRef(file("", "SGVsbG8="))).not.toBe(
+      attachmentRef(file("S", "GVsbG8=")),
+    );
+  });
+});
+
 describe("only an attachment locator yields a ref", () => {
   it("returns null for a public source", () => {
     expect(attachmentRefOf("https://example.com/a")).toBeNull();
@@ -71,6 +92,26 @@ describe("only an attachment locator yields a ref", () => {
       "attachment://abc/../../etc/passwd",
     ]) {
       expect(attachmentRefOf(bad)).toBeNull();
+    }
+  });
+
+  it("rejects an uppercase ref rather than quietly lowercasing it", () => {
+    // `attachmentRef` only ever emits lowercase, so an uppercase locator names
+    // an object that was never written. Normalising it would point a cited
+    // source at whatever happens to live at the lowercase path — a *different*
+    // document. An unlinked label is the honest answer.
+    expect(attachmentRefOf("attachment://ABC123")).toBeNull();
+    expect(attachmentRefOf("attachment://AbC123")).toBeNull();
+  });
+});
+
+describe("the parser and the retrieval route share one rule", () => {
+  it("never yields a ref the route would refuse", () => {
+    // Two regexes for the same value is how a link that renders but 404s gets
+    // shipped. Both sides read this constant.
+    for (const candidate of ["abc123", "ABC123", "abc12", "zzz999", "a".repeat(65)]) {
+      const parsed = attachmentRefOf(`attachment://${candidate}`);
+      if (parsed !== null) expect(ATTACHMENT_REF_PATTERN.test(parsed)).toBe(true);
     }
   });
 });
