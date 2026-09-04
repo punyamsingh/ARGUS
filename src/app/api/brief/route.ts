@@ -54,11 +54,12 @@ export async function POST(req: Request) {
     return Response.json({ ok: false, error: attachments.error }, { status: 400 });
   }
 
-  // Optional client session id, used only to group briefs in Langfuse. Capped
-  // and sanitised — it's untrusted input that ends up as a span attribute.
-
+  // Optional conversation id, used only as the Langfuse session key (#15): one
+  // conversation — this brief and the follow-ups asked about it — is one
+  // session. Capped and sanitised; it's untrusted input that ends up as a span
+  // attribute.
   const sessionId = req.headers
-    .get("x-argus-session-id")
+    .get("x-argus-conversation-id")
     ?.replace(/[^a-zA-Z0-9._-]/g, "")
     .slice(0, 200) || undefined;
 

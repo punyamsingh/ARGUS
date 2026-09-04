@@ -28,7 +28,7 @@ export function FocusedBrief({ id }: { id: string }) {
   const router = useRouter();
   const { data: session, isPending: sessionPending } = useSession();
   const signedIn = !!session?.user;
-  const { status, stage, result, error, run } = useBriefStream();
+  const { status, stage, result, error, conversationId, run } = useBriefStream();
   const [loaded, setLoaded] = useState<BriefResult | null>(null);
   const [notFound, setNotFound] = useState(false);
   const inputRef = useRef<BriefInput | null>(null);
@@ -141,6 +141,10 @@ export function FocusedBrief({ id }: { id: string }) {
           <BriefConversation
             result={brief}
             onClose={() => router.push("/")}
+            // Only when the brief was generated on this page do the follow-ups
+            // join its conversation; a brief loaded from history starts its own
+            // Langfuse session (#15).
+            conversationId={result ? conversationId : null}
             // Only a brief the account holds has documents behind it. While the
             // URL is still /brief/new there is no row yet; it becomes the
             // server id the moment the save lands (#99).

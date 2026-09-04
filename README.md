@@ -210,8 +210,12 @@ a crash. The default model is `gemini-2.5-flash`.
 
 With the keys set, each brief is exported to Langfuse as **one trace tree** —
 `brief → resolve → each gather tool → synthesize` — with per-step latency, token
-usage, model, and cost. The Vercel AI SDK emits OpenTelemetry spans
-(`experimental_telemetry`) and the pipeline adds spans via `@langfuse/tracing`;
+usage, model, and cost. Traces are grouped into **one session per
+conversation**: a brief and every follow-up asked about it share a conversation
+id (minted client-side, sent as `x-argus-conversation-id`), so a Langfuse
+session is one meeting's worth of work rather than a browser's entire history.
+Generating another brief starts another session. The Vercel AI SDK emits
+OpenTelemetry spans (`experimental_telemetry`) and the pipeline adds spans via `@langfuse/tracing`;
 the `@langfuse/otel` `LangfuseSpanProcessor` (registered in `instrumentation.ts`,
 `exportMode: "immediate"` for serverless) ships them, and the route force-flushes
 via `after()`. ARGUS runs fine without Langfuse; with no keys, nothing is

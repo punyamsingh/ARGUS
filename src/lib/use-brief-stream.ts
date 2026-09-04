@@ -8,7 +8,7 @@ import type {
   BriefStage,
   BriefStreamMessage,
 } from "@/types/brief";
-import { getSessionId } from "@/lib/session-id";
+import { newConversationId } from "@/lib/conversation-id";
 import { saveToHistory } from "@/lib/brief-history";
 import { saveBriefToAccount } from "@/lib/briefs/library";
 
@@ -42,12 +42,18 @@ export function parsePendingBrief(raw: string): PendingBrief | null {
  * (stage events → terminal result/error), persists the result to history, and
  * exposes the live state. Extracted so the focused brief page can stream a brief
  * the moment you land on it.
+ *
+ * Each run opens a new conversation (#15): the id it mints is what makes this
+ * brief — and the follow-ups asked about it — one Langfuse session. Callers hand
+ * `conversationId` down to the follow-up panel so the chats land in the same
+ * session as the brief they're about.
  */
 export function useBriefStream() {
   const [status, setStatus] = useState<GenStatus>("idle");
   const [stage, setStage] = useState<BriefStage>("resolving");
   const [result, setResult] = useState<BriefResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   async function run(
     input: BriefInput,
@@ -64,6 +70,12 @@ export function useBriefStream() {
     setError(null);
     setResult(null);
 
+    // A fresh conversation per generation — including a retry, which is a new
+    // attempt at the brief and so a new session rather than a second trace in
+    // the failed one.
+    const conversation = newConversationId();
+    setConversationId(conversation);
+
     try {
       const res = await fetch("/api/brief", {
         method: "POST",
@@ -72,8 +84,9 @@ export function useBriefStream() {
           // The route streams NDJSON; ask for it explicitly so the contract is
           // unambiguous and a future JSON fallback wouldn't desync the reader.
           Accept: "application/x-ndjson, application/json",
-          // Groups this browser's briefs into one Langfuse session.
-          "x-argus-session-id": getSessionId(),
+          // Opens this conversation's Langfuse session; the follow-ups asked
+          // about the resulting brief send the same id.
+          "x-argus-conversation-id": conversation,
         },
         // `demo` and `attachments` ride alongside the input — the route reads
         // them separately, so the BriefInput contract is untouched. For
@@ -142,5 +155,5 @@ export function useBriefStream() {
     }
   }
 
-  return { status, stage, result, error, run };
+  return { status, stage, result, error, conversationId, run };
 }
