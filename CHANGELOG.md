@@ -1,3 +1,9 @@
+## [3.21.0](https://github.com/punyamsingh/ARGUS/compare/v3.20.1...v3.21.0) (2026-09-04)
+
+### Features
+
+* **telemetry:** one Langfuse session per conversation ([#120](https://github.com/punyamsingh/ARGUS/issues/120)) ([40019e6](https://github.com/punyamsingh/ARGUS/commit/40019e6048ac505b9c29057a34af8e269405bbe2))
+
 ## [3.20.1](https://github.com/punyamsingh/ARGUS/compare/v3.20.0...v3.20.1) (2026-08-06)
 
 ### Bug Fixes
