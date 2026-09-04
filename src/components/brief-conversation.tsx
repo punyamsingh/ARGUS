@@ -17,6 +17,7 @@ export function BriefConversation({
   onClose,
   onExpand,
   briefId,
+  conversationId,
 }: {
   result: BriefResult;
   onClose?: () => void;
@@ -25,6 +26,10 @@ export function BriefConversation({
    *  can resolve its attachment sources (#99); everything else renders them as
    *  plain labels. */
   briefId?: string | null;
+  /** Set when this brief was just generated here, so its follow-ups join the
+   *  same Langfuse session as the generation (#15). Absent for a brief opened
+   *  from history — that's a new conversation, and the panel opens one. */
+  conversationId?: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -39,6 +44,7 @@ export function BriefConversation({
         key={result.meta.generatedAt}
         result={result}
         briefId={briefId}
+        conversationId={conversationId}
       />
     </div>
   );

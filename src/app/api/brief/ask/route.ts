@@ -34,9 +34,11 @@ export async function POST(req: Request) {
     );
   }
 
-  // Optional client session id — groups follow-ups with their brief in Langfuse.
+  // Optional conversation id — the Langfuse session key (#15), so this
+  // follow-up lands in the same session as the brief it's about. Sanitised for
+  // the same reason as in /api/brief: it's untrusted input on a span.
   const sessionId = req.headers
-    .get("x-argus-session-id")
+    .get("x-argus-conversation-id")
     ?.replace(/[^a-zA-Z0-9._-]/g, "")
     .slice(0, 200) || undefined;
 

@@ -9,7 +9,7 @@ import type {
 } from "@/types/brief";
 import { clsx } from "@/lib/cn";
 import { DISABLED_PRIMARY } from "@/lib/button";
-import { getSessionId } from "@/lib/session-id";
+import { newConversationId } from "@/lib/conversation-id";
 import { SourceLabel } from "@/components/source-label";
 
 /**
@@ -44,14 +44,24 @@ const SUGGESTIONS = [
 export function BriefFollowUps({
   result,
   briefId,
+  conversationId,
 }: {
   result: BriefResult;
   /** Account id, when this brief has one — lets attachment sources resolve.
    *  A follow-up answers over the same evidence store, so its citations point
    *  at the same documents the brief above does. */
   briefId?: string | null;
+  /** The conversation these chats belong to (#15) — the id the brief above was
+   *  generated under, so brief and follow-ups share one Langfuse session. A
+   *  brief reopened from history arrives without one: that's a new conversation,
+   *  and the fallback below opens a session for it. */
+  conversationId?: string | null;
 }) {
   const [turns, setTurns] = useState<Turn[]>([]);
+  // Minted once per mount. The panel is keyed to the brief, so opening another
+  // brief remounts it and starts a new conversation — never one long-running
+  // session spanning unrelated meetings.
+  const [ownConversationId] = useState(newConversationId);
   const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const nextId = useRef(0);
@@ -73,7 +83,7 @@ export function BriefFollowUps({
         headers: {
           "Content-Type": "application/json",
           Accept: "application/x-ndjson, application/json",
-          "x-argus-session-id": getSessionId(),
+          "x-argus-conversation-id": conversationId ?? ownConversationId,
         },
         body: JSON.stringify({
           question: q,

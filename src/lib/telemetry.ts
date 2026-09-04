@@ -15,7 +15,8 @@ export const telemetryEnabled = Boolean(
 type Json = Record<string, unknown>;
 
 interface TraceAttrs {
-  /** Groups related briefs in the Langfuse Sessions view. */
+  /** The conversation this trace belongs to — one brief plus the follow-ups
+   *  asked about it — which is what Langfuse's Sessions view groups on (#15). */
   sessionId?: string;
   /** Explicit trace name (otherwise Langfuse infers it from the root span). */
   traceName?: string;
